@@ -21,7 +21,8 @@ indexes checked on hazel:
 Plus the B73 controls (`results/b73_control/`: ERR3288215 15.5×, skim10 5.7×). These 10 BC1 CRAMs and 84 line CRAMs were made by
 nilhmm / `bc2s3_realign.sbatch` (minibwa -x sr, MAPQ 20, `-F 0x904`) **without duplicate marking and without read groups**, so they are
 the first imports: MARK_DUPLICATES + read-group pass (Task 2), then zealgt's own variant discovery. The existing Zx.0540_P3 discovery
-table predates duplicate marking and serves as the before/after comparison, not as zealgt input.
+table predates duplicate marking and serves as the before/after comparison, not as zealgt input. Compare against the rerun
+with the CRISP BED-end fix (§4 #9), not the pre-fix table (`discovery/<donor>_preBEDfix/`), so the comparison measures duplicate marking only.
 
 ### Task 1 — turn the existing demux FASTQs into CRAMs, once
 Align every not-yet-aligned sample of the libraries that are already demuxed, from the FASTQs still in the nilhmm `work/` directories
@@ -130,7 +131,7 @@ sabre + Trimmomatic FASTQs (`sara/BZea/filtered_S/`) stay as a fallback and comp
 | 1b | 1 | `read_trimming` | TRIMMOMATIC (batch-1 parameters) → FASTQC | sample (inside the library task) | trimmed FASTQ (task scratch only), FastQC report |
 | 2 | 1 | `read_alignment` | ALIGN (minibwa -x sr) → READ_GROUPS → **MARK_DUPLICATES** (`samtools markdup -d 2500`) → CRAM (no MAPQ filter) → SAMTOOLS_STATS → MOSDEPTH → MULTIQC | sample | `cram/<sample>.cram` + QC + provenance |
 | 2b | 2 | `sample_quality_control` | QC_PANEL_COUNTS (`mpileup -I` at a blind QC panel, one task per sample) → COVERAGE_QC → RELATEDNESS_QC → DONOR_CONTENT_QC | sample / cohort | `sample_qc.tsv`: pass/fail + reason per sample; discovery and every caller read it |
-| 3 | 2 | `variant_discovery` | WITNESS_POOL → CRISP (BC1 samples + witness only) → WITNESS_VETO → B73_CONTROL_COUNTS (`mpileup -I`) → POOLED_LIKELIHOOD_TIERS | donor × chr | `step4/<donor>.sites.tsv.gz` |
+| 3 | 2 | `variant_discovery` | WITNESS_POOL → CRISP (BC1 samples + witness only) → BED_CLIP (`bcftools view -T`, §4 #9) → WITNESS_VETO → B73_CONTROL_COUNTS (`mpileup -I`) → POOLED_LIKELIHOOD_TIERS | donor × chr | `step4/<donor>.sites.tsv.gz` |
 | 4 | 2 | `marker_union` | MARKER_UNION (tier-A sites of the donor set; multi-allelic dropped) | donor set × chr | `union/<set>_<chr>.tsv.gz` |
 | 5 | 2 | `donor_allele_calling` | UNION_SITE_COUNTS (`mpileup -I -T union`, one task per sample) → JOINT_POOLED_LIKELIHOOD → GAP_FILLING (`dhd_bayes`) | sample / donor set × chr | donor allele table |
 | 6 | 2 | `ancestry_inference` | LINE_ALLELE_COUNTS → RTIGER (design BC2S3, rigidity 500) | donor × chr | ancestry segments per line |
@@ -170,6 +171,7 @@ and each entry checks the run card before starting.
 | 6 | Tiers depend on the count source (CRISP vs mpileup disagreed at ~15% of own tier-A sites) | stages 3 vs 5 | which counts define tiers |
 | 7 | RTIGER rigidity fixed at 500 vs a density-scaled rule | stage 6 | confirm 500 |
 | 8 | Marker union / donor allele calling / gap filling / ancestry inference exist only as standalone scripts (`PHG/bin/`) | stages 4–6 | port as modules |
+| 9 | **CRISP reads the `--bed` end one base too far** (found and fixed in zealbc1 2026-09-24, zealbc1 `docs/DECISIONS.md`): it also calls the base right after every range; starts are read correctly. Evidence: BED `chr10 105269 105270` (base 105,270 only) → CRISP reports 105,271; Zx.0570_P2 raw output has 29 records at range end + 1 (≈ the ~41 expected inside a range) vs 36 at range first bases; 18 of 82,724 rows of the Zx.0540_P3 + Zx.0570_P2 union sit 1 bp past a range end. Size ≤ 1 base per range (8,095 ranges, ~0.03% of the 26 Mb tested); sites inside ranges unaffected | stage 3, right after CRISP | **decided:** `bcftools view -T <lowcopy BED>` on the CRISP VCF before WITNESS_VETO, so step 4, the union and ancestry inference see only in-range sites (zealbc1 `PHG/bin/donor_discovery_chr10.sbatch`, dc95eea). Any zealbc1 table made before dc95eea carries the extra sites (step-4 tables of Zx.0540_P3, Zx.0570_P2, Zv.0490_P4, Zx.0150_P2, Zx.0100_P4, Zd.0040_P1, the QC-set founders, and every union / gap filling / founder / PHG / RTIGER output built on them); zealbc1 `PHG/qcset/variant_discovery.sbatch` is not fixed yet. Rerun with the fix: Zx.0540_P3, Zx.0570_P2 (jobs 949447, 949448; pre-fix outputs in `discovery/<donor>_preBEDfix/`) |
 
 ## 5. Storage, caching and cleanup (from the disk audit, 2026-09-24, job 946049)
 Measured (`du -sk` / `--inodes`, one array task per directory; table `ZEAL/results/audit_du_20260924/tasks/`):
