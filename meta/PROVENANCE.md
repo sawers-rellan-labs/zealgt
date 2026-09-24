@@ -5,7 +5,7 @@ copied into this repo on 2026-09-24. This file records where each source came fr
 Rebuild with `python3 meta/build_samples.py` (it validates and exits 1 on a failed check).
 
 ## Result
-2,283 samples in 80 libraries: BC1 384 (32 pools); BC2S3 batch 1 1,515 (16 plate pools: 1,408 lines, 76 landrace lines, 31 checks);
+2,283 samples in 80 libraries: BC1 384 (32 pools); BC2S3 batch 1 1,515 (16 plate pools: 1,405 lines, 79 landrace lines, 31 checks);
 BC2S3 batch 2 384 wells (32 rows: 362 lines, 13 checks, 9 empty). All sample IDs unique; all barcodes unique within their library;
 every sample has a raw location.
 
@@ -30,7 +30,7 @@ every sample has a raw location.
   vs 6.6% for 6-mers at base 31). BC1 and batch 2: 6-bp inline barcode on both R1 and R2.
 - **Excluded — another project sequenced in the same batch-1 run** (user, 2026-09-24): all of plate 1 (96 wells, `LANTEO…_BC2S4-bulk`)
   and the 21 `LANTEO…` wells on plates 2–17. None of them is in the skim map.
-- **Roles:** batch 1 — `check` = B73 or purple check; `landrace_line` = `…BC1S4-bulk` (traditional-variety introgressions, samples
+- **Roles:** batch 1 — `check` = B73 or purple check; `landrace_line` = `…_BC1S3-bulk` / `…_BC1S4-bulk` (traditional-variety introgressions, samples
   119–198 per the delivery README); `line` otherwise. Batch 2 — from its `class` column (`line`, `B73`/`NC358` → check, `empty`).
 - **Donor / taxon** for batch 1 from the skim-map pedigree (`<accession>_P<n>` → Zd/Zx/Zv/Zl/Zh); BC1 and batch 2 from their maps.
 - **Batch-1 processing history (not used by zealgt, kept for comparison):** Nirwan's pipeline (github.com/nirwan1265/BZea_genotyping):
@@ -40,6 +40,6 @@ every sample has a raw location.
 ## Unresolved
 1. **PN18 (14 samples, PN18_SID1633–1647)** are in the skim map but not in `BZea_Sample_ID.xlsx` (17 plates): a plate 18 from another
    sequencing run? Its raw data location is unknown.
-2. **5 batch-1 lines without a nil_id** (in the sheet, not in the skim map).
-3. **Landrace BC1S4 lines (76):** part of this delivery; confirm they belong in the ZEAL genotyping.
+2. **2 batch-1 teosinte lines without a nil_id** (in the sheet, not in the skim map): PN13_SID1226 (`Zdip-JSG-RMM-LCL-551_P3_P1_P1_P2.5.1.1-bulk`), PN17_SID1574 (`Mesa-JSG-Y-RMM-444_P2_P1_P1_P2.2.1.1-bulk`).
+3. **Landrace BC1S3/BC1S4 lines (79):** part of this delivery; confirm they belong in the ZEAL genotyping.
 4. The builders of `bc1_well_map.csv` and `bc2s3_batch1_skim_nil_id.tsv` are not in any repository.
