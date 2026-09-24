@@ -90,18 +90,52 @@ text after variable substitution, its inputs, and its environment (conda / conta
 5. **Temporaries die inside the task** (merged witness pool, sort temp, demux FASTQs if merged with ALIGN; see §5).
 6. Tools: minibwa, samtools, bcftools, CRISP, nilHMM, PHG — the ones in use; environments prebuilt and referenced by prefix.
 
-## 3. Stages (entries) and modules
-| # | entry | modules | per | main output (store) |
+## 3. Two workflows, stages and modules
+The pipeline is two workflows in this repository, with the **store as the only contract** between them (decided 2026-09-24):
+
+| | **Workflow 1 — read processing** | **Workflow 2 — genotyping** |
+|---|---|---|
+| input | raw libraries + sample maps | the CRAM store + a sample sheet + a run card |
+| runs | once per library, then done (demux registry) | many times: development, new donors, parameter changes |
+| output | analysis-ready CRAMs + read/alignment QC + provenance + registry | discovery tables, markers, ancestry, imputed genotypes |
+| cost | heavy (hours per BC1 library; ~3,000 CPU-h for all BC1 samples) | light per donor (minutes per chromosome) |
+| profile | compute/normal, large scratch | short QOS |
+Genotyping development never contains a demultiplexing or alignment step, so no edit to it can trigger one. Genotyping checks each
+CRAM's provenance record against the current read-processing settings.
+
+### Workflow 1 stop point: the analysis-ready CRAM
+Per sample, into the store: CRAM + index (B73 v5, coordinate-sorted, read groups in every read, **duplicates flagged, not removed**,
+all mapped primary reads, **no MAPQ filter**); per-sample QC (FastQC of the trimmed reads, `samtools stats`/`flagstat`, markdup
+stats, mosdepth λ); per-library demux QC and MultiQC; a provenance record (source, demux tool, trimming parameters, aligner and
+version, markdup settings, code version); the registry entry. MAPQ, base-quality and duplicate filters are applied by workflow 2 at
+read time (`mpileup -q20 -Q20`, CRISP `--mmq 20`), so a threshold change never needs realignment. (The nilhmm CRAMs were written with
+`-q 20 -F 0x904`; new CRAMs are not.) Anything that needs reference ranges, a site panel or the pedigree belongs to workflow 2.
+
+### One read-processing standard for all three sources
+| source | libraries | input adapter | barcode layout | sample map |
 |---|---|---|---|---|
-| 1 | `read_demultiplexing` | DEMUX (cutadapt exact inline, `-e 0 --no-indels`), DEMUX_QC | pool | per-sample FASTQ (transient), `demux_qc/<pool>.tsv` (store, one file per pool) |
-| 2 | `read_alignment` | ALIGN (minibwa -x sr) → **MARK_DUPLICATES** → CRAM (MAPQ 20, `-F 0x904`, duplicates flagged or removed) → MOSDEPTH | sample (BC1 sample, BC2S3 line, B73 pool) | `cram/<sample>.cram` (store) |
-| 2b | `sample_quality_control` | QC_PANEL_COUNTS (`mpileup -I` at a blind QC panel, one task per sample) → COVERAGE_QC → RELATEDNESS_QC → DONOR_CONTENT_QC | sample / cohort | `sample_qc.tsv`: pass/fail + reason per sample; discovery and every caller read it |
-| 3 | `variant_discovery` | WITNESS_POOL → CRISP (BC1 samples + witness only) → WITNESS_VETO → B73_CONTROL_COUNTS (`mpileup -I`) → POOLED_LIKELIHOOD_TIERS | donor × chr | `step4/<donor>.sites.tsv.gz` |
-| 4 | `marker_union` | MARKER_UNION (tier-A sites of the donor set; multi-allelic dropped) | donor set × chr | `union/<set>_<chr>.tsv.gz` |
-| 5 | `donor_allele_calling` | UNION_SITE_COUNTS (`mpileup -I -T union`, one task per sample) → JOINT_POOLED_LIKELIHOOD → GAP_FILLING (`dhd_bayes`) | sample / donor set × chr | donor allele table |
-| 6 | `ancestry_inference` | LINE_ALLELE_COUNTS → RTIGER (design BC2S3, rigidity 500) | donor × chr | ancestry segments per line |
-| 7 | `genotype_imputation` | DONOR_FOUNDER (gVCF → pseudo-assembly) → PHG_DATABASE → PHG_IMPUTATION (pairwise: B73 + donor, that donor's lines; F = 0, stay 0.99999) → RASTERIZE | donor × chr | genotypes at the union sites |
-| 8 | `reporting` | CHROMOSOME_PAINTING, summary tables, KS / single-locus checks | donor × chr | paintings, tables |
+| BC1 pools | 32 (1A–4H), `BC1_dna_raw/` | plain FASTQs | inline, symmetric on R1 and R2 (`-g`/`-G`) | `meta/bc1_well_map.csv` |
+| BC2S3 batch 2 | 32 rows (V21A–V24H), `BC2S3_batch_2_dna_raw/` | plain FASTQs | inline, symmetric on R1 and R2 | `meta/bc2s3_batch2_well_map.csv` |
+| BC2S3 batch 1 (CLY2023) | 17 plate pools in `sara/DNA_Sequencing_raw/BZea/NVS188B_*_R{1,2}.tar` (1.5 TB, read-only) | members streamed out of the tars (`tar -xOf`), lanes concatenated; plate pool = 6-bp Illumina index in the header | **8-bp inline barcode on R1 only** (checked 2026-09-24: top-96 5′ 8-mers cover 91.9% of reads vs 6.6% at base 31) | `BZea_Sample_ID.xlsx` (1,632 wells: barcode, plate, plate index, running number, genotype) → a well map; joins to check: plate index → `BZea<n>` files, running number → `PN<plate>_SID<n>` |
+Same steps for every library, in one task per library: cutadapt exact-match demux (`-e 0 --no-indels`; R1-only anchoring for batch 1)
+→ Trimmomatic PE with batch 1's original parameters (`ILLUMINACLIP 2:30:10, LEADING:3, TRAILING:3, SLIDINGWINDOW:4:15, MINLEN:36`) →
+minibwa -x sr → read groups → `samtools fixmate -m` → `sort` → `markdup -d 2500` → CRAM; FASTQs deleted per sample as it finishes
+(peak scratch ≈ 1.1 × the library). Batch 1 is demultiplexed again from the tars so all ~2,400 samples share one provenance; Nirwan's
+sabre + Trimmomatic FASTQs (`sara/BZea/filtered_S/`) stay as a fallback and comparison. Genotype names in `BZea_Sample_ID.xlsx` read
+`…_BC2S4-bulk` for the first rows seen — check for the teosinte lines (it bears on the bulk-parent generation, math supplement S2.2).
+
+| # | workflow | entry | modules | per | main output (store) |
+|---|---|---|---|---|---|
+| 1 | 1 | `read_demultiplexing` | FETCH_LIBRARY (source adapter) → DEMUX (cutadapt exact inline) → DEMUX_QC | library | per-sample FASTQ (task scratch only), `demux_qc/<library>.tsv` |
+| 1b | 1 | `read_trimming` | TRIMMOMATIC (batch-1 parameters) → FASTQC | sample (inside the library task) | trimmed FASTQ (task scratch only), FastQC report |
+| 2 | 1 | `read_alignment` | ALIGN (minibwa -x sr) → READ_GROUPS → **MARK_DUPLICATES** (`samtools markdup -d 2500`) → CRAM (no MAPQ filter) → SAMTOOLS_STATS → MOSDEPTH → MULTIQC | sample | `cram/<sample>.cram` + QC + provenance |
+| 2b | 2 | `sample_quality_control` | QC_PANEL_COUNTS (`mpileup -I` at a blind QC panel, one task per sample) → COVERAGE_QC → RELATEDNESS_QC → DONOR_CONTENT_QC | sample / cohort | `sample_qc.tsv`: pass/fail + reason per sample; discovery and every caller read it |
+| 3 | 2 | `variant_discovery` | WITNESS_POOL → CRISP (BC1 samples + witness only) → WITNESS_VETO → B73_CONTROL_COUNTS (`mpileup -I`) → POOLED_LIKELIHOOD_TIERS | donor × chr | `step4/<donor>.sites.tsv.gz` |
+| 4 | 2 | `marker_union` | MARKER_UNION (tier-A sites of the donor set; multi-allelic dropped) | donor set × chr | `union/<set>_<chr>.tsv.gz` |
+| 5 | 2 | `donor_allele_calling` | UNION_SITE_COUNTS (`mpileup -I -T union`, one task per sample) → JOINT_POOLED_LIKELIHOOD → GAP_FILLING (`dhd_bayes`) | sample / donor set × chr | donor allele table |
+| 6 | 2 | `ancestry_inference` | LINE_ALLELE_COUNTS → RTIGER (design BC2S3, rigidity 500) | donor × chr | ancestry segments per line |
+| 7 | 2 | `genotype_imputation` | DONOR_FOUNDER (gVCF → pseudo-assembly) → PHG_DATABASE → PHG_IMPUTATION (pairwise: B73 + donor, that donor's lines; F = 0, stay 0.99999) → RASTERIZE | donor × chr | genotypes at the union sites |
+| 8 | 2 | `reporting` | CHROMOSOME_PAINTING, summary tables, KS / single-locus checks | donor × chr | paintings, tables |
 
 ### Stage 2b — sample QC before discovery (proposal, 2026-09-24)
 Discovery assumes every BC1 sample and every line belongs to its recorded donor; a pollination error, seed mix-up or contaminated
