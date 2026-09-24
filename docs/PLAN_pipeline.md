@@ -3,6 +3,40 @@
 Status: **proposal, 2026-09-24**, for discussion; nothing implemented. Storage section (§5) filled from the disk audit
 (`nilhmm/bin/audit_du.sbatch`, job 946049, results in `ZEAL/results/audit_du_20260924/`).
 
+## 0. First work in zealgt (user, 2026-09-24): no more demultiplexing of the libraries already in use
+Demultiplexing is the most expensive step to repeat. In the nilhmm runs, pool 1B was demuxed ~9 times during the 09-11 → 09-14 gate runs,
+and every other library was demuxed once but only its donor's samples were aligned, leaving ~2.8 TB of FASTQs for unaligned samples in
+`work/` (§5). Nextflow did not prevent this: `workDir = ${params.outdir}/work` gave every new outdir an empty cache, demux FASTQs were not
+published, and hash changes between tries reran DEMUX. These two tasks come before any other zealgt work.
+
+### Task 1 — turn the existing demux FASTQs into CRAMs, once
+Align every not-yet-aligned sample of the libraries that are already demuxed, from the FASTQs still in the nilhmm `work/` directories
+(by `-resume` in the original launch directories, so the cached DEMUX tasks are reused, or by an alignment job reading those FASTQs
+directly), with duplicate marking; write the CRAMs to the store.
+
+| libraries demuxed | samples | aligned (2026-09-24) | to align | FASTQs now in |
+|---|---|---|---|---|
+| BC1 1B | 12 | 12 (`results/align_membench`) | 0 | `results/gate2/work` |
+| BC1 4E, 4F, 4G | 36 | 4 (Zv.0490_P4) | 32 | `results/work` (launch `results/pool_run_4E4F4G`) |
+| BC1 1A | 12 | 1 (S_1A_4) | 11 | `results/work` (launch `results/pool_run_1A`) |
+| BC1 2A, 2B, 2F | 36 | 5 (Zx.0540_P3) | 31 | `results/work` (launch `results/pool_run_2A2B2F`) |
+| BC1 2H, 3B–3E | 60 | Zx.0570_P2's | ~55 | `results/work` (launch `results/pool_run_2H3B3C3D3E`; other session's run — its decision) |
+| BC2S3 batch-2 rows V22A–H, V23A–H, V24A–B | 216 wells | ~30 lines + checks | ~185 | `results/bc2s3_batch2/work` |
+Scale: ~130 BC1 samples (~1 h × 8 cpu each, ~1,000 CPU-h) and ~185 lines (minutes each). **Until this is done and verified, those `work/`
+directories are the only copy of the demuxed reads and must not be cleaned.** Done = every sample of these libraries has a verified,
+non-empty CRAM in the store; then the FASTQs can go (§5, cleanup group A–C).
+
+### Task 2 — make repeated demultiplexing impossible by construction
+- **Development starts from CRAMs.** Development entries take a sample sheet of existing CRAMs; `read_demultiplexing` is not part of them.
+- **Demux registry in the store.** A library is registered as done when its demux QC table and all its sample CRAMs are in the store.
+  `read_demultiplexing` refuses a registered library unless it is named explicitly with `--force-demux <library>`.
+- **One pass per library** for any library demuxed from now on: one task demuxes the library, aligns **all** its samples, marks
+  duplicates and writes the CRAMs; FASTQs live only in that task's scratch and are deleted when it ends. `--samples` never restricts which
+  samples of a demuxed library get aligned.
+- **Reuse of existing outputs:** entries read existing CRAMs / tables through sample sheets; the workflow computes only what is missing
+  in the store; CRAMs imported from nilhmm (made without duplicate marking) get a MARK_DUPLICATES-only step, not a realignment.
+- **Raw libraries are read-only inputs.**
+
 ## 1. Why
 The chr10 pilots ran as standalone sbatch scripts next to the `nilhmm/` pipeline. The same step was implemented more than once and the
 copies drifted: B73 pools inside vs outside CRISP, `mpileup -I` present in one pileup and missing in another, a demux QC table overwritten
@@ -114,8 +148,8 @@ small. The large file counts are environments and the stub run, not data.
 Rules proposed for v2:
 1. `workDir` on `/share/maize/frodrig4/nf_work/<run>` (2 TB, not persistent; 22 GB used today). Results published to `/rsstu`.
 2. CRAMs, per-pool demux QC and step-4 tables in a `storeDir` on `/rsstu` (`ZEAL/store/{cram,demux_qc,step4}`), never in `work/`.
-3. Demux FASTQs never outlive their alignment: either capped concurrent DEMUX (`maxForks` 3–4, ≤ ~600 GB at a time) with deletion once the
-   pool's ALIGN tasks finish, or one DEMUX+ALIGN task per pool writing FASTQs to its own scratch (decision open).
+3. Demux FASTQs never outlive their alignment: one DEMUX+ALIGN task per library, all samples aligned, FASTQs in the task's scratch only
+   (§0, Task 2); 3–4 libraries at a time fit the 2 TB scratch.
 4. After each successful run: `nextflow clean -f -but <last>` and a size report; stub runs always cleaned.
 5. Existing `work/` (3.2 TB): before deleting, confirm every CRAM / table the project uses is published outside `work/`
    (`results/cram`, `results/align_membench`, `results/bc2s3_batch2/cram`, the pilot dirs) — decision and check pending, nothing deleted.
