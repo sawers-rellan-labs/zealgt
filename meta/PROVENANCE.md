@@ -37,6 +37,17 @@ every sample has a raw location.
   sabre demux → Trimmomatic PE (ILLUMINACLIP 2:30:10, LEADING:3, TRAILING:3, SLIDINGWINDOW:4:15, MINLEN:36) → `sara/BZea/filtered_S/`
   (plates 2–17) → bwa mem → Picard markdup → ANGSD. zealgt re-demultiplexes batch 1 from the tars (docs/PLAN_pipeline.md §3).
 
+## Development import sheet (`meta/dev_import.csv`, 2026-09-24)
+The existing CRAMs zealgt's development entries start from (docs/PLAN_pipeline.md §0), read in place from `ZEAL/results/` (written by
+zealbc1 / nilhmm) — not copied. 96 rows: per donor (`import_set` Zx.0540_P3, Zx.0570_P2) 5 BC1 samples (`results/cram/`, nilhmm pool_run
+ALIGN) and 40 / 44 BC2S3 batch-1 lines (`results/bench_zx05{40,70}_chr10/bc2s3_realign/cram/`, zealbc1 `PHG/bin/bc2s3_realign.sbatch`),
+plus the 2 B73 controls (`results/b73_control/`: ERR3288215 CRAM, skim10 BAM). Made from `ls -l` on hazel
+(`meta/sources/dev_import_listing_20260924.txt`) joined to `meta/samples.csv`; every file has its index, every sample is in the sheet, donors
+agree. All were aligned with minibwa -x sr, MAPQ 20, `-F 0x904`, **no duplicate marking, no read groups** (`dup_marked`, `read_groups`
+columns), so the import step is MARK_DUPLICATES + read groups, not realignment. Open: the line CRAMs are 90–250 MB (consistent with
+whole-genome 0.4×, not yet checked with idxstats); PN6_SID484 (1.8 MB) and PN8_SID736 (5.7 MB) are far smaller than the rest — check their
+read counts before use. B73 control read groups not checked.
+
 ## Unresolved
 1. **PN18 (14 samples, PN18_SID1633–1647)** are in the skim map but not in `BZea_Sample_ID.xlsx` (17 plates): a plate 18 from another
    sequencing run? Its raw data location is unknown.
