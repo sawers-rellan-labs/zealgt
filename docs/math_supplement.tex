@@ -1,0 +1,267 @@
+%% zealgt — mathematical supplement (DRAFT, 2026-09-24).
+%% Models behind the ZEAL genotyping pipeline (docs/PLAN_pipeline.md): the crossing scheme and the donor haplotype,
+%% pooled samples (BC1 pools, BC2S3 bulks), per-donor discovery, the union of informative sites and gap filling, and the
+%% ancestry inference and genotype imputation. Structure follows the nilHMM supplement (nilhmm-paper/supplement_engine_math.tex): numbered Texts,
+%% full derivations, one narrative. Numbers quoted from pilot runs are chr10, 2026-09-20 -> 24, and marked as such.
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage[round,authoryear]{natbib}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue]{hyperref}
+\setlength{\emergencystretch}{3em}
+
+\newcommand{\REF}{\mathrm{REF}}
+\newcommand{\HET}{\mathrm{HET}}
+\newcommand{\ALT}{\mathrm{ALT}}
+\newcommand{\Bin}{\mathrm{Binom}}
+\newcommand{\Pois}{\mathrm{Pois}}
+\newcommand{\LLR}{\mathrm{LLR}}
+\newcommand{\Hd}{H_d}
+\newcommand{\cov}{\lambda}                  % per-sample coverage (as in the nilHMM supplement)
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\todo}[1]{\textbf{[TO CHECK: #1]}}
+
+\title{Supplemental Texts (DRAFT)\\[2pt]
+\large Pooled-sample genotyping of the ZEAL BC$_2$S$_3$ population (zealgt)}
+\author{Rodr\'iguez-Zapata \textit{et al.}}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{description}
+\item[Text S1] The crossing scheme and the donor haplotype
+\item[Text S2] Pooled samples: BC$_1$ pools and BC$_2$S$_3$ bulks
+\item[Text S3] Reads at low coverage
+\item[Text S4] Per-donor variant discovery
+\item[Text S5] The union of informative sites and gap filling
+\item[Text S6] Ancestry inference, genotype imputation, and their checks
+\end{description}
+\clearpage
+
+%======================================================================
+\section{The crossing scheme and the donor haplotype}
+\label{sec:scheme}
+%======================================================================
+
+Each ZEAL family descends from one teosinte plant crossed to B73. The F$_1$ receives a single haploid gamete from the teosinte parent,
+which we call the donor haplotype $\Hd$ of donor $d$. That gamete is a recombinant of the teosinte parent's two haplotypes and exists only
+in that F$_1$; it is one sequence, with one allele per site, and needs no phasing. The F$_1$ is $\Hd/\mathrm{B73}$, so every teosinte base
+pair in its BC$_1$ progeny and in all of its BC$_2$S$_3$ descendants is a piece of $\Hd$. The heterozygosity of the teosinte parent does
+not enter any model below.
+
+\paragraph{Single-locus expectation.} Let $h_t$ be the probability that a plant of generation $t$ is heterozygous $\Hd/\mathrm{B73}$ at a
+locus, and $a_t$ that it is homozygous $\Hd/\Hd$. Backcrossing to B73 halves $h$ and creates no homozygotes; selfing halves $h$ and moves
+the lost half equally into the two homozygous classes:
+\begin{equation}
+\text{backcross: } h_{t+1}=\tfrac12 h_t,\ a_{t+1}=0;\qquad
+\text{self: } h_{t+1}=\tfrac12 h_t,\ a_{t+1}=a_t+\tfrac14 h_t .
+\label{eq:recursion}
+\end{equation}
+From $h_{\mathrm{F1}}=1$: $h_{\mathrm{BC1}}=\tfrac12$, $h_{\mathrm{BC2}}=\tfrac14$, and after $s$ selfings
+\begin{equation}
+h_{\mathrm{BC2S}s}=\tfrac14\,2^{-s},\qquad a_{\mathrm{BC2S}s}=\tfrac12\left(\tfrac14-\tfrac14\,2^{-s}\right).
+\end{equation}
+For BC$_2$S$_3$: $h=1/32=3.1\%$, $a=7/64=10.9\%$, B73 $=55/64=85.9\%$, and the donor allele frequency $a+h/2=1/8$ is fixed at
+$12.5\%$ by the two backcrosses, whatever the number of selfings. For BC$_2$S$_2$: $h=1/16$, $a=3/32$, B73 $=27/32$. These are the
+expectations implemented by \code{single\_locus\_p0(n\_bc, n\_self)} (zealhmm, via \code{nilHMM::breeding\_prior}).
+
+%======================================================================
+\section{Pooled samples: BC$_1$ pools and BC$_2$S$_3$ bulks}
+\label{sec:pools}
+%======================================================================
+
+Every sequenced library in ZEAL is a pool of six plants: each BC$_1$ sample is six BC$_1$ plants of one donor, and each BC$_2$S$_3$ skim is a
+six-plant field-plot bulk of one line. A pool of six diploid plants holds twelve chromosome copies at a locus. Whether those twelve copies can
+be treated as independent draws depends on where each plant's two gametes come from.
+
+\subsection{BC$_1$ pools: six fixed B73 gametes and six F$_1$ gametes}
+\label{sec:bc1pool}
+A BC$_1$ plant is a B73 gamete times an F$_1$ gamete. At a site where $\Hd$ carries the ALT allele, the B73 gamete is always REF, and the
+F$_1$ gamete carries $\Hd$'s allele with probability $\tfrac12$, independently across plants. The number of carrier plants in pool $i$ is
+therefore
+\begin{equation}
+j_i\sim\Bin(6,\tfrac12),\qquad f_i=\frac{j_i}{12}\in\{0,\tfrac1{12},\dots,\tfrac6{12}\},
+\label{eq:bc1}
+\end{equation}
+with $E[f_i]=\tfrac14$, $\mathrm{SD}[f_i]=\sqrt{6\cdot\tfrac14}/12=0.102$, and $f_i\le\tfrac12$ always. Treating the twelve copies as
+independent haplotypes, each ALT with probability $\tfrac14$ ($\Bin(12,\tfrac14)$), would keep the mean but inflate the variance
+($12\cdot\tfrac14\cdot\tfrac34=2.25$ vs.\ $1.5$ haplotypes) and allow $f>\tfrac12$, which the cross cannot produce. The plant level is what
+matters here, because the two gametes of a plant have different sources. This is the model of step~4 of discovery
+(Text~\ref{sec:discovery}).
+
+\paragraph{Presence.} A segment of $\Hd$ is absent from all $6k$ F$_1$ gametes of a donor's $k$ samples with probability $2^{-6k}$, so it is
+present in the pooled DNA with probability $1-2^{-6k}$ ($98.4\%$ for one sample, $>99.99\%$ for three). Completeness of $\Hd$ is limited by
+detection (Text~\ref{sec:reads}), not presence. Along the chromosome $j_i$ is constant between the crossovers of the six F$_1$ gametes, so
+neighbouring sites share $j_i$; the per-site model of Eq.~\eqref{eq:bc1} ignores that correlation.
+
+\subsection{BC$_2$S$_3$ bulks: sibs of one selfed parent}
+\label{sec:bulk}
+The six plants of a BC$_2$S$_3$ plot are sibs from selfing one BC$_2$S$_2$ parent. At a locus the parent is B73/B73, $\Hd/\Hd$, or
+heterozygous, with the BC$_2$S$_2$ frequencies of Text~\ref{sec:scheme}. If it is homozygous the bulk's donor fraction is fixed at 0 or 1. If it
+is heterozygous, every sib gamete carries $\Hd$ with probability $\tfrac12$ independently, so each sib's dosage is $\Bin(2,\tfrac12)$ and the
+bulk's donor-haplotype count is a sum of six of them:
+\begin{equation}
+K\sim\Bin(12,\tfrac12),\qquad g=\frac{K}{12}\in\{0,\dots,1\},\qquad E[g]=\tfrac12,\ \mathrm{SD}[g]=0.144 .
+\label{eq:bulk}
+\end{equation}
+Here, unlike the BC$_1$ pool, grouping the twelve gametes into plants does not change the distribution at a single locus: both gametes of a
+sib come from the same parent. The marginal donor fraction of a bulk is the mixture
+\begin{equation}
+P(g)=\tfrac{27}{32}\,\delta_0+\tfrac{3}{32}\,\delta_1+\tfrac{1}{16}\,\Bin\!\left(12g;12,\tfrac12\right),\qquad E[g]=\tfrac18 ,
+\label{eq:bulkmix}
+\end{equation}
+which keeps the $12.5\%$ donor content of Text~\ref{sec:scheme}. \todo{which generation is the bulk's parent: BC$_2$S$_2$ (used here) or BC$_2$S$_3$ (then $h=1/32$, $a=7/64$, B73 $=55/64$ in Eq.~\eqref{eq:bulkmix})} Within a segment where the parent is heterozygous, $K$ is constant between
+the breakpoints of the twelve gametes, so a segment's read fraction is one draw of $K/12$ (e.g.\ $3/12$ or $10/12$), not $\tfrac12$. A
+single-plant three-state model with emission means $\{\epsilon,\tfrac12,1-\epsilon\}$ mis-specifies such segments; the alternative is a
+state space on the parent's genotype (a BC$_2$S$_2$ prior) with Eq.~\eqref{eq:bulk} as the heterozygous emission. Which fits the ZEAL
+bulks better is an empirical question (Text~\ref{sec:checks}).
+
+\subsection{Unequal DNA per plant}
+If plant $p$ contributes a DNA share $w_p$ ($\sum_p w_p=1$), a read comes from plant $p$ with probability $w_p$, and both haplotypes of that
+plant share its weight. The expected ALT fraction becomes $\sum_p w_p\,x_p/2$ ($x_p\in\{0,1,2\}$ the plant's dosage) instead of the
+count-over-12 of Eqs.~\eqref{eq:bc1}--\eqref{eq:bulk}. With $w_p=\tfrac16$ the equal-pooling models are exact; unequal $w_p$ spreads the
+fractions off the $1/12$ lattice and adds overdispersion shared by the two haplotypes of a plant. \todo{measure pooling evenness from the
+sharpness of the $j/12$ lattice in deep BC$_1$ samples}
+
+%======================================================================
+\section{Reads at low coverage}
+\label{sec:reads}
+%======================================================================
+
+With mean coverage $\lambda$ per sample, the reads at a site are $\Pois(\lambda)$ (Lander--Waterman). At the BC$_2$S$_3$ skim depths:
+
+\begin{center}
+\begin{tabular}{lcccc}
+\toprule
+$\lambda$ & 0 reads & 1 read & 2 reads & $\ge 3$ reads\\
+\midrule
+0.25$\times$ & 0.78 & 0.19 & 0.024 & 0.002\\
+0.4$\times$  & 0.67 & 0.27 & 0.054 & 0.008\\
+0.67$\times$ & 0.51 & 0.34 & 0.11 & 0.03\\
+1.2$\times$  & 0.30 & 0.36 & 0.22 & 0.12\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+At $0.4\times$ a covered site almost always has one read, which samples one of the bulk's twelve copies; no single site separates
+heterozygous from homozygous, and dosage can only come from aggregating reads along a segment (the ancestry HMM of Text~\ref{sec:checks}).
+The ALT reads at a site thin the Poisson: if the sample's ALT fraction is $f$, the ALT reads are $\Pois(\lambda f)$ and the probability of seeing
+none is $e^{-\lambda f}$ (used in Eq.~\eqref{eq:veto}).
+
+\paragraph{Duplicates.} Every model here treats reads as independent draws from the pool. A PCR duplicate is the same molecule counted
+twice, so it inflates both $n$ and the ALT count $a$ without adding information, and the likelihood ratios of Text~\ref{sec:discovery},
+which are sums over reads, overstate the evidence by roughly the duplication factor. At skim depth this is negligible; in the BC$_1$ samples
+(5--25$\times$ each), where one carrier plant contributes about $\lambda/12$ ALT reads, it can push weak sites over the thresholds. Duplicate
+removal before variant calling is standard in pooled-sequencing pipelines \citep{huang2015pooled} and in GATK best practices
+\citep{vanderauwera2013}; the CRISP paper does not discuss it \citep{bansal2010crisp}.
+
+%======================================================================
+\section{Per-donor variant discovery}
+\label{sec:discovery}
+%======================================================================
+
+Candidate sites come from CRISP \citep{bansal2010crisp} run on the donor's BC$_1$ samples plus a witness pool (the donor's BC$_2$S$_3$ lines
+merged). Our post-filter (step~4) scores each candidate per donor.
+
+\subsection{Pooled likelihood ratio}
+For pool $i$ of donor $d$ with $n_i$ reads, $a_i$ of them ALT, and a site error rate $\epsilon$,
+\begin{align}
+L_1^{(i)} &= \sum_{j=0}^{6}\binom{6}{j}2^{-6}\,\Bin\!\big(a_i;\,n_i,\,p_j\big),\qquad p_j=\tfrac{j}{12}(1-\epsilon)+\big(1-\tfrac{j}{12}\big)\epsilon,\\
+L_0^{(i)} &= \Bin(a_i;\,n_i,\,\epsilon),\qquad
+\LLR_d=\sum_{i\in d}\left(\log L_1^{(i)}-\log L_0^{(i)}\right).
+\label{eq:llr}
+\end{align}
+$j_i$ is marginalised per pool because it is not observed (Eq.~\eqref{eq:bc1}); $j_i=0$ is allowed, so a pool with no ALT reads is not evidence
+against $\Hd$'s allele. With prior $\pi$ the posterior is $\sigma(\LLR_d+\log\frac{\pi}{1-\pi})$; at $\pi=\tfrac12$ the tier thresholds
+$\LLR\ge6.9,\ 4.6,\ 2.2$ are posteriors $\ge0.999,\ 0.99,\ 0.9$. A site is REF (tier \code{ref}) when $\LLR\le-4$ with pooled depth
+$\ge12$.
+
+\paragraph{Site error rate.} $\epsilon$ is estimated per site from the pools of donors that are confidently non-carriers there ($\LLR<-3$ at
+the starting value), including two B73 pools counted at the candidate sites, when those hold $\ge20$ reads; otherwise a default is used.
+
+\paragraph{Flags.} \code{af\_gt\_half}: the donor's pooled ALT fraction is significantly above $\tfrac12$ (binomial test), impossible under
+Eq.~\eqref{eq:bc1} and the signature of paralogs or mis-mapping. \code{hidepth}: summed depth $>2\times$ the median, the signature of copy-number
+gain. Tier A additionally requires ALT reads in $\ge2$ BC$_1$ samples.
+
+\subsection{Witness veto}
+The veto keeps a candidate only if the witness pool shows $\ge1$ ALT read. For a real $\Hd$ allele, a line of coverage $\lambda$ shows no ALT read with
+probability $E[e^{-\lambda g}]$ over the bulk fraction $g$ of Eq.~\eqref{eq:bulkmix}; using
+$E[e^{-\lambda K/12}]=\big(\tfrac{1+e^{-\lambda/12}}{2}\big)^{12}$,
+\begin{equation}
+q(\lambda)=\tfrac{27}{32}+\tfrac{3}{32}e^{-\lambda}+\tfrac{1}{16}\Big(\tfrac{1+e^{-\lambda/12}}{2}\Big)^{12},
+\qquad P(\text{real allele vetoed})\approx q(\lambda)^{L}
+\label{eq:veto}
+\end{equation}
+for $L$ lines, treating lines as independent at the locus (they are not: sibling lines share BC$_1$ and BC$_2$ ancestry, which makes the true
+loss larger). $q(0.4)=0.958$ and $q(1.2)=0.907$, so the veto discards about $65\%$ of real alleles with ten lines at $0.4\times$
+($0.958^{10}$), $19\%$ with 38 lines, and $25\%$ with fourteen lines at $1.2\times$. This is consistent in direction with the pilot, where a
+10-line witness kept $20\%$ of CRISP records and a 38-line witness $51\%$ (chr10; records include artifacts, so the numbers are not
+directly comparable). \todo{compare Eq.~\eqref{eq:veto} with the QC-set witness}
+
+%======================================================================
+\section{The union of informative sites and gap filling}
+\label{sec:union}
+%======================================================================
+
+\subsection{Genotype as ancestry times donor allele}
+For a line of donor $d$ at site $s$, with ancestry dosage $x\in\{0,1,2\}$ (copies of $\Hd$'s segment) and donor allele $D_{ds}\in\{\REF,\ALT\}$,
+the genotype is fixed:
+\begin{equation}
+G_s=\begin{cases}x & D_{ds}=\ALT\\ 0 & D_{ds}=\REF\\ \text{unknown} & D_{ds}\ \text{missing and } x>0.\end{cases}
+\label{eq:projection}
+\end{equation}
+A common marker set across donors therefore needs $D_{ds}$ at every site of the union $U=\bigcup_d A_d$ of the donors' tier-A sets,
+including sites discovered only in other donors. Positions with different ALT alleles in different donors are dropped.
+
+\subsection{Gap filling}
+Own sites ($s\in A_d$) are ALT by discovery and are not re-called. For a gap ($s\in U\setminus A_d$), the donor's BC$_1$ samples are counted
+at $s$ (one pileup per sample, all union sites at once) and scored by Eq.~\eqref{eq:llr} without the veto. REF is assigned from the donor's
+own reads only (tier \code{ref}). ALT uses a prior raised by the other donors: with $k$ = other donors (in a chosen set, e.g.\ the same
+taxon) that carry the allele and $m$ = other donors with a genotype at $s$,
+\begin{equation}
+\pi_{ds}=\frac{w\mu_d+k}{w+m},\qquad
+P(D_{ds}=\ALT\mid\text{reads})=\sigma\!\left(\LLR_{ds}+\log\frac{\pi_{ds}}{1-\pi_{ds}}\right),
+\label{eq:eb}
+\end{equation}
+a leave-one-out beta-binomial prior with mean $\mu_d$ (donor $d$'s sharing rate: tier A$/$(A$+$ref) at its gaps) and weight $w=2$.
+ALT is called at posterior $\ge0.999$; sites flagged \code{hidepth} or \code{af\_gt\_half} are never promoted.
+The likelihood ratio models sequencing error but not artifacts; a site that is tier A in another donor, passed that donor's witness and is
+clean in the B73 pools is independent evidence that the site is real, which is what the prior carries. A mis-mapped paralog shows ALT in all
+donors, so sharing alone does not separate real alleles from artifacts; the B73 zero class and the flags do.
+
+\subsection{Benchmark}
+On the simulated QC set (founders Gigi and TIL18, five BC$_1$ pools of $\sim14\times$, tier A subsampled to the pilot's sizes; truth =
+assembly alleles in the lowcopy ranges; chr10), gap ALT at posterior $\ge0.999$ was truly ALT at the rate of the donors' own tier-A sites
+(0.74 and 0.75 vs.\ 0.68 and 0.74), gap REF was $97$--$98\%$ correct, and the Bayes rule and the heuristic ``tier A or B'' rule gave the
+same precision at this depth. The residual $\sim26\%$ false is inherited from discovery.
+
+%======================================================================
+\section{Ancestry inference, genotype imputation, and their checks}
+\label{sec:checks}
+%======================================================================
+
+\paragraph{Ancestry inference.} Per line, RTIGER \citep{campos2023rtiger} on the donor's own tier-A sites (design BC$_2$S$_3$, rigidity 500)
+gives segments with dosage $x\in\{0,1,2\}$. These feed the QTL scan (R/qtl \code{bcsft}, Haley--Knott) on a 0.1\,cM grid built from the
+union markers.
+
+\paragraph{Genotype imputation.} Per donor, a two-founder PHG graph (B73 and the donor founder built from $D_{d\cdot}$ on $U$), imputing
+only that donor's lines, rasterised at $U$ (Eq.~\eqref{eq:projection}). These feed GWAS.
+
+\paragraph{Checks.} (i) Per-line Mb fractions REF/HET/ALT against the single-locus expectation (Text~\ref{sec:scheme}; single plant) or
+the bulk mixture (Eq.~\eqref{eq:bulkmix}), with a Hotelling test on the (HET, ALT) fractions; this decides between the single-plant BC$_2$S$_3$
+design and a BC$_2$S$_2$-parent design for the bulks. (ii) B73 controls free of donor segments. (iii) Segment-length distribution against the
+BC$_2$S$_3$ expectation. \todo{derive the expected segment-length distribution of a bulk from Eq.~\eqref{eq:bulk}}
+
+\bibliographystyle{plainnat}
+\begin{thebibliography}{9}
+\bibitem[Bansal(2010)]{bansal2010crisp} Bansal V. 2010. A statistical method for the detection of variants from next-generation
+resequencing of DNA pools. \textit{Bioinformatics} 26:i318--i324.
+\bibitem[Campos-Martin et~al.(2023)]{campos2023rtiger} Campos-Martin R, et al. 2023. RTIGER. \todo{full citation: title and journal not checked}
+\bibitem[Huang et~al.(2015)]{huang2015pooled} Huang HW, Mullikin JC, Hansen NF. 2015. Evaluation of variant detection software for pooled
+next-generation sequence data. \textit{BMC Bioinformatics} 16:235.
+\bibitem[Van~der Auwera et~al.(2013)]{vanderauwera2013} Van der Auwera GA, Carneiro MO, Hartl C, Poplin R, et al. 2013. From FastQ data to
+high-confidence variant calls: the Genome Analysis Toolkit best practices pipeline. \textit{Curr Protoc Bioinformatics} 43:11.10.1--11.10.33.
+\end{thebibliography}
+\end{document}

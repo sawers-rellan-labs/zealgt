@@ -1,0 +1,13 @@
+# local scratch, build outputs, Nextflow run state
+agent/
+build/
+*.aux
+*.log
+*.out
+*.pdf
+*.fls
+*.fdb_latexmk
+.nextflow*
+work/
+results/
+__pycache__/
