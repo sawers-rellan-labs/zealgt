@@ -9,6 +9,20 @@ and every other library was demuxed once but only its donor's samples were align
 `work/` (§5). Nextflow did not prevent this: `workDir = ${params.outdir}/work` gave every new outdir an empty cache, demux FASTQs were not
 published, and hash changes between tries reran DEMUX. These two tasks come before any other zealgt work.
 
+### Development starting data (ready, 2026-09-24)
+Two mexicana donors with 5 BC1 samples each (the QC-set design: 5 pools per founder), fully demultiplexed and aligned, all files and
+indexes checked on hazel:
+
+| donor | BC1 samples (`results/cram/`) | BC1 total λ | BC2S3 lines (0.4×, realigned) | demux QC rows | discovery |
+|---|---|---|---|---|---|
+| Zx.0540_P3 | S_2A_3, S_2A_11, S_2B_8, S_2F_1, S_2F_12 | 43.2× | 40, `results/bench_zx0540_chr10/bc2s3_realign/cram/` | `results/bench_zx0540_chr10/` | chr10 done (job 944798; `results/bench_zx0540_chr10/step4/Zx.0540_P3.sites.tsv.gz`, tier A 40,948) |
+| Zx.0570_P2 | S_2H_1, S_3B_11, S_3C_9, S_3D_8, S_3E_7 | 43.7× | 44, `results/bench_zx0570_chr10/bc2s3_realign/cram/` | `results/bench_zx0570_chr10/` | not run |
+
+Plus the B73 controls (`results/b73_control/`: ERR3288215 15.5×, skim10 5.7×). These 10 BC1 CRAMs and 84 line CRAMs were made by
+nilhmm / `bc2s3_realign.sbatch` (minibwa -x sr, MAPQ 20, `-F 0x904`) **without duplicate marking and without read groups**, so they are
+the first imports: MARK_DUPLICATES + read-group pass (Task 2), then zealgt's own variant discovery. The existing Zx.0540_P3 discovery
+table predates duplicate marking and serves as the before/after comparison, not as zealgt input.
+
 ### Task 1 — turn the existing demux FASTQs into CRAMs, once
 Align every not-yet-aligned sample of the libraries that are already demuxed, from the FASTQs still in the nilhmm `work/` directories
 (by `-resume` in the original launch directories, so the cached DEMUX tasks are reused, or by an alignment job reading those FASTQs
@@ -19,8 +33,8 @@ directly), with duplicate marking; write the CRAMs to the store.
 | BC1 1B | 12 | 12 (`results/align_membench`) | 0 | `results/gate2/work` |
 | BC1 4E, 4F, 4G | 36 | 4 (Zv.0490_P4) | 32 | `results/work` (launch `results/pool_run_4E4F4G`) |
 | BC1 1A | 12 | 1 (S_1A_4) | 11 | `results/work` (launch `results/pool_run_1A`) |
-| BC1 2A, 2B, 2F | 36 | 5 (Zx.0540_P3) | 31 | `results/work` (launch `results/pool_run_2A2B2F`) |
-| BC1 2H, 3B–3E | 60 | Zx.0570_P2's | ~55 | `results/work` (launch `results/pool_run_2H3B3C3D3E`; other session's run — its decision) |
+| BC1 2A, 2B, 2F | 36 | 5 (Zx.0540_P3; CRAMs checked 09-24) | 31 | `results/work` (launch `results/pool_run_2A2B2F`) |
+| BC1 2H, 3B–3E | 60 | 5 (Zx.0570_P2; CRAMs checked 09-24) | 55 | `results/work` (launch `results/pool_run_2H3B3C3D3E`; other session's run — its decision) |
 | BC2S3 batch-2 rows V22A–H, V23A–H, V24A–B | 216 wells | ~30 lines + checks | ~185 | `results/bc2s3_batch2/work` |
 Scale: ~130 BC1 samples (~1 h × 8 cpu each, ~1,000 CPU-h) and ~185 lines (minutes each). **Until this is done and verified, those `work/`
 directories are the only copy of the demuxed reads and must not be cleaned.** Done = every sample of these libraries has a verified,
