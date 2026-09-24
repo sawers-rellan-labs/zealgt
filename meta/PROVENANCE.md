@@ -44,8 +44,9 @@ ALIGN) and 40 / 44 BC2S3 batch-1 lines (`results/bench_zx05{40,70}_chr10/bc2s3_r
 plus the 2 B73 controls (`results/b73_control/`: ERR3288215 CRAM, skim10 BAM). Made from `ls -l` on hazel
 (`meta/sources/dev_import_listing_20260924.txt`) joined to `meta/samples.csv`; every file has its index, every sample is in the sheet, donors
 agree. All were aligned with minibwa -x sr, MAPQ 20, `-F 0x904`, **no duplicate marking, no read groups** (`dup_marked`, `read_groups`
-columns), so the import step is MARK_DUPLICATES + read groups, not realignment. Development runs on chr10 only (user, 2026-09-24). Open: PN6_SID484 (1.8 MB) and PN8_SID736 (5.7 MB) are far smaller than the rest — check their
-read counts before use. B73 control read groups not checked.
+columns), so the import step is MARK_DUPLICATES + read groups, not realignment. Development runs on chr10 only (user, 2026-09-24). Excluded (`include` = FALSE, user 2026-09-24): PN6_SID484 (57,596 mapped reads) and PN8_SID736 (196,992) — failed libraries, ~1% and
+~3% of a normal line (~6.5M; idxstats job 949252); PN6_SID484 also fails the zealtiger coverage QC, PN8_SID736 passes it. Development
+uses 94 files: 5 + 39 (Zx.0540_P3), 5 + 43 (Zx.0570_P2), 2 B73 controls. Open: B73 control read groups not checked.
 
 ## Unresolved
 1. **PN18 (14 samples, PN18_SID1633–1647)** are in the skim map but not in `BZea_Sample_ID.xlsx` (17 plates): a plate 18 from another
