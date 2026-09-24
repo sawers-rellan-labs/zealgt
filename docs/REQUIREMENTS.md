@@ -42,10 +42,10 @@ Environments under `/share` are not persistent (wiped); zealgt should build them
 ## 4. Compute (measured per unit)
 | stage | unit | cpus | memory | wall time | disk |
 |---|---|---|---|---|---|
-| read_demultiplexing | BC1 library (12 samples) | 8 | 16 GB *req.* | ~2 h (4E) | FASTQs ≈ library size (115–150 GB), transient |
+| read_demultiplexing | BC1 library (12 samples) | 8 | 16 GB *req.* | ~2 h (4E); 53–72 min for a 94–140 GB pool, pools in parallel (935092, 945148) | FASTQs ≈ library size (115–150 GB), transient |
 | read_demultiplexing | batch-2 row library | 8 | 16 GB *req.* | 18 lines incl. align in 58 min (908026) | small |
-| read_alignment | BC1 sample (5–25×), whole genome | 8 | ≥ 32 GB, ≥ 48 GB at ~20× (sort) | 1–4 h | CRAM 1–5 GB; sort temp off node `/tmp` (16 GB) |
-| read_alignment | BC2S3 line (0.4–1.2×) | 8 | 32 GB *req.* | 4–9 min (935093) | CRAM ~0.2 GB |
+| read_alignment | BC1 sample (5–25×), whole genome | 8 | ≥ 32 GB, ≥ 48 GB at ~20× (sort) | 1–4 h; ~12–13 min per 1× of depth (56 min – 2 h 39 min for 4.9–12.5×, 935092 / 945148) | CRAM 1–5 GB; sort temp off node `/tmp` (16 GB) |
+| read_alignment | BC2S3 line (0.4–1.2×) | 8 | 32 GB *req.* | 4–9 min (935093); ~10 min per line as an array (945149). A full donor prep (demux + 5 BC1 + ~40 lines) ≈ 4 h | CRAM ~0.2 GB |
 | sample_quality_control | sample × panel | 1–2 | < 4 GB (est.) | minutes (est.) | small |
 | variant_discovery | donor × chr10 (witness merge + CRISP + veto + B73 counts + step 4) | 8 | 48 GB *req.*; CRISP 0.35 GB measured | 8–17 min | witness BAM ~2 GB (temp), CRISP VCF ~30 MB |
 | marker_union | donor set × chr10 | 1 | < 1 GB | seconds | < 1 MB |
