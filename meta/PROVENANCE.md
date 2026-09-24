@@ -30,7 +30,7 @@ every sample has a raw location.
   vs 6.6% for 6-mers at base 31). BC1 and batch 2: 6-bp inline barcode on both R1 and R2.
 - **Excluded — another project sequenced in the same batch-1 run** (user, 2026-09-24): all of plate 1 (96 wells, `LANTEO…_BC2S4-bulk`)
   and the 21 `LANTEO…` wells on plates 2–17. None of them is in the skim map.
-- **Roles:** batch 1 — `check` = B73 or purple check; `landrace_line` = `…_BC1S3-bulk` / `…_BC1S4-bulk` (traditional-variety introgressions, samples
+- **Roles:** batch 1 — `check` = B73 or purple check; `landrace_line` = names with `_BC1S3` / `_BC1S4` (incl. colour-suffixed `…_BC1S4_black-bulk`) (traditional-variety introgressions, samples
   119–198 per the delivery README); `line` otherwise. Batch 2 — from its `class` column (`line`, `B73`/`NC358` → check, `empty`).
 - **Donor / taxon** for batch 1 from the skim-map pedigree (`<accession>_P<n>` → Zd/Zx/Zv/Zl/Zh); BC1 and batch 2 from their maps.
 - **Batch-1 processing history (not used by zealgt, kept for comparison):** Nirwan's pipeline (github.com/nirwan1265/BZea_genotyping):

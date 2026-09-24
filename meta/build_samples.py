@@ -65,7 +65,7 @@ for r in rd('bc2s3_batch1_sample_sheet.csv'):
     ped = s.get('pedigree', ''); nil = s.get('nil_id', '')
     is_b73 = g.upper().startswith('B73') or nil == 'B73_check'
     is_purple = 'PURPLE' in g.upper()
-    role = 'check' if (is_b73 or is_purple) else ('landrace_line' if re.search(r'_BC1S[0-9]-bulk$', g) else 'line')
+    role = 'check' if (is_b73 or is_purple) else ('landrace_line' if re.search(r'_BC1S[0-9]', g) else 'line')
     d = donor_of(ped); tx = TAXON.get(d[:2], '') if d else ''
     rows.append(dict(sample_id=sid, source='bc2s3_batch1', role=role, library=f'BZea{plate}', library_index=r['Plate_barcode'],
                      raw_location=RAW_B1, raw_r1=';'.join(f'NVS188B_Rellan_Alvarez_R1.tar:{p}' for p in sorted(members[plate]['R1'])),
