@@ -242,7 +242,7 @@ same precision at this depth. The residual $\sim26\%$ false is inherited from di
 \label{sec:checks}
 %======================================================================
 
-\paragraph{Ancestry inference.} Per line, RTIGER \citep{campos2023rtiger} on the donor's own tier-A sites (rigidity 500; RTIGER learns its transition and emission parameters from the data, so no design prior enters --- the BC$_2$S$_2$ vs BC$_2$S$_3$ question needs a design-aware caller)
+\paragraph{Ancestry inference.} Per line, RTIGER \citep{campos2023rtiger} on the donor's own tier-A sites (rigidity 500; RTIGER learns its transition and emission parameters from the data, so no design prior enters). Lines with any chromosome below $2\times$ rigidity covered markers are excluded before inference
 gives segments with dosage $x\in\{0,1,2\}$. These feed the QTL scan (R/qtl \code{bcsft}, Haley--Knott) on a 0.1\,cM grid built from the
 union markers.
 
