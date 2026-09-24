@@ -12,6 +12,7 @@ data and results live on the BZea partition on hazel.
 | `docs/PLAN_pipeline.md` | pipeline plan (draft): stages as Nextflow entries, caching/rerun rules, storage and cleanup (from the 2026-09-24 disk audit), sample QC, known issues and open decisions |
 | `docs/REQUIREMENTS.md` | requirements for a minimal run: inputs, software, measured compute per stage, hard-coded values to parameterize |
 | `docs/math_supplement.tex` | mathematical supplement (draft): crossing scheme, BC1 pools vs BC₂S₃ bulks, reads at low coverage (λ), variant discovery, marker union and gap filling, ancestry inference and genotype imputation |
+| `meta/samples.csv` | the single sample sheet of workflow 1 (2,283 samples: BC1, BC2S3 batches 1 and 2), built by `meta/build_samples.py`; provenance in `meta/PROVENANCE.md` |
 | `docs/runs/` | one run card per run: purpose, donors (BC1 samples, lines, coverage), exclusions |
 
 Build the supplement: `latexmk -pdf -outdir=build docs/math_supplement.tex`.

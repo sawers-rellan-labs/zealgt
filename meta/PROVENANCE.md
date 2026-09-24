@@ -1,0 +1,45 @@
+# Provenance of the sample metadata (2026-09-24)
+
+`meta/samples.csv` — the single sample sheet of workflow 1 — is built by `meta/build_samples.py` from the tables in `meta/sources/`,
+copied into this repo on 2026-09-24. This file records where each source came from, how it was made, and what is still unresolved.
+Rebuild with `python3 meta/build_samples.py` (it validates and exits 1 on a failed check).
+
+## Result
+2,283 samples in 80 libraries: BC1 384 (32 pools); BC2S3 batch 1 1,515 (16 plate pools: 1,408 lines, 76 landrace lines, 31 checks);
+BC2S3 batch 2 384 wells (32 rows: 362 lines, 13 checks, 9 empty). All sample IDs unique; all barcodes unique within their library;
+every sample has a raw location.
+
+## Sources
+| file in `meta/sources/` | what | origin | how it was made |
+|---|---|---|---|
+| `bc1_well_map.csv` | BC1: pool, column, barcode, `Sample_Id` (`S_<pool>_<col>`), BC1 line, donor, taxon (384) | zealbc1 `meta/bc1_well_map.csv` | built in zealbc1 from the BC1 sequencing manifest of `bzea-bc1-reference` (`meta/samples.tsv`, `docs/BZea_BC1_384_sequencing_manifest.csv`; Rubén) and the 12 inline column barcodes; builder not tracked |
+| `bc1_libraries.csv` | BC1 pool → raw directory name (1A = `BC1_1Ar`, a re-delivery) | zealbc1 `meta/` | raw data `BZea/BC1_dna_raw/01.RawData/` (Novogene; 4B re-demultiplexed by the center, 2026-09-03) |
+| `inline_barcodes.tsv` | the 12 BC1 / batch-2 inline column barcodes (6 bp, same on R1 and R2) | zealbc1 `meta/` | from the library design |
+| `bc2s3_batch2_well_map.csv` | batch 2: row, column, barcode, `Sample_Id` (`P<plot>`), label, nil_id (+ source), check flag, class, taxon, plot, pedigree, donor, plate, cell (384) | zealbc1 `meta/` (decisions 2026-09-21) | Hannah's Google Sheet → `zealbc1/meta/ZeaLV2.xlsx` (sheet ZeaL-V2_manifest) → `bc2s3_batch2_manifest.csv`, restricted on 2026-09-23 to the 4 sequenced plates BZeaV2_1–4 (plate BZeaV2_5 was never and will never be sequenced); nil_id from the zealhmm register, 3 pedigrees missing from it given nil_ids derived by the register's rule |
+| `bc2s3_batch2_libraries.csv` | batch-2 row → raw directory | zealbc1 `meta/` | raw data `BZea/BC2S3_batch_2_dna_raw/01.RawData/` (Novogene X202SC26093287-Z01-F001, delivered 2026-09-15) |
+| `bc2s3_batch1_sample_sheet.csv` | batch 1 (CLY2023): well, barcode (8 bp, R1), library, plate, plate index (TruSeq 6 bp), running number, genotype (1,632 wells) | `sara/DNA_Sequencing_raw/BZea/BZea_Sample_ID.xlsx` (delivery document, Dec 2023; read-only) | converted to CSV on 2026-09-24 (sheet 1, no edits) |
+| `bc2s3_batch1_tar_members.tsv` | the FASTQ members (size, path) of `NVS188B_Rellan_Alvarez_R{1,2}.tar` | `sara/DNA_Sequencing_raw/BZea/` (NovaSeq S4 2×150 run NVS188B, June 2023; owner ntanduk; 753 + 765 GB, read-only) | `tar -tvf` on 2026-09-24: 17 plate pools `BZea1`–`BZea17` × 2 lanes × R1/R2 |
+| `bc2s3_batch1_skim_nil_id.tsv` | batch-1 `PN<plate>_SID<n>` → nil_id, pedigree (1,418) | zealbc1 `agent/skim_sample_nil_id.tsv` | derived from the zealhmm correspondence tables (`data/zeal/correspondence/skim_sample_pedigree.csv`, `sample_metadata_master.csv`); builder not tracked |
+
+## Joins and rules applied
+- **Batch-1 plate ↔ tar pool:** `BZea<n>` = plate *n*. Plates 1–9 carry TruSeq indexes 1–9; plates 10–17 reuse indexes 2–9 and sit on
+  lanes 3–4 (plates 1–9 on lanes 1–2). Checked: `BZea6` reads carry index `GCCAAT` = plate 6's.
+- **Batch-1 sample ID:** `PN<Plate_Number>_SID<Sample_ID running number>`; matches 1,404 of the 1,418 samples of the skim map
+  (spot checks: PN7_SID590 = Zd.0040, PN3_SID220 = Zx.0100, PN15_SID1438 = Zv.0490, PN10_SID893 = B73).
+- **Batch-1 barcode layout:** 8-bp inline barcode at the start of R1 only (checked on `BZea6`: the top 96 5′ 8-mers cover 91.9% of reads
+  vs 6.6% for 6-mers at base 31). BC1 and batch 2: 6-bp inline barcode on both R1 and R2.
+- **Excluded — another project sequenced in the same batch-1 run** (user, 2026-09-24): all of plate 1 (96 wells, `LANTEO…_BC2S4-bulk`)
+  and the 21 `LANTEO…` wells on plates 2–17. None of them is in the skim map.
+- **Roles:** batch 1 — `check` = B73 or purple check; `landrace_line` = `…BC1S4-bulk` (traditional-variety introgressions, samples
+  119–198 per the delivery README); `line` otherwise. Batch 2 — from its `class` column (`line`, `B73`/`NC358` → check, `empty`).
+- **Donor / taxon** for batch 1 from the skim-map pedigree (`<accession>_P<n>` → Zd/Zx/Zv/Zl/Zh); BC1 and batch 2 from their maps.
+- **Batch-1 processing history (not used by zealgt, kept for comparison):** Nirwan's pipeline (github.com/nirwan1265/BZea_genotyping):
+  sabre demux → Trimmomatic PE (ILLUMINACLIP 2:30:10, LEADING:3, TRAILING:3, SLIDINGWINDOW:4:15, MINLEN:36) → `sara/BZea/filtered_S/`
+  (plates 2–17) → bwa mem → Picard markdup → ANGSD. zealgt re-demultiplexes batch 1 from the tars (docs/PLAN_pipeline.md §3).
+
+## Unresolved
+1. **PN18 (14 samples, PN18_SID1633–1647)** are in the skim map but not in `BZea_Sample_ID.xlsx` (17 plates): a plate 18 from another
+   sequencing run? Its raw data location is unknown.
+2. **5 batch-1 lines without a nil_id** (in the sheet, not in the skim map).
+3. **Landrace BC1S4 lines (76):** part of this delivery; confirm they belong in the ZEAL genotyping.
+4. The builders of `bc1_well_map.csv` and `bc2s3_batch1_skim_nil_id.tsv` are not in any repository.
