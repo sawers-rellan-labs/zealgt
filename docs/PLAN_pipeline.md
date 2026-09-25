@@ -159,6 +159,34 @@ before discovery and must not depend on any donor's discovered sites.
 Donor sets for stages 4–5 are named in a run card (`docs/runs/<run>.md`: purpose, donors with BC1 count / lines / coverage, exclusions),
 and each entry checks the run card before starting.
 
+### Teosinte reference variant space from the founder assemblies (plan, 2026-09-24; not yet in the math supplement)
+How many sites differ between a teosinte haplotype and B73, per taxon, measured on the reference inbred assemblies rather than on reads.
+Uses: the size of the variant space discovery works in, the truth allele set of the QC-set benchmark (PERFECT founder = assembly SNPs ∩
+lowcopy BED), and annotation of step-4 tables.
+
+**How it was done (zealbc1 chr10 PHG pilot, 2026-09-17; `agent/PHG_PILOT_chr10.md` step 4, `agent/pilot_1B_chr10_runlog_20260917.md`):**
+founder assembly → AnchorWave against B73 v5, chr10 (run directly, not through `phg align-assemblies`) → MAF
+(`ZEAL/results/phg_pilot/chr10/maf/`) → PHG `create-maf-vcf` → gVCF of the assembly vs B73 (`phg_pilot/chr10/vcf_files/<founder>.g.vcf.gz`)
+→ SNP table `chr, pos, ref, alt` (`ZEAL/results/crisp_bench/<founder>_vs_B73_chr10_snps.tsv`). Only syntenic sequence aligned by
+AnchorWave is counted.
+
+| founder (taxon) | SNPs vs B73, chr10 | per chr10 length (~152 Mb) |
+|---|---|---|
+| TIL18 (mexicana) | 2,031,229 | ~1 / 75 bp |
+| Gigi (diploperennis) | 2,090,083 | ~1 / 73 bp |
+
+**In zealgt** (entry `reference_variant_space`, per founder × chromosome):
+ANCHORWAVE_ALIGN (assembly vs B73 v5; ~1–2 h × 8 cpu per chromosome, ≤ 16 GB) → MAF_TO_GVCF (PHG `create-maf-vcf`) → ASSEMBLY_SNPS
+(a tracked script: biallelic SNPs from the gVCF, `<NON_REF>`/reference blocks excluded, one row per site) → VARIANT_SPACE_SUMMARY
+(per founder × chromosome: SNPs, aligned bp, SNPs per aligned kb and per chromosome Mb, SNPs inside the lowcopy BED).
+1. **Reproduce first:** the gVCF → SNP-table step of 09-17 is not in any tracked script. ASSEMBLY_SNPS is written from scratch and
+   run on the existing chr10 gVCFs; it must return exactly 2,031,229 (TIL18) and 2,090,083 (Gigi) before it is used anywhere else.
+2. **Then the other founders:** TIL11 (parviglumis), RIL003 (luxurians; assembly is `.fa.gz`), RIMHU001 (huehuetenangensis) have
+   assemblies but no alignment to B73 — one AnchorWave chr10 run each (also needed by the QC set, zealbc1 `docs/PLAN_benchmark_calibration.md`).
+3. **Then genome-wide:** the remaining 9 chromosomes for all five founders (~400 CPU-h, the largest item; measure memory on one
+   chromosome first).
+Outputs go to the store (`ZEAL/store/reference_variants/`), not `work/`. The math supplement gets a text on this only after step 1.
+
 ## 4. Known issues and where each is settled
 | # | issue (found 2026-09-20 → 24) | settled in | decision needed |
 |---|---|---|---|
