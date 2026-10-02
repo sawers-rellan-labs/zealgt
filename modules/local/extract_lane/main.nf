@@ -18,8 +18,8 @@ process EXTRACT_LANE {
 
     script:
     // a lane is a tar member (batch 1) or a plain file; head_pairs > 0 keeps its first pairs only
-    def reader1 = member1 ? "tar -xOf ${source1} '${member1}'" : "cat ${source1}"
-    def reader2 = member2 ? "tar -xOf ${source2} '${member2}'" : "cat ${source2}"
+    def reader1 = member1 ? "tar -xOf '${source1}' '${member1}'" : "cat '${source1}'"
+    def reader2 = member2 ? "tar -xOf '${source2}' '${member2}'" : "cat '${source2}'"
     def lines   = 4 * (head_pairs as long)
     if (!lines) {
         """

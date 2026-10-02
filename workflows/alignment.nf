@@ -50,7 +50,10 @@ workflow ALIGNMENT {
                     def (t2, m2) = b.tokenize(':')
                     [file(m1).name - ~/_R1_\d+\.fastq\.gz$/, file("${loc}/${t1}"), file("${loc}/${t2}"), m1, m2]
                 }
-                : files("${loc}/*_{1,2}.fq.gz").sort().collate(2).collect { f1, f2 -> [f1.name - ~/_1\.fq\.gz$/, f1, f2, '', ''] }
+                : files("${loc}/*_{1,2}.fq.gz").groupBy { f -> f.name - ~/_[12]\.fq\.gz$/ }.collect { lane, pair ->
+                    def (f1, f2) = pair.sort { f -> f.name }
+                    [lane, f1, f2, '', '']
+                }
             lanes.collect { lane, s1, s2, m1, m2 -> [lib + [id: "${lib.id}.${lane}", lane: lane, n_lanes: lanes.size()], s1, s2, m1, m2] }
         }
         .branch { _meta, _s1, _s2, m1, _m2 ->
@@ -81,7 +84,7 @@ workflow ALIGNMENT {
         }
         .groupTuple()
         .map { sample, lanes, pairs -> [sample.toString(), [lanes, pairs].transpose().sort { l -> l[0] }.collect { l -> l[1] }.flatten()] }
-        .join(ch_samplesheet.map { meta, _loc, _r1, _r2 -> [meta.id, meta] })
+        .join(ch_samplesheet.map { meta, _loc, _r1, _r2 -> [meta.id, meta] }, failOnMismatch: true)
         .map { _id, reads, meta -> [meta + [single_end: false], reads] }
         .branch { _meta, reads ->
             one_lane: reads.size() == 2
