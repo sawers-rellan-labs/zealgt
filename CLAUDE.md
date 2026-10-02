@@ -26,6 +26,9 @@ the `ALIGNMENT` workflow stops at one CRAM per sample, then the `GENOTYPE` workf
 - nf-core modules first; patch them only with `nf-core modules patch`.
 - Resources only in config, measured per process; modules read only `task.cpus` and `task.memory`.
 - Comments: one line saying what the code does; history goes in commits.
+- `workflows/<name>.nf`: the list of stage calls only, <= 80 lines.
+- `subworkflows/local/<stage>/main.nf`: one stage's channel wiring, <= 100 lines; `modules/local/<tool>/main.nf`: one tool call, <= 80 lines.
+- `subworkflows/local/utils_nfcore_zealgt_pipeline/`: template code plus the samplesheet-to-channel step only; no Groovy function files.
 
 ## Testing
 - Wiring tests run on the laptop on stubs, in seconds, and give the channel-level DAG; all laptop tests together <= 5 min.
