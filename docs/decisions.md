@@ -42,3 +42,6 @@ when the 30-day scratch purge removes them. Not `/rsstu`: slower (seen when buil
 `fqtk demux` (nf-core `fqtk`) replaces `fgbio DemuxFastqs`: same read structures and mismatch rule. On 5 M pairs per
 lane it gave identical read sets per sample for all 75 samples of a 96-Plex lane and all 12 of a FlexPrep lane, in
 20 s / 13 s instead of 4 min 12 s / 3 min 43 s, at half the memory (1.5-1.6 GB). 5 cpus, `--threads 5`, 2 GB per lane.
+
+## 2026-10-02 Unmatched reads discarded
+Reads matching no sample barcode are not kept, as before; their count per lane is in the published fqtk metrics.
