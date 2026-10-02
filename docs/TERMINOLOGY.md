@@ -11,5 +11,5 @@ Plant material and sequencing units, from field to reads. Code, docs and the pap
 | **BC2S3 sample** | a sample of 6 plants from one plot of a bulk; a NIL planted in several plots has several samples |
 | **library** | samples multiplexed by inline barcode and sequenced together (`library` in the samplesheet) |
 | **tissue pool** | a sample seen as a mixture of 6 plants assumed to give equimolar DNA (pool-seq / CRISP sense) |
-| **synthetic pool** | samples merged after sequencing into one input, e.g. a donor's witness pool or `B73_skim10` |
-| **pool** | alone, only where the method does not distinguish tissue from synthetic pools (CRISP: one input BAM); never a library |
+| **in silico pool** | samples merged after sequencing into one input, e.g. a donor's witness pool or `B73_skim10` |
+| **pool** | alone, only where the method does not distinguish tissue from in silico pools (CRISP: one input BAM); never a library |
