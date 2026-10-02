@@ -50,6 +50,7 @@ workflow SAWERSRELLANLABS_ZEALGT {
     )
     emit:
     multiqc_report = ALIGNMENT.out.multiqc_report // channel: /path/to/multiqc_report.html
+    demux_reads    = ALIGNMENT.out.reads          // channel: [ meta, [ R1, R2 ] ], one per sample
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -87,6 +88,16 @@ workflow {
     PIPELINE_COMPLETION (
         params.monochrome_logs,
     )
+
+    publish:
+    // each stage's result, published only during development
+    demux_reads = params.publish_intermediates ? SAWERSRELLANLABS_ZEALGT.out.demux_reads : channel.empty()
+}
+
+output {
+    demux_reads {
+        path { meta, _reads -> "demux/${meta.id}" }
+    }
 }
 
 /*
