@@ -13,6 +13,13 @@ Nextflow 26.04.6 (laptop, or hazel GPFS with tasks on Slurm compute nodes).
 - One fixed launch directory per profile: the task cache lives in `<launch directory>/.nextflow/cache`, and resuming
   needs that cache and `work/` intact (docs). A new directory per attempt starts every run cold.
 
+## When a run fails
+- Read the failing task's `.command.err` (also `.command.out`, `.command.sh`) in its task directory under `work/`; the
+  head log names that directory.
+- Fix on the laptop, then rerun with `-resume` from the same launch directory: finished steps come from the cache.
+- Logs to report after every submission: the head log `/share/maize/frodrig4/nf_work/zealgt_head_<job id>.log`, the
+  launch directory's `.nextflow.log`, and on failure the task's `.command.err`.
+
 ## What reruns a step on `-resume`
 - Reruns: a change to the step's script, inputs, container, the `ext` values its script uses, or its process or calling
   workflow name (docs). Tested: changing `ext.args` reruns the step.
