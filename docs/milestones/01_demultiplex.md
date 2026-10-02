@@ -41,16 +41,24 @@ First step of `ALIGNMENT`: raw library reads to one R1/R2 FASTQ pair per sample,
 - Task-disk use of extracted tar members (about 2 x 20 GB per batch-1 lane).
 
 ## Tests
-- Wiring (laptop, Docker, minutes): nf-test on `FGBIO_DEMUXFASTQS` and on the pipeline with `-profile test`, on
-  `tests/fixtures/raw/LIBX` (`twist_flexprep`, 2 plain lanes) and `LIBB1` (`twist_96plex`, tar members). Checks: every sample gets a
-  pair; reads start after the barcode and skipped bases (template = `chrA` of the fixture `tiny.fa`); read counts per
-  sample equal the fixtures' assignment (LIBB1 L001: 68 pairs, 30 / 20 / 10 / 0 assigned under exact matching, from the
-  old demux test; recomputed for fgbio's 1 mismatch; LIBX counts derived from its reads, the old test checked names only).
-- Resource profile (hazel, Apptainer, <= 30 min per process): one BC1 lane and one batch-1 lane with `--head`;
-  CPU, peak memory and throughput from the trace, written as numbers in `conf/hazel.config`.
+1. Wiring (laptop, stubs, seconds): every local module has a `stub:` block and an nf-test `- stub` case; the pipeline
+   test runs with `options "-stub"` on both fixture libraries, `tests/fixtures/raw/LIBX` (`twist_flexprep`, 2 plain
+   lanes) and `LIBB1` (`twist_96plex`, tar members). Checks: the channels connect and every expected output file
+   appears, per sample and per lane. The same stub run writes the channel-level DAG (`-with-dag`: processes, operators
+   and channels).
+2. Tool behaviour (laptop, Docker, minutes): nf-test of `FGBIO_DEMUXFASTQS` on the same fixtures. Checks: reads start
+   after the barcode and skipped bases (template = `chrA` of the fixture `tiny.fa`); read counts per sample equal the
+   fixtures' assignment (LIBB1 L001: 68 pairs, 30 / 20 / 10 / 0 under exact matching, from the old demux test;
+   recomputed for fgbio's 1 mismatch; LIBX counts derived from its reads).
+3. Cluster wiring (hazel, Apptainer): `-profile hazel -stub-run` on a minimal sheet (one library per kit, fewest rows),
+   since stub time is task count x Slurm overhead.
+4. Resource profile (hazel, <= 30 min per process): one BC1 lane and one batch-1 lane with `--head`; CPU, peak memory
+   and throughput from the trace, written as numbers in `conf/hazel.config`.
+- Budget: all laptop tests (1 and 2) together <= 5 min, one test <= 1 min; going over is a bug to fix, not to wait
+  out. The report gives the measured times.
 
 ## Done when
-- Wiring tests pass; `nf-core pipelines lint` has no failures.
-- The DAG of the run shows `FGBIO_DEMUXFASTQS -> CAT_FASTQ` per library.
+- Stub and tool tests pass; `nf-core pipelines lint` has no failures.
+- The channel-level DAG of the stub run shows `FGBIO_DEMUXFASTQS -> CAT_FASTQ` per library.
 - Resource numbers are in `conf/hazel.config`, measured, one line per process.
 - The report lists the choices made during the work.
