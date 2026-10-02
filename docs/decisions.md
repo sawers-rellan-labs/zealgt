@@ -10,9 +10,9 @@ First N read pairs per library, before demultiplexing; test runs only. Not calle
 downsampling in genotyping.
 
 ## 2026-10-02 Read processing, both kits
-- Demultiplexing: `fgbio DemuxFastqs` as the Twist guides say.
-  - 96-Plex (BC2S3 batch 1): `--read-structures 8B12S+T 8S+T`, fgbio's default mismatches (the guide sets none).
-  - FlexPrep (BC1, BC2S3 batch 2): `--read-structures 6B2S+T 6B2S+T --max-mismatches 1 --min-mismatch-delta 2`.
+- Demultiplexing: read structures and mismatches as the Twist guides say (tool: see "Demultiplexing with fqtk").
+  - 96-Plex (BC2S3 batch 1): `8B12S+T 8S+T`, default mismatches (the guide sets none).
+  - FlexPrep (BC1, BC2S3 batch 2): `6B2S+T 6B2S+T --max-mismatches 1 --min-mismatch-delta 2`.
 - No adapter trimming, as both guides say. Twist publishes no adapter sequences; none are needed.
 - After alignment: `fgbio ClipBam --clip-bases-past-mate`, both kits.
   - Removes read-through into the mate's barcode, random bases and adapter: clips at the insert end in 94-97 % of reads.
@@ -37,3 +37,8 @@ mismatches. Replaces `barcode_layout` (`symmetric` | `r1_only`), which described
 ## 2026-10-02 Container images on `/share`
 `apptainer.cacheDir` = `/share/maize/frodrig4/apptainer/cache`; images are pulled there by an xfer job and pulled again
 when the 30-day scratch purge removes them. Not `/rsstu`: slower (seen when building conda envs there).
+
+## 2026-10-02 Demultiplexing with fqtk
+`fqtk demux` (nf-core `fqtk`) replaces `fgbio DemuxFastqs`: same read structures and mismatch rule. On 5 M pairs per
+lane it gave identical read sets per sample for all 75 samples of a 96-Plex lane and all 12 of a FlexPrep lane, in
+20 s / 13 s instead of 4 min 12 s / 3 min 43 s, at half the memory (1.5-1.6 GB). 5 cpus, `--threads 5`, 2 GB per lane.

@@ -23,7 +23,7 @@ Read top down; each level only names the one below it.
 
 | stage | modules | status |
 |---|---|---|
-| `FASTQ_DEMULTIPLEX_FGBIO` | `EXTRACT_LANE` -> `FGBIO_DEMUXFASTQS` -> `CAT_FASTQ` | built (milestone 1), inline in the workflow until moved |
+| `FASTQ_DEMULTIPLEX_FQTK` | `EXTRACT_LANE` -> `FQTK` -> `CAT_FASTQ` | built (milestone 1) |
 | `FASTQ_ALIGN_MINIBWA` | `ALIGN_MARKDUP` -> `FGBIO_CLIPBAM` | milestone 2; ClipBam's place relative to markdup open |
 | `CRAM_QC_SAMTOOLS_PICARD` | `SAMTOOLS_STATS`, `PICARD_COLLECTWGSMETRICS` | later |
 | inline | `MARKDUP_IMPORT` (`--step markduplicates`), `MULTIQC` | later |
