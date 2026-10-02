@@ -1,0 +1,8 @@
+sample_id,library,raw_location,raw_r1,raw_r2,barcode_r1,barcode_r2,kit
+LX_1,LIBX,tests/fixtures/raw/LIBX,,,GCCATA,GCCATA,twist_flexprep
+LX_2,LIBX,tests/fixtures/raw/LIBX,,,TCTGGT,TCTGGT,twist_flexprep
+LX_3,LIBX,tests/fixtures/raw/LIBX,,,TGGCTT,TGGCTT,twist_flexprep
+PB1_SID1,LIBB1,tests/fixtures/raw/LIBB1,R1.tar:LIBB1_R1/LIBB1_S1_L001_R1_001.fastq.gz;R1.tar:LIBB1_R1/LIBB1_S1_L002_R1_001.fastq.gz,R2.tar:LIBB1_R2/LIBB1_S1_L001_R2_001.fastq.gz;R2.tar:LIBB1_R2/LIBB1_S1_L002_R2_001.fastq.gz,CGTACGTA,,twist_96plex
+PB1_SID2,LIBB1,tests/fixtures/raw/LIBB1,R1.tar:LIBB1_R1/LIBB1_S1_L001_R1_001.fastq.gz;R1.tar:LIBB1_R1/LIBB1_S1_L002_R1_001.fastq.gz,R2.tar:LIBB1_R2/LIBB1_S1_L001_R2_001.fastq.gz;R2.tar:LIBB1_R2/LIBB1_S1_L002_R2_001.fastq.gz,AGGAACGT,,twist_96plex
+PB1_SID3,LIBB1,tests/fixtures/raw/LIBB1,R1.tar:LIBB1_R1/LIBB1_S1_L001_R1_001.fastq.gz;R1.tar:LIBB1_R1/LIBB1_S1_L002_R1_001.fastq.gz,R2.tar:LIBB1_R2/LIBB1_S1_L001_R2_001.fastq.gz;R2.tar:LIBB1_R2/LIBB1_S1_L002_R2_001.fastq.gz,CTAGCTAG,,twist_96plex
+PB1_SID4,LIBB1,tests/fixtures/raw/LIBB1,R1.tar:LIBB1_R1/LIBB1_S1_L001_R1_001.fastq.gz;R1.tar:LIBB1_R1/LIBB1_S1_L002_R1_001.fastq.gz,R2.tar:LIBB1_R2/LIBB1_S1_L001_R2_001.fastq.gz;R2.tar:LIBB1_R2/LIBB1_S1_L002_R2_001.fastq.gz,CTCTCAGT,,twist_96plex

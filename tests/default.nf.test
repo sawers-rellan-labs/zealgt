@@ -4,28 +4,33 @@ nextflow_pipeline {
     script "../main.nf"
     tag "pipeline"
 
-    test("-profile test") {
+    // containers give real tool versions in the snapshot
+    profile "test,docker"
+
+    test("-profile test - stub") {
+
+        options "-stub"
 
         when {
+            // nf-test launches in its own directory: the fixture sheet's relative paths are made absolute
+            def sheet = new File("$outputDir/samplesheet.csv")
+            sheet.parentFile.mkdirs()
+            sheet.text = new File("$baseDir/tests/fixtures/samplesheet.csv").text.replace('tests/fixtures/', "$baseDir/tests/fixtures/")
             params {
                 outdir = "$outputDir"
+                input  = sheet.path
             }
         }
 
         then {
-            // stable_path: All files + folders in ${params.outdir}/ with a stable path (including file name)
+            // every published path, one fixture library per kit
             def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
-            // stable_content: All files in ${params.outdir}/ with stable content
-            def stable_content = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
             assert workflow.success
             assertAll(
                 { assert snapshot(
-                    // pipeline versions.yml file for multiqc from which Nextflow version is removed because we test pipelines on multiple Nextflow versions
+                    // pipeline versions.yml without the Nextflow version, as in the nf-core template
                     removeNextflowVersion("$outputDir/pipeline_info/zealgt_software_mqc_versions.yml"),
-                    // All stable path name, with a relative path
-                    stable_path,
-                    // All files with stable contents
-                    stable_content
+                    stable_path
                 ).match() }
             )
         }

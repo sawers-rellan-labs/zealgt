@@ -9,3 +9,6 @@ testing*
 null/
 .lineage/
 agent/
+.nf-test/
+.nf-test.log
+.nf-test-*.nf

@@ -1,0 +1,92 @@
+nextflow_process {
+
+    name "Test Process EXTRACT_LANE"
+    script "../main.nf"
+    process "EXTRACT_LANE"
+    tag "modules"
+    tag "modules_local"
+    tag "extract_lane"
+
+    // module tests run the tool in its container; the pipeline stub test needs none
+    profile "test,docker"
+
+    test("tar members, all pairs") {
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id: 'LIBB1.L001' ],
+                    file("${projectDir}/tests/fixtures/raw/LIBB1/R1.tar", checkIfExists: true),
+                    file("${projectDir}/tests/fixtures/raw/LIBB1/R2.tar", checkIfExists: true),
+                    'LIBB1_R1/LIBB1_S1_L001_R1_001.fastq.gz',
+                    'LIBB1_R2/LIBB1_S1_L001_R2_001.fastq.gz',
+                    0,
+                ])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert path(process.out.reads[0][1]).linesGzip.size() == 4 * 68 },
+                { assert path(process.out.reads[0][2]).linesGzip.size() == 4 * 68 }
+            )
+        }
+    }
+
+    test("plain lane, first 10 pairs") {
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id: 'LIBX.L1' ],
+                    file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L1_1.fq.gz", checkIfExists: true),
+                    file("${projectDir}/tests/fixtures/raw/LIBX/LIBX_TESTFC01_L1_2.fq.gz", checkIfExists: true),
+                    '',
+                    '',
+                    10,
+                ])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert path(process.out.reads[0][1]).linesGzip.size() == 40 },
+                { assert path(process.out.reads[0][2]).linesGzip.size() == 40 }
+            )
+        }
+    }
+
+    test("tar members - stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id: 'LIBB1.L001' ],
+                    file("${projectDir}/tests/fixtures/raw/LIBB1/R1.tar", checkIfExists: true),
+                    file("${projectDir}/tests/fixtures/raw/LIBB1/R2.tar", checkIfExists: true),
+                    'LIBB1_R1/LIBB1_S1_L001_R1_001.fastq.gz',
+                    'LIBB1_R2/LIBB1_S1_L001_R2_001.fastq.gz',
+                    0,
+                ])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert file(process.out.reads[0][1]).name == 'LIBB1.L001_R1.fastq.gz' },
+                { assert file(process.out.reads[0][2]).name == 'LIBB1.L001_R2.fastq.gz' }
+            )
+        }
+    }
+}

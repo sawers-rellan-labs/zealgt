@@ -13,7 +13,7 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { ZEALGT  } from './workflows/zealgt'
+include { ALIGNMENT } from './workflows/alignment'
 include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_zealgt_pipeline'
 include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_zealgt_pipeline'
 /*
@@ -35,15 +35,16 @@ workflow SAWERSRELLANLABS_ZEALGT {
     //
     // WORKFLOW: Run pipeline
     //
-    ZEALGT (
+    ALIGNMENT (
         samplesheet,
+        params.head,
         params.multiqc_config,
         params.multiqc_logo,
         params.multiqc_methods_description,
         params.outdir,
     )
     emit:
-    multiqc_report = ZEALGT.out.multiqc_report // channel: /path/to/multiqc_report.html
+    multiqc_report = ALIGNMENT.out.multiqc_report // channel: /path/to/multiqc_report.html
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

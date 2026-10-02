@@ -2,32 +2,56 @@
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/sawers-rellan-labs/zealgt/main/assets/schema_input.json",
     "title": "sawers-rellan-labs/zealgt pipeline - params.input schema",
-    "description": "Schema for the file provided with params.input",
+    "description": "One row per sample; only the columns a process reads",
     "type": "array",
     "items": {
         "type": "object",
         "properties": {
-            "sample": {
+            "sample_id": {
                 "type": "string",
-                "pattern": "^\\S+$",
-                "errorMessage": "Sample name must be provided and cannot contain spaces",
+                "pattern": "^[A-Za-z0-9_]+$",
+                "errorMessage": "sample_id must be letters, digits and underscores",
                 "meta": ["id"]
             },
-            "fastq_1": {
+            "library": {
                 "type": "string",
-                "format": "file-path",
-                "exists": true,
-                "pattern": "^([\\S\\s]*\\/)?[^\\s\\/]+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 1 must be provided, cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
+                "pattern": "^[A-Za-z0-9_]+$",
+                "errorMessage": "library must be letters, digits and underscores",
+                "meta": ["library"]
             },
-            "fastq_2": {
+            "kit": {
                 "type": "string",
-                "format": "file-path",
+                "enum": ["twist_flexprep", "twist_96plex"],
+                "errorMessage": "kit must be twist_flexprep or twist_96plex",
+                "meta": ["kit"]
+            },
+            "barcode_r1": {
+                "type": "string",
+                "pattern": "^[ACGT]+$",
+                "errorMessage": "barcode_r1 must be an ACGT sequence",
+                "meta": ["barcode_r1"]
+            },
+            "barcode_r2": {
+                "type": "string",
+                "pattern": "^[ACGT]*$",
+                "errorMessage": "barcode_r2 must be an ACGT sequence or empty",
+                "meta": ["barcode_r2"]
+            },
+            "raw_location": {
+                "type": "string",
+                "format": "directory-path",
                 "exists": true,
-                "pattern": "^([\\S\\s]*\\/)?[^\\s\\/]+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 2 cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
+                "errorMessage": "raw_location must be an existing directory"
+            },
+            "raw_r1": {
+                "type": "string",
+                "errorMessage": "raw_r1: <tar>:<member>;... for tar lanes, empty for plain lane files"
+            },
+            "raw_r2": {
+                "type": "string",
+                "errorMessage": "raw_r2: <tar>:<member>;... for tar lanes, empty for plain lane files"
             }
         },
-        "required": ["sample", "fastq_1"]
+        "required": ["sample_id", "library", "kit", "barcode_r1", "raw_location"]
     }
 }
