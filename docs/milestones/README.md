@@ -6,7 +6,8 @@ Work is done one milestone at a time; each has a one-page spec in this folder (`
 - Inputs and outputs, with file names and samplesheet columns.
 - Tools and settings, taken from `../decisions.md`.
 - The choices the spec settles, each with the rejected alternative.
-- Tests: a wiring test on fixtures (minutes, laptop) and a resource profile on hazel (<= 30 min per process).
+- Tests: wiring on stubs (laptop, seconds, with the channel-level DAG), tool tests on fixtures (laptop), a stub run on
+  hazel, and a resource profile on hazel (<= 30 min per process); laptop tests together <= 5 min.
 - Done when: the checks that close the milestone.
 
 ## During: the agent works alone

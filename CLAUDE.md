@@ -27,7 +27,7 @@ the `ALIGNMENT` workflow stops at one CRAM per sample, then the `GENOTYPE` workf
 - Comments: one line saying what the code does; history goes in commits.
 
 ## Testing
-- Wiring tests run on the laptop on fixtures, in minutes.
+- Wiring tests run on the laptop on stubs, in seconds, and give the channel-level DAG; all laptop tests together <= 5 min.
 - Resource profiling runs on hazel, at most 30 min per process.
 - No runs on full libraries without the user's OK.
 
