@@ -13,3 +13,4 @@ agent/
 .nf-test.log
 .nf-test-*.nf
 .claude/worktrees/
+meta/sources/drive/
