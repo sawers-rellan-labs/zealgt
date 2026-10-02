@@ -26,8 +26,6 @@
                 "demux/LIBB1.LIBB1_S1_L001/PB1_SID3.R2.fq.gz",
                 "demux/LIBB1.LIBB1_S1_L001/PB1_SID4.R1.fq.gz",
                 "demux/LIBB1.LIBB1_S1_L001/PB1_SID4.R2.fq.gz",
-                "demux/LIBB1.LIBB1_S1_L001/unmatched_R1.fq.gz",
-                "demux/LIBB1.LIBB1_S1_L001/unmatched_R2.fq.gz",
                 "demux/LIBB1.LIBB1_S1_L002",
                 "demux/LIBB1.LIBB1_S1_L002/PB1_SID1.R1.fq.gz",
                 "demux/LIBB1.LIBB1_S1_L002/PB1_SID1.R2.fq.gz",
@@ -37,8 +35,6 @@
                 "demux/LIBB1.LIBB1_S1_L002/PB1_SID3.R2.fq.gz",
                 "demux/LIBB1.LIBB1_S1_L002/PB1_SID4.R1.fq.gz",
                 "demux/LIBB1.LIBB1_S1_L002/PB1_SID4.R2.fq.gz",
-                "demux/LIBB1.LIBB1_S1_L002/unmatched_R1.fq.gz",
-                "demux/LIBB1.LIBB1_S1_L002/unmatched_R2.fq.gz",
                 "demux/LIBX.LIBX_TESTFC01_L1",
                 "demux/LIBX.LIBX_TESTFC01_L1/LX_1.R1.fq.gz",
                 "demux/LIBX.LIBX_TESTFC01_L1/LX_1.R2.fq.gz",
@@ -46,8 +42,6 @@
                 "demux/LIBX.LIBX_TESTFC01_L1/LX_2.R2.fq.gz",
                 "demux/LIBX.LIBX_TESTFC01_L1/LX_3.R1.fq.gz",
                 "demux/LIBX.LIBX_TESTFC01_L1/LX_3.R2.fq.gz",
-                "demux/LIBX.LIBX_TESTFC01_L1/unmatched_R1.fq.gz",
-                "demux/LIBX.LIBX_TESTFC01_L1/unmatched_R2.fq.gz",
                 "demux/LIBX.LIBX_TESTFC01_L2",
                 "demux/LIBX.LIBX_TESTFC01_L2/LX_1.R1.fq.gz",
                 "demux/LIBX.LIBX_TESTFC01_L2/LX_1.R2.fq.gz",
@@ -55,8 +49,6 @@
                 "demux/LIBX.LIBX_TESTFC01_L2/LX_2.R2.fq.gz",
                 "demux/LIBX.LIBX_TESTFC01_L2/LX_3.R1.fq.gz",
                 "demux/LIBX.LIBX_TESTFC01_L2/LX_3.R2.fq.gz",
-                "demux/LIBX.LIBX_TESTFC01_L2/unmatched_R1.fq.gz",
-                "demux/LIBX.LIBX_TESTFC01_L2/unmatched_R2.fq.gz",
                 "extract_lane",
                 "extract_lane/LIBB1.LIBB1_S1_L001_R1.fastq.gz",
                 "extract_lane/LIBB1.LIBB1_S1_L001_R2.fastq.gz",
@@ -94,7 +86,7 @@
                 "samplesheet.csv"
             ]
         ],
-        "timestamp": "2026-10-02T17:54:09.194042",
+        "timestamp": "2026-10-02T18:06:03.539776",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

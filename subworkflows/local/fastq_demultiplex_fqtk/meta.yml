@@ -28,7 +28,7 @@ output:
       pattern: "*.{fq,fastq}.gz"
   - metrics:
       type: file
-      description: Channel with fqtk's demultiplexing metrics, one per lane: [ meta, demux-metrics.txt ].
+      description: "Channel with fqtk's demultiplexing metrics, one per lane: [ meta, demux-metrics.txt ]."
       pattern: "*.txt"
 authors:
   - "@faustovrz"
