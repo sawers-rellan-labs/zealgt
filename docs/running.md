@@ -10,6 +10,8 @@ Nextflow 26.04.6 (laptop, or hazel GPFS with tasks on Slurm compute nodes).
 - `hpc_prod`: whole libraries; launch directory always `/share/maize/frodrig4/nf_work/zealgt_prod`; only CRAMs and QC
   published; `cleanup = true`; head job on the normal QOS.
 - Start: `sbatch scripts/submit_head_job.sbatch hpc_dev <nextflow run args>` (production: see the script's header).
+- Compute nodes have no internet: the head job sets `NXF_OFFLINE=true`; a run that must download images runs its head
+  job on the xfer partition with `NXF_OFFLINE=false` (see the script's header); Nextflow then pulls them into the cache.
 - One fixed launch directory per profile: the task cache lives in `<launch directory>/.nextflow/cache`, and resuming
   needs that cache and `work/` intact (docs). A new directory per attempt starts every run cold.
 
