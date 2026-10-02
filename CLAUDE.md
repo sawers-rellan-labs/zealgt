@@ -11,6 +11,7 @@ the `ALIGNMENT` workflow stops at one CRAM per sample, then the `GENOTYPE` workf
 ## How we work
 - Work through one milestone without stopping (one process added and tested, one template folder reviewed); show the result there and wait for the user's OK.
 - Ask in between only for decisions that are the user's to make.
+- Work follows `docs/milestones/`: an approved spec per milestone, then autonomous work, then a report.
 - Short answers.
 
 ## Shell
