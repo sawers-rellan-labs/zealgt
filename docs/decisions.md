@@ -45,3 +45,15 @@ lane it gave identical read sets per sample for all 75 samples of a 96-Plex lane
 
 ## 2026-10-02 Unmatched reads discarded
 Reads matching no sample barcode are not kept, as before; their count per lane is in the published fqtk metrics.
+
+## 2026-10-02 Intermediate results during development
+During development each step publishes its intermediates (e.g. demultiplexed FASTQs) to `--outdir` on `/share` as hard
+links (`publish_dir_mode = 'link'`): no extra space, and they outlive `work/`. The next step starts from them through
+`--step` instead of repeating earlier steps. Not symlinks: they break when `work/` is deleted. When the user decides a
+step is production-ready, its intermediates come off the publish list. `cleanup = true` deletes a successful run's
+`work/`; a failed run keeps it for `-resume` after a fix. Production leaves only the CRAMs and QC.
+
+## 2026-10-02 CRAMs to permanent storage
+The CRAM process publishes each CRAM and its index straight to the `/rsstu` store with `mode: 'copy'` (another
+filesystem) as its task ends; Nextflow finishes all publishing before the run succeeds and `cleanup` removes `work/`, and
+a failed copy fails the run. No separate move step after the workflow.
