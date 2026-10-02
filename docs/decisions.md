@@ -46,12 +46,15 @@ lane it gave identical read sets per sample for all 75 samples of a 96-Plex lane
 ## 2026-10-02 Unmatched reads discarded
 Reads matching no sample barcode are not kept, as before; their count per lane is in the published fqtk metrics.
 
-## 2026-10-02 Intermediate results during development
-During development each step publishes its intermediates (e.g. demultiplexed FASTQs) to `--outdir` on `/share` as hard
-links (`publish_dir_mode = 'link'`): no extra space, and they outlive `work/`. The next step starts from them through
-`--step` instead of repeating earlier steps. Not symlinks: they break when `work/` is deleted. When the user decides a
-step is production-ready, its intermediates come off the publish list. `cleanup = true` deletes a successful run's
-`work/`; a failed run keeps it for `-resume` after a fix. Production leaves only the CRAMs and QC.
+## 2026-10-02 Development and production profiles
+Two profiles over shared cluster settings (`conf/hpc_shared.config`), each with one fixed launch directory on `/share`
+so `-resume` always finds the previous run's cache:
+- `hpc_dev` (`nf_work/zealgt_dev`): runs on heads of one library; every step's intermediates are published as hard links
+  (`publish_dir_mode = 'link'`, `publish_intermediates = true`): no extra space, and not symlinks, which break when
+  `work/` is deleted. `work/` is kept, so after a code change `-resume` reruns only the changed steps and what follows.
+- `hpc_prod` (`nf_work/zealgt_prod`): whole libraries; only CRAMs and QC are published; `cleanup = true` deletes a
+  successful run's `work/` (a failed run keeps it for `-resume`); the head job runs on the normal QOS.
+A step's intermediates stop being published when the user decides the step is production-ready.
 
 ## 2026-10-02 CRAMs to permanent storage
 The CRAM process publishes each CRAM and its index straight to the `/rsstu` store with `mode: 'copy'` (another

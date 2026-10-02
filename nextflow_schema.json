@@ -141,6 +141,13 @@
                 "show_hidden": {
                     "type": "boolean",
                     "description": "Display hidden parameters in the help message (only works when --help or --help_full are provided)."
+                },
+                "publish_intermediates": {
+                    "type": "boolean",
+                    "default": false,
+                    "hidden": true,
+                    "fa_icon": "fas fa-copy",
+                    "description": "Publish every step's intermediate files (development)."
                 }
             }
         }

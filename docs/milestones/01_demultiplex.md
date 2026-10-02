@@ -50,15 +50,15 @@ Stage `FASTQ_DEMULTIPLEX_FQTK`:
    after the barcode and skipped bases (template = `chrA` of the fixture `tiny.fa`); read counts per sample equal the
    fixtures' assignment (LIBB1 L001: 68 pairs, 30 / 20 / 10 / 0 under exact matching, from the old demux test;
    under 1 mismatch the same; LIBX 150 per sample, 20 unmatched, per lane).
-3. Cluster wiring (hazel, Apptainer): `-profile hazel -stub-run` on a minimal sheet (one library per kit, fewest rows),
+3. Cluster wiring (hazel, Apptainer): `-profile hpc_dev -stub-run` on a minimal sheet (one library per kit, fewest rows),
    since stub time is task count x Slurm overhead.
 4. Resource profile (hazel, <= 30 min per process): one BC1 lane and one batch-1 lane with `--head`; CPU, peak memory
-   and throughput from the trace, written as numbers in `conf/hazel.config`.
+   and throughput from the trace, written as numbers in `conf/hpc_dev.config` / `conf/hpc_prod.config`.
 - Budget: all laptop tests (1 and 2) together <= 5 min, one test <= 1 min; going over is a bug to fix, not to wait
   out. The report gives the measured times.
 
 ## Done when
 - Stub and tool tests pass; `nf-core pipelines lint` has no failures.
 - The channel-level DAG of the stub run shows `FQTK -> CAT_FASTQ` per library.
-- Resource numbers are in `conf/hazel.config`, measured, one line per process.
+- Resource numbers are in `conf/hpc_dev.config` / `conf/hpc_prod.config`, measured, one line per process.
 - The report lists the choices made during the work.
