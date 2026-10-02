@@ -58,11 +58,13 @@
             },
             "raw_r1": {
                 "type": "string",
-                "errorMessage": "raw_r1: <tar>:<member>;... for tar lanes, empty for plain lane files"
+                "errorMessage": "raw_r1: <tar>:<member>;... for tar lanes, empty for plain lane files",
+                "pattern": "^([^;:'\"\\s]+:[^;:'\"\\s]+(;[^;:'\"\\s]+:[^;:'\"\\s]+)*)?$"
             },
             "raw_r2": {
                 "type": "string",
-                "errorMessage": "raw_r2: <tar>:<member>;... for tar lanes, empty for plain lane files"
+                "errorMessage": "raw_r2: <tar>:<member>;... for tar lanes, empty for plain lane files",
+                "pattern": "^([^;:'\"\\s]+:[^;:'\"\\s]+(;[^;:'\"\\s]+:[^;:'\"\\s]+)*)?$"
             }
         },
         "required": [
