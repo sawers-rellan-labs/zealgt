@@ -29,3 +29,11 @@ downsampling in genotyping.
 - No `-d 10000`: samples are 0.9-5.5x (48 BC1 samples); >= 250x covers at most 0.008 % of the genome, i.e. repeats.
 - Open: CRISP discovery sets no base-quality threshold (`--mbq` default 10 keeps batch 1's Q11 bases); `--mbq 20`
   proposed, not measured.
+
+## 2026-10-02 Samplesheet column `kit`
+`kit` = `twist_flexprep` | `twist_96plex` names the library preparation kit and selects the read structure and
+mismatches. Replaces `barcode_layout` (`symmetric` | `r1_only`), which described a consequence, not the kit.
+
+## 2026-10-02 Container images on `/share`
+`apptainer.cacheDir` = `/share/maize/frodrig4/apptainer/cache`; images are pulled there by an xfer job and pulled again
+when the 30-day scratch purge removes them. Not `/rsstu`: slower (seen when building conda envs there).
