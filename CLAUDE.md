@@ -31,6 +31,7 @@ the `ALIGNMENT` workflow stops at one CRAM per sample, then the `GENOTYPE` workf
 - `subworkflows/local/utils_nfcore_zealgt_pipeline/`: template code plus the samplesheet-to-channel step only; no Groovy function files.
 
 ## Testing
+- Before running or rerunning the pipeline, read `docs/running.md`.
 - Wiring tests run on the laptop on stubs, in seconds, and give the channel-level DAG; all laptop tests together <= 5 min.
 - Resource profiling runs on hazel, at most 30 min per process.
 - No runs on full libraries without the user's OK.
