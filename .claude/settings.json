@@ -12,7 +12,7 @@
     ],
     "deny": [
       "Bash(rm *)", "Bash(rmdir *)", "Bash(git clean *)", "Bash(nextflow clean *)", "Bash(chmod *)", "Bash(chown *)",
-      "Bash(sudo *)", "Bash(curl *)", "Bash(wget *)", "Bash(scancel *)"
+      "Bash(sudo *)", "Bash(wget *)", "Bash(scancel *)"
     ]
   },
   "hooks": {
