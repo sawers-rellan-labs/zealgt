@@ -31,7 +31,9 @@ library, and every sample has a raw location.
 ## Sources
 `meta/sources/SOURCES.tsv` lists every file with its class, Drive URL, Drive last-modified time, export date, how it was obtained, sha256,
 use and status. The builder reads only listed files and refuses to run on a sha256 mismatch.
-- **Re-export:** add a new row for the same `file` with the new sha; the last row wins, and git history keeps the old copy.
+- **Not in the repository:** the field workbooks in `drive/` hold other projects' data and collaborators' contacts, so the
+  folder is git-ignored; fetch each from its Drive URL in `SOURCES.tsv` (the builder checks the sha256) to rebuild.
+- **Re-export:** add a new row for the same `file` with the new sha; the last row wins.
 - **User-provided exports (2026-09-28):** `CLY25-Fieldbook` and `23_NCS_PSU_LANGEBIO_FIELDS` are too large for the Drive connector;
   the user's browser exports of 2026-07-08 are pinned byte-for-byte as `drive/cly25_fieldbook.xlsx` and
   `drive/23_ncs_psu_langebio_fields.xlsx`. CLY25-Fieldbook was edited on Drive on 2026-07-20, after the export, and the pinned copy has
