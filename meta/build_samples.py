@@ -199,6 +199,7 @@ members = collections.defaultdict(lambda: {'R1': [], 'R2': []})
 with open(src('bc2s3_batch1_tar_members.tsv')) as f:
     for line in f:
         size, path = line.rstrip('\n').split('\t'); m = re.search(r'/BZea(\d+)_S\d+_L\d+_(R[12])_001\.fastq\.gz$', path)
+        if not m: sys.exit(f'bc2s3_batch1_tar_members.tsv: member name not BZea<n>_S<n>_L<n>_R<1|2>_001.fastq.gz: {path}')
         members[int(m.group(1))][m.group(2)].append(path)
 prep = {}
 for r in sheet('drive/bzea_library_prep_sheet_code.xlsx', 'Sheet1')[1:]:     # two columns are named Sample_ID: read by position
