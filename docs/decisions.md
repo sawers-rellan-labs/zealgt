@@ -84,3 +84,7 @@ close as 2 apart, one error from ours) go to their own wells; those wells (`excl
 
 Milestone 1 went straight into `main` as 0.1.0. From Milestone 2 on, we use nf-core's branch flow: feature branches go
 into `dev` by PR; `dev` goes into `main` only for a release; `patch` is for fixes to a release.
+
+## 2026-10-02 Nextflow from a container on hazel
+
+The head job runs Nextflow from a container, not from a conda environment or hazel's modules.
