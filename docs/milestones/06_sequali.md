@@ -20,6 +20,8 @@ asked, for FASTQs that come from elsewhere.
 
 - `reports/sequali/<sample_id>.{html,json}`, one report per FASTQ pair.
 - `multiqc/reads/multiqc_report.html`: the read-QC report, one per run.
+- Alignment's `--read_qc` publishes to `reports/sequali_alignment/` and `multiqc/reads_alignment/` instead, so it never
+  replaces demultiplexing's read QC if both runs share an outdir (user, after the review).
 - The alignment's CRAM report (`multiqc/`) is unchanged.
 
 ## Choices this spec settles
