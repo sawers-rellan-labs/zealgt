@@ -1,4 +1,4 @@
-include { EXTRACT_LANE            } from '../modules/local/extract_lane/main'
+include { SEQKIT_HEAD             } from '../modules/nf-core/seqkit/head/main'
 include { FASTQ_ALIGN_MINIBWA     } from '../subworkflows/local/fastq_align_minibwa/main'
 include { CRAM_QC_SAMTOOLS_PICARD } from '../subworkflows/local/cram_qc_samtools_picard/main'
 include { MULTIQC                } from '../modules/nf-core/multiqc/main'
@@ -18,15 +18,15 @@ workflow ALIGNMENT {
     multiqc_methods_description
 
     main:
-    // --head N: the first N pairs per sample, cut by EXTRACT_LANE
+    // --head N (test runs): the first N pairs per sample, by seqkit head
     def ch_input = ch_samplesheet
-        .map { meta, r1, r2 -> [meta + [single_end: false], r1, r2] }
-        .branch { _meta, _r1, _r2 ->
+        .map { meta, r1, r2 -> [meta + [single_end: false], [r1, r2]] }
+        .branch { _meta, _reads ->
             head: head_pairs > 0
             all: true
         }
-    EXTRACT_LANE(ch_input.head.map { meta, r1, r2 -> [meta, r1, r2, '', '', head_pairs] })
-    def ch_reads = ch_input.all.mix(EXTRACT_LANE.out.reads).map { meta, r1, r2 -> [meta, [r1, r2]] }
+    SEQKIT_HEAD(ch_input.head.map { meta, reads -> [meta, reads, head_pairs] })
+    def ch_reads = ch_input.all.mix(SEQKIT_HEAD.out.subset)
 
     // reference and its prebuilt minibwa index, read by every alignment task
     def ch_fasta = channel.value([[id: file(fasta).name], file(fasta, checkIfExists: true), file("${fasta}.fai", checkIfExists: true)])

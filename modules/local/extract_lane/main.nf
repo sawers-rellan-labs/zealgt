@@ -8,8 +8,7 @@ process EXTRACT_LANE {
         : 'community.wave.seqera.io/library/coreutils_grep_gzip_lbzip2_pruned:838ba80435a629f8'}"
 
     input:
-    // sources in their own folders: a per-sample FASTQ has the output's name
-    tuple val(meta), path(source1, stageAs: 'source1/*'), path(source2, stageAs: 'source2/*'), val(member1), val(member2), val(head_pairs)
+    tuple val(meta), path(source1), path(source2), val(member1), val(member2), val(head_pairs)
 
     output:
     tuple val(meta), path("${meta.id}_R1.fastq.gz"), path("${meta.id}_R2.fastq.gz"), emit: reads

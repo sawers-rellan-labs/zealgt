@@ -9,7 +9,8 @@ One entry per decision, newest last. Terms as in `TERMINOLOGY.md`.
 ## 2026-10-02 `--head N`
 
 First N read pairs per library, before demultiplexing; test runs only. Not called `--subsample`, which means coverage
-downsampling in genotyping. Since Milestone 5, `--step alignment` takes the first N pairs per sample FASTQ.
+downsampling in genotyping. `--step alignment` takes the first N pairs per sample with nf-core `seqkit/head` (user,
+2026-10-03), not with `EXTRACT_LANE`, which handles lanes only.
 
 ## 2026-10-02 Read processing, both kits
 
