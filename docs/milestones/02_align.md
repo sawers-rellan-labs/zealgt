@@ -20,7 +20,8 @@ sample.
   - `ID:<sample_id>`, `SM:<sample_id>`, `LB:<library>`, `PL:ILLUMINA`, `PU:<lanes>`.
   - `<lanes>` are the lane file stems, comma-joined, e.g. `LIBX_TESTFC01_L1,LIBX_TESTFC01_L2` (Novogene) or
     `LIBB1_S1_L001,LIBB1_S1_L002` (batch 1).
-- During development every process publishes its outputs (`hpc_dev`).
+- During development (`hpc_dev`) only stage results are published: the demultiplexed FASTQs and the CRAMs; files
+  internal to the stage stay in `work/` (decision "Development and production profiles").
 
 ## Processes
 
@@ -51,16 +52,16 @@ Stage `FASTQ_ALIGN_MINIBWA`, every module from nf-core, one task per sample each
   in channel code.
 - **No index module.** The B73 index is prebuilt and the fixture index is tracked. Rejected: `MINIBWA_INDEX` on every
   production run, since `cleanup` deletes `work/`.
-
+- **`SAMTOOLS_INDEX` for the `.crai`:** the nf-core markdup module does not output an index. Rejected: patching
+  markdup to `--write-index`.
+- **Markdup statistics are not published:** the module has no output for them; duplicate rates come from the QC stage
+  (`CRAM_QC_SAMTOOLS_PICARD`). Rejected: patching markdup for `-f`.
 - **minibwa 0.7** (user): nf-core `minibwa/map` pins 0.2; it is patched with `nf-core modules patch` to 0.7, the version
   of the old runs, the prebuilt B73 index and the current bioconda release. Rejected: 0.2, which needs a new B73 index.
 
 ## Open, to check during the work
 
-- Whether `samtools markdup` writes the `.crai` (`--write-index`) through the nf-core module. If not, add
-  `SAMTOOLS_INDEX`.
-- Markdup statistics (`-f`): published if the module allows it, otherwise left to `CRAM_QC_SAMTOOLS_PICARD`.
-- Task disk use of the intermediate BAMs on one batch-1 lane.
+- Task disk use of the intermediate BAMs for one batch-1 sample.
 
 ## Tests
 
@@ -72,9 +73,9 @@ Stage `FASTQ_ALIGN_MINIBWA`, every module from nf-core, one task per sample each
    - one `@RG` per sample with the fields above, `PU` listing both lanes of LIBX;
    - reads on `chrA`;
    - soft clips where a read passes its mate's start;
-   - duplicates flagged and kept (`samtools flagstat`).
+   - duplicates flagged (0x400) and kept, counted on the CRAM records.
 3. **Cluster wiring** (hazel, Apptainer): `-profile hpc_dev -stub-run` on the Milestone 1 minimal sheet.
-4. **Resource profile** (hazel, <= 30 min per process): one BC1 lane and one batch-1 lane with `--head`. CPU, peak memory
+4. **Resource profile** (hazel, <= 30 min per process): one BC1 library and one batch-1 library with `--head`. CPU, peak memory
    and run time per process go into `conf/hpc_dev.config` / `conf/hpc_prod.config`.
 
 - Budget: all laptop tests together <= 5 min.
