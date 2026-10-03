@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: "cram_qc_samtools_picard"
+description: Per-sample QC of each CRAM with samtools stats, Picard CollectWgsMetrics and mosdepth
+keywords:
+  - qc
+  - cram
+  - samtools
+  - picard
+  - mosdepth
+components:
+  - samtools/stats
+  - picard/collectwgsmetrics
+  - mosdepth
+input:
+  - ch_cram:
+      type: file
+      description: "Channel with one entry per sample: [ meta, cram, crai ]."
+      pattern: "*.{cram,crai}"
+  - ch_fasta:
+      type: file
+      description: "Value channel with the reference: [ meta, fasta, fai ]."
+      pattern: "*.{fa,fasta,fai}"
+output:
+  - qc:
+      type: file
+      description: |
+        Channel with several entries per sample: [ meta, file ]. The samtools stats file, the CollectWgsMetrics
+        metrics, and mosdepth's summary, distributions and 500 bp window depths.
+      pattern: "*.{stats,coverage_metrics,txt,bed.gz,csi}"
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

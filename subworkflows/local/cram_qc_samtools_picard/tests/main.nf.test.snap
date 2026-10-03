@@ -1,0 +1,61 @@
+{
+    "LIBX CRAMs, tiny.fa": {
+        "content": [
+            {
+                "LX_1": {
+                    "files": [
+                        "CollectWgsMetrics.coverage_metrics",
+                        "mosdepth.global.dist.txt",
+                        "mosdepth.region.dist.txt",
+                        "mosdepth.summary.txt",
+                        "regions.bed.gz",
+                        "regions.bed.gz.csi",
+                        "stats"
+                    ],
+                    "raw_total_sequences": 600,
+                    "reads_duplicated": 60,
+                    "pct_exc_total": 0.109,
+                    "mean_coverage": 1.670625,
+                    "mosdepth_total": 1.69
+                },
+                "LX_2": {
+                    "files": [
+                        "CollectWgsMetrics.coverage_metrics",
+                        "mosdepth.global.dist.txt",
+                        "mosdepth.region.dist.txt",
+                        "mosdepth.summary.txt",
+                        "regions.bed.gz",
+                        "regions.bed.gz.csi",
+                        "stats"
+                    ],
+                    "raw_total_sequences": 600,
+                    "reads_duplicated": 60,
+                    "pct_exc_total": 0.109,
+                    "mean_coverage": 1.670625,
+                    "mosdepth_total": 1.69
+                },
+                "LX_3": {
+                    "files": [
+                        "CollectWgsMetrics.coverage_metrics",
+                        "mosdepth.global.dist.txt",
+                        "mosdepth.region.dist.txt",
+                        "mosdepth.summary.txt",
+                        "regions.bed.gz",
+                        "regions.bed.gz.csi",
+                        "stats"
+                    ],
+                    "raw_total_sequences": 600,
+                    "reads_duplicated": 60,
+                    "pct_exc_total": 0.109,
+                    "mean_coverage": 1.670625,
+                    "mosdepth_total": 1.69
+                }
+            }
+        ],
+        "timestamp": "2026-10-03T01:47:09.547596",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}
