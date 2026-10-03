@@ -25,8 +25,13 @@ nextflow_pipeline {
         then {
             // every published path, one fixture library per kit
             def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
+            // tasks per process: 6 kept samples x 2 lanes per lane step, every sample multi-lane
+            def tasks = workflow.trace.tasks().countBy { t -> t.name.tokenize(':')[-1].tokenize(' ')[0] }
             assert workflow.success
             assertAll(
+                { assert ['MINIBWA_MAP', 'FGUMI_CLIP', 'SAMTOOLS_FIXMATE', 'SAMTOOLS_SORT'].every { p -> tasks[p] == 12 } },
+                { assert ['SAMTOOLS_MERGE', 'SAMTOOLS_MARKDUP', 'SAMTOOLS_INDEX'].every { p -> tasks[p] == 6 } },
+                { assert stable_path.findAll { p -> p.startsWith('cram/') }.sort() == ['LX_1', 'LX_2', 'LX_3', 'PB1_SID1', 'PB1_SID2', 'PB1_SID4'].collectMany { s -> ["cram/${s}.cram", "cram/${s}.cram.crai"] }*.toString() },
                 { assert snapshot(
                     // pipeline versions.yml without the Nextflow version, as in the nf-core template
                     removeNextflowVersion("$outputDir/pipeline_info/zealgt_software_mqc_versions.yml"),

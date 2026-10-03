@@ -1,0 +1,49 @@
+{
+    "LIBX 2 lanes, SI_1 1 lane, tiny.fa": {
+        "content": [
+            {
+                "LX_1": {
+                    "records": 600,
+                    "unmapped": 0,
+                    "on_chrA": 288,
+                    "soft_clipped": 0,
+                    "hard_clipped": 0,
+                    "past_mate": 0,
+                    "duplicates": 60
+                },
+                "LX_2": {
+                    "records": 600,
+                    "unmapped": 0,
+                    "on_chrA": 302,
+                    "soft_clipped": 0,
+                    "hard_clipped": 0,
+                    "past_mate": 0,
+                    "duplicates": 60
+                },
+                "LX_3": {
+                    "records": 600,
+                    "unmapped": 0,
+                    "on_chrA": 282,
+                    "soft_clipped": 0,
+                    "hard_clipped": 0,
+                    "past_mate": 0,
+                    "duplicates": 60
+                },
+                "SI_1": {
+                    "records": 40,
+                    "unmapped": 0,
+                    "on_chrA": 40,
+                    "soft_clipped": 40,
+                    "hard_clipped": 0,
+                    "past_mate": 0,
+                    "duplicates": 0
+                }
+            }
+        ],
+        "timestamp": "2026-10-02T23:57:58.533288",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

@@ -43,6 +43,30 @@
                 }
             }
         },
+        "reference_genome_options": {
+            "title": "Reference genome options",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "Reference FASTA and its prebuilt minibwa index.",
+            "required": ["fasta", "minibwa_index"],
+            "properties": {
+                "fasta": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "pattern": "^\\S+\\.fn?a(sta)?$",
+                    "description": "Reference FASTA, uncompressed, with its .fai next to it.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "minibwa_index": {
+                    "type": "string",
+                    "pattern": "^\\S+\\.\\{l2b,mbw\\}$",
+                    "description": "Glob of the prebuilt minibwa 0.7 index files, e.g. <fasta>.{l2b,mbw}.",
+                    "fa_icon": "fas fa-bezier-curve"
+                }
+            }
+        },
         "generic_options": {
             "title": "Generic options",
             "type": "object",
@@ -142,6 +166,9 @@
     "allOf": [
         {
             "$ref": "#/$defs/input_output_options"
+        },
+        {
+            "$ref": "#/$defs/reference_genome_options"
         },
         {
             "$ref": "#/$defs/generic_options"

@@ -2,39 +2,81 @@
     "-profile test - stub": {
         "content": [
             {
-                "CAT_FASTQ": {
-                    "cat": 9.5
-                },
                 "EXTRACT_LANE": {
                     "tar": 1.34
                 },
+                "FGUMI_CLIP": {
+                    "fgumi": "0.7.0"
+                },
                 "FQTK": {
                     "fqtk": "0.4.0"
+                },
+                "MINIBWA_MAP": {
+                    "minibwa": 0.7,
+                    "samtools": "1.23.1"
+                },
+                "SAMTOOLS_FIXMATE": {
+                    "samtools": 1.24
+                },
+                "SAMTOOLS_INDEX": {
+                    "samtools": 1.24
+                },
+                "SAMTOOLS_MARKDUP": {
+                    "samtools": 1.24
+                },
+                "SAMTOOLS_MERGE": {
+                    "samtools": 1.24
+                },
+                "SAMTOOLS_SORT": {
+                    "samtools": 1.24
                 },
                 "Workflow": {
                     "sawers-rellan-labs/zealgt": "v0.2.0dev"
                 }
             },
             [
+                "cram",
+                "cram/LX_1.cram",
+                "cram/LX_1.cram.crai",
+                "cram/LX_2.cram",
+                "cram/LX_2.cram.crai",
+                "cram/LX_3.cram",
+                "cram/LX_3.cram.crai",
+                "cram/PB1_SID1.cram",
+                "cram/PB1_SID1.cram.crai",
+                "cram/PB1_SID2.cram",
+                "cram/PB1_SID2.cram.crai",
+                "cram/PB1_SID4.cram",
+                "cram/PB1_SID4.cram.crai",
                 "demux",
-                "demux/LX_1",
-                "demux/LX_1/LX_1_1.merged.fastq.gz",
-                "demux/LX_1/LX_1_2.merged.fastq.gz",
-                "demux/LX_2",
-                "demux/LX_2/LX_2_1.merged.fastq.gz",
-                "demux/LX_2/LX_2_2.merged.fastq.gz",
-                "demux/LX_3",
-                "demux/LX_3/LX_3_1.merged.fastq.gz",
-                "demux/LX_3/LX_3_2.merged.fastq.gz",
-                "demux/PB1_SID1",
-                "demux/PB1_SID1/PB1_SID1_1.merged.fastq.gz",
-                "demux/PB1_SID1/PB1_SID1_2.merged.fastq.gz",
-                "demux/PB1_SID2",
-                "demux/PB1_SID2/PB1_SID2_1.merged.fastq.gz",
-                "demux/PB1_SID2/PB1_SID2_2.merged.fastq.gz",
-                "demux/PB1_SID4",
-                "demux/PB1_SID4/PB1_SID4_1.merged.fastq.gz",
-                "demux/PB1_SID4/PB1_SID4_2.merged.fastq.gz",
+                "demux/LIBB1_S1_L001",
+                "demux/LIBB1_S1_L001/PB1_SID1.R1.fq.gz",
+                "demux/LIBB1_S1_L001/PB1_SID1.R2.fq.gz",
+                "demux/LIBB1_S1_L001/PB1_SID2.R1.fq.gz",
+                "demux/LIBB1_S1_L001/PB1_SID2.R2.fq.gz",
+                "demux/LIBB1_S1_L001/PB1_SID4.R1.fq.gz",
+                "demux/LIBB1_S1_L001/PB1_SID4.R2.fq.gz",
+                "demux/LIBB1_S1_L002",
+                "demux/LIBB1_S1_L002/PB1_SID1.R1.fq.gz",
+                "demux/LIBB1_S1_L002/PB1_SID1.R2.fq.gz",
+                "demux/LIBB1_S1_L002/PB1_SID2.R1.fq.gz",
+                "demux/LIBB1_S1_L002/PB1_SID2.R2.fq.gz",
+                "demux/LIBB1_S1_L002/PB1_SID4.R1.fq.gz",
+                "demux/LIBB1_S1_L002/PB1_SID4.R2.fq.gz",
+                "demux/LIBX_TESTFC01_L1",
+                "demux/LIBX_TESTFC01_L1/LX_1.R1.fq.gz",
+                "demux/LIBX_TESTFC01_L1/LX_1.R2.fq.gz",
+                "demux/LIBX_TESTFC01_L1/LX_2.R1.fq.gz",
+                "demux/LIBX_TESTFC01_L1/LX_2.R2.fq.gz",
+                "demux/LIBX_TESTFC01_L1/LX_3.R1.fq.gz",
+                "demux/LIBX_TESTFC01_L1/LX_3.R2.fq.gz",
+                "demux/LIBX_TESTFC01_L2",
+                "demux/LIBX_TESTFC01_L2/LX_1.R1.fq.gz",
+                "demux/LIBX_TESTFC01_L2/LX_1.R2.fq.gz",
+                "demux/LIBX_TESTFC01_L2/LX_2.R1.fq.gz",
+                "demux/LIBX_TESTFC01_L2/LX_2.R2.fq.gz",
+                "demux/LIBX_TESTFC01_L2/LX_3.R1.fq.gz",
+                "demux/LIBX_TESTFC01_L2/LX_3.R2.fq.gz",
                 "multiqc",
                 "multiqc/multiqc_data",
                 "multiqc/multiqc_data/.stub",
@@ -52,7 +94,7 @@
                 "samplesheet.csv"
             ]
         ],
-        "timestamp": "2026-10-02T20:39:14.311221",
+        "timestamp": "2026-10-03T00:02:02.062223",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
