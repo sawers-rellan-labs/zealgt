@@ -5,7 +5,8 @@ Outputs (all rebuilt together, never hand-edited):
   meta/registry.csv    one row per sequenced sample of every experiment (BC1, BC2S3 batch 1 incl. the wells of the other project,
                        BC2S3 batch 2, BRB-seq), key sample_id
   meta/samples.csv     the sample sheet of workflow 1 (read processing): the registry rows of bc1 / bc2s3_batch1 / bc2s3_batch2
-                       that are not excluded, with the first 21 registry columns (up to rg_pu) (assets/schema_input.json validates it)
+                       of every library with a non-excluded row (its excluded wells too: fqtk gets all barcodes of a shared plate),
+                       with the first 21 registry columns (up to rg_pu) plus exclude (assets/schema_input.json validates it)
   meta/accessions.csv  donor passport data (J2Teo metadata), with the resolved longitude
 
 Rules (meta/PROVENANCE.md "Sources" and "Joins"):
@@ -46,7 +47,7 @@ COLS = ['sample_id', 'source', 'role', 'library', 'library_index', 'raw_location
         # corrections applied (meta/corrections.csv)
         'pedigree_resolved', 'nil_id_resolved', 'donor_resolved', 'correction_ids',
         'exclude', 'exclude_reason', 'flags']
-WF_COLS = COLS[:COLS.index('rg_pu') + 1]    # samples.csv keeps the workflow-1 columns (assets/schema_input.json); the rest is in registry.csv
+WF_COLS = COLS[:COLS.index('rg_pu') + 1] + ['exclude']    # samples.csv keeps the workflow-1 columns (assets/schema_input.json); the rest is in registry.csv
 
 # --- sources: SOURCES.tsv + sha256 ------------------------------------------------------------------------------------
 fail, warn = [], []
@@ -351,7 +352,8 @@ acc_missing = sorted({d['accession'] for d in rows if d['accession'] and d['acce
 ids = collections.Counter(d['sample_id'] for d in rows)
 dups = [k for k, v in ids.items() if v > 1]
 if dups: fail.append(f'duplicate sample_id: {dups[:5]}')
-wf = [d for d in rows if d['source'] in WF_SOURCES and d['exclude'] != 'TRUE']
+wf_libs = {d['library'] for d in rows if d['source'] in WF_SOURCES and d['exclude'] != 'TRUE'}
+wf = [d for d in rows if d['source'] in WF_SOURCES and d['library'] in wf_libs]    # excluded wells of a run library stay: fqtk needs their barcodes
 c = collections.Counter((d['library'], d['barcode_r1'], d['barcode_r2']) for d in wf)
 bad = [k for k, v in c.items() if v > 1]
 if bad: fail.append(f'duplicate barcode within library: {bad[:5]}')
@@ -367,7 +369,7 @@ for d in wf:
 # --- write / check -----------------------------------------------------------------------------------------------------
 def render(cols, recs):
     b = io.StringIO(); w = csv.DictWriter(b, fieldnames=cols, lineterminator='\r\n'); w.writeheader(); w.writerows(recs); return b.getvalue()
-outs = {'registry.csv': render(COLS, rows), 'samples.csv': render(WF_COLS, [{k: d[k] for k in WF_COLS} for d in wf]),
+outs = {'registry.csv': render(COLS, rows), 'samples.csv': render(WF_COLS, [{k: d[k] for k in WF_COLS} | {'exclude': d['exclude'] or 'FALSE'} for d in wf]),
         'accessions.csv': render(ACOLS, accs)}
 if CHECK:
     diff = []
@@ -381,7 +383,7 @@ if CHECK:
     print(f'[build_samples --check] {len(listed)} sources verified; registry.csv, samples.csv, accessions.csv reproduce exactly'); sys.exit(0)
 
 print(f'[build_samples] {len(listed)} sources verified (sha256); {len(rows)} registry rows -> meta/registry.csv, '
-      f'{len(wf)} -> meta/samples.csv, {len(accs)} accessions -> meta/accessions.csv')
+      f'{len(wf)} -> meta/samples.csv ({sum(d["exclude"] == "TRUE" for d in wf)} excluded), {len(accs)} accessions -> meta/accessions.csv')
 for (s, r, e), n in sorted(collections.Counter((d['source'], d['role'], d['exclude'] or 'FALSE') for d in rows).items()):
     print(f'  {s:14s} {r:14s} exclude={e:5s} {n}')
 print(f'  nil_id rule vs register: {len(reg) - len(rule_mismatch)}/{len(reg)} register rows reproduce; mismatches {rule_mismatch[:5]}')

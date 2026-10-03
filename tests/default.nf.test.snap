@@ -32,9 +32,6 @@
                 "demux/PB1_SID2",
                 "demux/PB1_SID2/PB1_SID2_1.merged.fastq.gz",
                 "demux/PB1_SID2/PB1_SID2_2.merged.fastq.gz",
-                "demux/PB1_SID3",
-                "demux/PB1_SID3/PB1_SID3_1.merged.fastq.gz",
-                "demux/PB1_SID3/PB1_SID3_2.merged.fastq.gz",
                 "demux/PB1_SID4",
                 "demux/PB1_SID4/PB1_SID4_1.merged.fastq.gz",
                 "demux/PB1_SID4/PB1_SID4_2.merged.fastq.gz",
@@ -55,7 +52,7 @@
                 "samplesheet.csv"
             ]
         ],
-        "timestamp": "2026-10-02T19:23:49.800572",
+        "timestamp": "2026-10-02T20:39:14.311221",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

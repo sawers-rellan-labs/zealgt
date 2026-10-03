@@ -9,7 +9,7 @@ workflow FASTQ_DEMULTIPLEX_FQTK {
     head_pairs     // integer: first N read pairs per library, 0 = all
 
     main:
-    // one fqtk sample sheet per library; FlexPrep barcodes are the R1 and R2 barcodes joined
+    // one fqtk sample sheet per library, excluded wells included; FlexPrep barcodes are the R1 and R2 barcodes joined
     def ch_sheets = ch_samplesheet
         .map { meta, _loc, _r1, _r2 -> ["${meta.library}.tsv", "${meta.id}\t${meta.barcode_r1}${meta.barcode_r2 ?: ''}\n"] }
         .collectFile(seed: "sample_id\tbarcode\n", sort: true)
@@ -57,16 +57,22 @@ workflow FASTQ_DEMULTIPLEX_FQTK {
             }
     )
 
+    // kept samples by id; excluded ones are demultiplexed only so their reads leave ours
+    def ch_kept = ch_samplesheet.filter { meta, _loc, _r1, _r2 -> !meta.exclude }.map { meta, _loc, _r1, _r2 -> [meta.id, meta] }
+
     // per sample: its lane pairs in lane order (R1, R2, R1, R2, ...), released when all lanes are in
     def ch_sample_lanes = FQTK.out.sample_fastq
         .flatMap { meta, files ->
             files.findAll { f -> !f.name.startsWith('unmatched') }
                 .groupBy { f -> f.name - ~/\.R[12]\.fq\.gz$/ }
-                .collect { sample, pair -> [groupKey(sample, meta.n_lanes), meta.lane, pair.sort { f -> f.name }] }
+                .collect { sample, pair -> [sample, meta.n_lanes, meta.lane, pair.sort { f -> f.name }] }
         }
+        // drops the lanes of excluded samples: only ids of kept rows match
+        .combine(ch_kept, by: 0)
+        .map { sample, n_lanes, lane, pair, _meta -> [groupKey(sample, n_lanes), lane, pair] }
         .groupTuple()
         .map { sample, lanes, pairs -> [sample.toString(), [lanes, pairs].transpose().sort { l -> l[0] }.collect { l -> l[1] }.flatten()] }
-        .join(ch_samplesheet.map { meta, _loc, _r1, _r2 -> [meta.id, meta] }, failOnMismatch: true)
+        .join(ch_kept, failOnMismatch: true)
         .map { _id, reads, meta -> [meta + [single_end: false], reads] }
         .branch { _meta, reads ->
             one_lane: reads.size() == 2

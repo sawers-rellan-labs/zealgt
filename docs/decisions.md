@@ -61,3 +61,8 @@ A stage's result stops being published when the user decides the stage is produc
 The CRAM process publishes each CRAM and its index straight to the `/rsstu` store with `mode: 'copy'` (another
 filesystem) as its task ends; Nextflow finishes all publishing before the run succeeds and `cleanup` removes `work/`, and
 a failed copy fails the run. No separate move step after the workflow.
+
+## 2026-10-02 Shared plates: all barcodes to fqtk
+A plate shared with another project gives fqtk all its barcodes, so the other project's reads (96-Plex barcodes are as
+close as 2 apart, one error from ours) go to their own wells; those wells (`exclude` = TRUE in `meta/samples.csv`, e.g. the
+21 `LANTEO` wells of BZea2) are dropped right after demultiplexing. A library with no kept well (BZea1) is not run.

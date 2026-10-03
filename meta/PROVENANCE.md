@@ -5,11 +5,11 @@
 | output | what |
 |---|---|
 | `meta/registry.csv` | one row per sequenced sample of every experiment, key `sample_id`; raw identity columns from the sources, `*_resolved` columns with `meta/corrections.csv` applied |
-| `meta/samples.csv` | the sample sheet of workflow 1 (read processing): the non-excluded `bc1` / `bc2s3_batch1` / `bc2s3_batch2` rows of the registry, first 21 columns, up to `rg_pu` (validated by `assets/schema_input.json`) |
+| `meta/samples.csv` | the sample sheet of workflow 1 (read processing): the `bc1` / `bc2s3_batch1` / `bc2s3_batch2` rows of the registry of every library with a non-excluded row, first 21 columns, up to `rg_pu`, plus `exclude` (validated by `assets/schema_input.json`) |
 | `meta/accessions.csv` | donor passport data of the 227 accessions (J2Teo `metadata`), `longitude_resolved` with the corrections applied |
 | `meta/corrections.csv` | append-only identity correction log (hand-maintained; never rewritten) |
 
-A run's samplesheet is a row subset of `meta/samples.csv` by library, all 21 columns kept (nf-schema warns on the columns
+A run's samplesheet is a row subset of `meta/samples.csv` by library, all 22 columns kept (nf-schema warns on the columns
 `assets/schema_input.json` does not declare and drops them): `awk -F, 'NR==1 || $4=="1A" || $4=="BZea2"' meta/samples.csv > run.csv`
 (no quoted field before `library`; only `rg_pu` is quoted).
 
@@ -25,7 +25,8 @@ Registry: 2,784 samples.
 - BC2S3 batch 2: 384 (362 lines, 13 checks, 9 empty).
 - BRB-seq summer 2023: 384 (345 lines, 39 checks).
 
-`samples.csv`: the 2,283 workflow-1 rows (unchanged set and order). All sample IDs are unique, all barcodes are unique within their
+`samples.csv`: the 2,283 workflow-1 rows (unchanged set and order) plus the 21 excluded `LANTEO` wells of BZea2 with `exclude` = TRUE
+(fqtk needs every barcode of a shared plate; the pipeline drops them after demultiplexing; BZea1, all excluded, stays out). All sample IDs are unique, all barcodes are unique within their
 library, and every sample has a raw location.
 
 ## Sources
@@ -103,7 +104,7 @@ use and status. The builder reads only listed files and refuses to run on a sha2
 - **Batch-1 barcode layout:** an 8-bp inline barcode at the start of R1 only. Checked on `BZea6`: the top 96 5′ 8-mers cover 91.9% of
   reads, vs 6.6% for 6-mers at base 31. BC1 and batch 2 carry a 6-bp inline barcode on both R1 and R2.
 - **Excluded — another project sequenced in the same batch-1 run** (user, 2026-09-24): all of plate 1 (96 wells) and the 21 `LANTEO…`
-  wells on plates 2–17. They are in `registry.csv` with `exclude` = TRUE and a reason, and are not in `samples.csv`.
+  wells on plates 2–17. They are in `registry.csv` with `exclude` = TRUE and a reason; only the LANTEO wells are in `samples.csv` (see above).
   - None of them is in `bc2s3_batch1_skim_nil_id.tsv`.
   - 29 are in the zealhmm/zealtiger `skim_sample_pedigree.csv`, with taxon-coded BC2S4 pedigrees such as PN1_SID37 =
     Zx.0120_P1_P2_P2.1.1.1.1 (project `lanteo` upstream).

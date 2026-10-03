@@ -8,7 +8,7 @@ nextflow_workflow {
     tag "subworkflows_local"
     tag "fastq_demultiplex_fqtk"
 
-    // runs fqtk in its container on both fixture libraries: LIBX (twist_flexprep, plain lanes), LIBB1 (twist_96plex, tar members)
+    // runs fqtk in its container on both fixture libraries: LIBX (twist_flexprep, plain lanes), LIBB1 (twist_96plex, tar members, PB1_SID3 excluded)
     profile "test,docker"
 
     test("both kits, all pairs") {
@@ -17,7 +17,7 @@ nextflow_workflow {
             workflow {
                 """
                 input[0] = channel.fromPath("${projectDir}/tests/fixtures/samplesheet.csv").splitCsv(header: true).map { r ->
-                    [[id: r.sample_id, library: r.library, kit: r.kit, barcode_r1: r.barcode_r1, barcode_r2: r.barcode_r2], "${projectDir}/" + r.raw_location, r.raw_r1, r.raw_r2]
+                    [[id: r.sample_id, library: r.library, kit: r.kit, barcode_r1: r.barcode_r1, barcode_r2: r.barcode_r2, exclude: r.exclude == 'TRUE'], "${projectDir}/" + r.raw_location, r.raw_r1, r.raw_r2]
                 }
                 input[1] = 0
                 """
@@ -31,12 +31,12 @@ nextflow_workflow {
             }
             def libx  = [LX_1: 150, LX_2: 150, LX_3: 150, unmatched: 20]
             def libb1 = [PB1_SID1: 30, PB1_SID2: 20, PB1_SID3: 10, PB1_SID4: 0, unmatched: 8]
-            // per sample: read lengths after the barcode and skipped bases, pairs over all lanes
+            // per sample: read lengths after the barcode and skipped bases, pairs over all lanes; excluded PB1_SID3 is assigned by fqtk, not emitted
             def reads = workflow.out.reads.collectEntries { meta, fq -> [meta.id, fq.collect { f -> path(f).linesGzip.withIndex().findAll { _l, i -> i % 4 == 1 }.collect { l, _i -> l.size() } }] }
             assertAll(
                 { assert workflow.success },
                 { assert lanes == ['LIBX.LIBX_TESTFC01_L1': libx, 'LIBX.LIBX_TESTFC01_L2': libx, 'LIBB1.LIBB1_S1_L001': libb1, 'LIBB1.LIBB1_S1_L002': libb1] },
-                { assert reads.collectEntries { id, r -> [id, r*.size()] } == [LX_1: [300, 300], LX_2: [300, 300], LX_3: [300, 300], PB1_SID1: [60, 60], PB1_SID2: [40, 40], PB1_SID3: [20, 20], PB1_SID4: [0, 0]] },
+                { assert reads.collectEntries { id, r -> [id, r*.size()] } == [LX_1: [300, 300], LX_2: [300, 300], LX_3: [300, 300], PB1_SID1: [60, 60], PB1_SID2: [40, 40], PB1_SID4: [0, 0]] },
                 // FlexPrep 108 -> 100 bp both reads; 96-Plex R1 loses 8 + 12, R2 loses 8
                 { assert reads.findAll { id, _r -> id.startsWith('LX_') }.every { _id, r -> r.flatten().every { n -> n == 100 } } },
                 { assert reads.findAll { id, _r -> id.startsWith('PB1_') }.every { _id, r -> r[0].every { n -> n == 80 } && r[1].every { n -> n == 92 } } }
@@ -52,7 +52,7 @@ nextflow_workflow {
             workflow {
                 """
                 input[0] = channel.fromPath("${projectDir}/tests/fixtures/samplesheet.csv").splitCsv(header: true).map { r ->
-                    [[id: r.sample_id, library: r.library, kit: r.kit, barcode_r1: r.barcode_r1, barcode_r2: r.barcode_r2], "${projectDir}/" + r.raw_location, r.raw_r1, r.raw_r2]
+                    [[id: r.sample_id, library: r.library, kit: r.kit, barcode_r1: r.barcode_r1, barcode_r2: r.barcode_r2, exclude: r.exclude == 'TRUE'], "${projectDir}/" + r.raw_location, r.raw_r1, r.raw_r2]
                 }
                 input[1] = 10
                 """
@@ -62,7 +62,7 @@ nextflow_workflow {
         then {
             assertAll(
                 { assert workflow.success },
-                { assert workflow.out.reads.collectEntries { meta, fq -> [meta.id, fq.size()] } == ['LX_1', 'LX_2', 'LX_3', 'PB1_SID1', 'PB1_SID2', 'PB1_SID3', 'PB1_SID4'].collectEntries { s -> [s, 2] } },
+                { assert workflow.out.reads.collectEntries { meta, fq -> [meta.id, fq.size()] } == ['LX_1', 'LX_2', 'LX_3', 'PB1_SID1', 'PB1_SID2', 'PB1_SID4'].collectEntries { s -> [s, 2] } },
                 { assert workflow.out.metrics.collect { meta, _f -> meta.id }.sort() == ['LIBB1.LIBB1_S1_L001', 'LIBB1.LIBB1_S1_L002', 'LIBX.LIBX_TESTFC01_L1', 'LIBX.LIBX_TESTFC01_L2'] }
             )
         }
