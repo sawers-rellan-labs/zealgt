@@ -1,0 +1,8 @@
+---
+# Nextflow for the head job on hazel (system Java is 1.8)
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - bioconda::nextflow=26.04.6
+  - conda-forge::openjdk=25.0.2
