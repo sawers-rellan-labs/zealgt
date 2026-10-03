@@ -1,18 +1,12 @@
 {
-    "-profile test - stub": {
+    "--step alignment --head 10 - stub": {
         "content": [
             {
-                "CAT_FASTQ": {
-                    "cat": 9.5
-                },
                 "EXTRACT_LANE": {
                     "tar": 1.34
                 },
                 "FGUMI_CLIP": {
                     "fgumi": "0.7.0"
-                },
-                "FQTK": {
-                    "fqtk": "0.4.0"
                 },
                 "MINIBWA_MAP": {
                     "minibwa": 0.7,
@@ -106,31 +100,60 @@
                 "cram/PB1_SID4.regions.bed.gz.csi",
                 "cram/PB1_SID4.stats",
                 "cram/PB1_SID4.summary.txt",
-                "demux",
-                "demux/LX_1",
-                "demux/LX_1/LX_1_R1.fastq.gz",
-                "demux/LX_1/LX_1_R2.fastq.gz",
-                "demux/LX_2",
-                "demux/LX_2/LX_2_R1.fastq.gz",
-                "demux/LX_2/LX_2_R2.fastq.gz",
-                "demux/LX_3",
-                "demux/LX_3/LX_3_R1.fastq.gz",
-                "demux/LX_3/LX_3_R2.fastq.gz",
-                "demux/PB1_SID1",
-                "demux/PB1_SID1/PB1_SID1_R1.fastq.gz",
-                "demux/PB1_SID1/PB1_SID1_R2.fastq.gz",
-                "demux/PB1_SID2",
-                "demux/PB1_SID2/PB1_SID2_R1.fastq.gz",
-                "demux/PB1_SID2/PB1_SID2_R2.fastq.gz",
-                "demux/PB1_SID4",
-                "demux/PB1_SID4/PB1_SID4_R1.fastq.gz",
-                "demux/PB1_SID4/PB1_SID4_R2.fastq.gz",
                 "multiqc",
                 "multiqc/multiqc_data",
                 "multiqc/multiqc_data/.stub",
                 "multiqc/multiqc_plots",
                 "multiqc/multiqc_plots/.stub",
                 "multiqc/multiqc_report.html",
+                "pipeline_info",
+                "pipeline_info/zealgt_software_mqc_versions.yml",
+                "samplesheet.csv"
+            ]
+        ],
+        "timestamp": "2026-10-03T14:43:57.640222",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "--step demultiplex - stub": {
+        "content": [
+            {
+                "CAT_FASTQ": {
+                    "cat": 9.5
+                },
+                "EXTRACT_LANE": {
+                    "tar": 1.34
+                },
+                "FQTK": {
+                    "fqtk": "0.4.0"
+                },
+                "Workflow": {
+                    "sawers-rellan-labs/zealgt": "v0.2.0dev"
+                }
+            },
+            [
+                "fastq",
+                "fastq/LX_1",
+                "fastq/LX_1/LX_1_R1.fastq.gz",
+                "fastq/LX_1/LX_1_R2.fastq.gz",
+                "fastq/LX_2",
+                "fastq/LX_2/LX_2_R1.fastq.gz",
+                "fastq/LX_2/LX_2_R2.fastq.gz",
+                "fastq/LX_3",
+                "fastq/LX_3/LX_3_R1.fastq.gz",
+                "fastq/LX_3/LX_3_R2.fastq.gz",
+                "fastq/PB1_SID1",
+                "fastq/PB1_SID1/PB1_SID1_R1.fastq.gz",
+                "fastq/PB1_SID1/PB1_SID1_R2.fastq.gz",
+                "fastq/PB1_SID2",
+                "fastq/PB1_SID2/PB1_SID2_R1.fastq.gz",
+                "fastq/PB1_SID2/PB1_SID2_R2.fastq.gz",
+                "fastq/PB1_SID4",
+                "fastq/PB1_SID4/PB1_SID4_R1.fastq.gz",
+                "fastq/PB1_SID4/PB1_SID4_R2.fastq.gz",
+                "fastq/samplesheet.csv",
                 "pipeline_info",
                 "pipeline_info/zealgt_software_mqc_versions.yml",
                 "reports",
@@ -142,7 +165,7 @@
                 "samplesheet.csv"
             ]
         ],
-        "timestamp": "2026-10-03T10:35:14.817583",
+        "timestamp": "2026-10-03T14:48:42.110869",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

@@ -1,0 +1,7 @@
+sample_id,fastq_1,fastq_2,library,lanes,kit
+LX_1,tests/fixtures/fastq/LX_1/LX_1_R1.fastq.gz,tests/fixtures/fastq/LX_1/LX_1_R2.fastq.gz,LIBX,"LIBX_TESTFC01_L1,LIBX_TESTFC01_L2",twist_flexprep
+LX_2,tests/fixtures/fastq/LX_2/LX_2_R1.fastq.gz,tests/fixtures/fastq/LX_2/LX_2_R2.fastq.gz,LIBX,"LIBX_TESTFC01_L1,LIBX_TESTFC01_L2",twist_flexprep
+LX_3,tests/fixtures/fastq/LX_3/LX_3_R1.fastq.gz,tests/fixtures/fastq/LX_3/LX_3_R2.fastq.gz,LIBX,"LIBX_TESTFC01_L1,LIBX_TESTFC01_L2",twist_flexprep
+PB1_SID1,tests/fixtures/fastq/PB1_SID1/PB1_SID1_R1.fastq.gz,tests/fixtures/fastq/PB1_SID1/PB1_SID1_R2.fastq.gz,LIBB1,"LIBB1_S1_L001,LIBB1_S1_L002",twist_96plex
+PB1_SID2,tests/fixtures/fastq/PB1_SID2/PB1_SID2_R1.fastq.gz,tests/fixtures/fastq/PB1_SID2/PB1_SID2_R2.fastq.gz,LIBB1,"LIBB1_S1_L001,LIBB1_S1_L002",twist_96plex
+PB1_SID4,tests/fixtures/fastq/PB1_SID4/PB1_SID4_R1.fastq.gz,tests/fixtures/fastq/PB1_SID4/PB1_SID4_R2.fastq.gz,LIBB1,"LIBB1_S1_L001,LIBB1_S1_L002",twist_96plex

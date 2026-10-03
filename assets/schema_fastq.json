@@ -1,0 +1,52 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/sawers-rellan-labs/zealgt/main/assets/schema_fastq.json",
+    "title": "sawers-rellan-labs/zealgt pipeline - params.input schema for --step alignment",
+    "description": "One row per sample: its FASTQ pair, as DEMULTIPLEX writes fastq/samplesheet.csv",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "sample_id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_]+$",
+                "errorMessage": "sample_id must be letters, digits and underscores",
+                "meta": ["id"]
+            },
+            "fastq_1": {
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
+                "errorMessage": "fastq_1 must be an existing .fastq.gz file"
+            },
+            "fastq_2": {
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
+                "errorMessage": "fastq_2 must be an existing .fastq.gz file"
+            },
+            "library": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_]+$",
+                "errorMessage": "library must be letters, digits and underscores",
+                "meta": ["library"]
+            },
+            "lanes": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_.-]+(,[A-Za-z0-9_.-]+)*$",
+                "errorMessage": "lanes must be the comma-joined lane file stems",
+                "meta": ["lanes"]
+            },
+            "kit": {
+                "type": "string",
+                "enum": ["twist_flexprep", "twist_96plex"],
+                "errorMessage": "kit must be twist_flexprep or twist_96plex",
+                "meta": ["kit"]
+            }
+        },
+        "required": ["sample_id", "fastq_1", "fastq_2", "library", "lanes", "kit"]
+    },
+    "uniqueEntries": ["sample_id"]
+}

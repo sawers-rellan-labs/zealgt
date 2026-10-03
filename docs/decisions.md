@@ -9,7 +9,7 @@ One entry per decision, newest last. Terms as in `TERMINOLOGY.md`.
 ## 2026-10-02 `--head N`
 
 First N read pairs per library, before demultiplexing; test runs only. Not called `--subsample`, which means coverage
-downsampling in genotyping.
+downsampling in genotyping. Since Milestone 5, `--step alignment` takes the first N pairs per sample FASTQ.
 
 ## 2026-10-02 Read processing, both kits
 
@@ -62,11 +62,9 @@ Reads matching no sample barcode are not kept, as before; their count per lane i
 Two profiles over shared cluster settings (`conf/hpc_shared.config`), each with one fixed launch directory on `/share`
 so `-resume` always finds the previous run's cache:
 
-- `hpc_dev` (`nf_work/zealgt_dev`): runs on heads of one library; each stage's result (e.g. one FASTQ pair per sample
-  after demultiplexing) is published as a workflow output, as hard links (`publish_dir_mode = 'link'`,
-  `publish_intermediates = true`): no extra space, and not symlinks, which break when `work/` is deleted. Files internal
-  to a stage stay in `work/`, which is kept, so after a code change `-resume` reruns only the changed steps.
-- `hpc_prod` (`nf_work/zealgt_prod`): whole libraries; only CRAMs and QC are published; `cleanup = true` deletes a
+- `hpc_dev` (`nf_work/zealgt_dev`): runs on heads of one library; outputs are published as hard links
+  (`publish_dir_mode = 'link'`): no extra space, and not symlinks, which break when `work/` is deleted. Files internal
+  to a stage stay in `work/`, which is kept, so after a code change `-resume` reruns only the changed steps.- `hpc_prod` (`nf_work/zealgt_prod`): whole libraries; only CRAMs and QC are published; `cleanup = true` deletes a
   successful run's `work/` (a failed run keeps it for `-resume`); the head job runs on the normal QOS.
   A stage's result stops being published when the user decides the stage is production-ready.
 
