@@ -22,12 +22,12 @@ Read top down; each level only names the one below it.
 
 ## ALIGNMENT: raw reads to one CRAM per sample
 
-| stage                     | modules                                               | status                                                |
-| ------------------------- | ----------------------------------------------------- | ----------------------------------------------------- |
-| `FASTQ_DEMULTIPLEX_FQTK`  | `EXTRACT_LANE` -> `FQTK` -> `CAT_FASTQ`               | built (milestone 1)                                   |
-| `FASTQ_ALIGN_MINIBWA`     | `ALIGN_MARKDUP` -> `FGBIO_CLIPBAM`                    | milestone 2; ClipBam's place relative to markdup open |
-| `CRAM_QC_SAMTOOLS_PICARD` | `SAMTOOLS_STATS`, `PICARD_COLLECTWGSMETRICS`          | later                                                 |
-| inline                    | `MARKDUP_IMPORT` (`--step markduplicates`), `MULTIQC` | later                                                 |
+| stage                     | modules                                                                                                                                                | status                               |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------ |
+| `FASTQ_DEMULTIPLEX_FQTK`  | `EXTRACT_LANE` -> `FQTK`; reads per sample x lane                                                                                                      | built (milestone 1, lanes kept in 2) |
+| `FASTQ_ALIGN_MINIBWA`     | per lane `MINIBWA_MAP` -> `FGUMI_CLIP` -> `SAMTOOLS_FIXMATE` -> `SAMTOOLS_SORT`; per sample `SAMTOOLS_MERGE` -> `SAMTOOLS_MARKDUP` -> `SAMTOOLS_INDEX` | milestone 2                          |
+| `CRAM_QC_SAMTOOLS_PICARD` | `SAMTOOLS_STATS`, `PICARD_COLLECTWGSMETRICS`                                                                                                           | later                                |
+| inline                    | `MARKDUP_IMPORT` (`--step markduplicates`), `MULTIQC`                                                                                                  | later                                |
 
 ## GENOTYPE: CRAMs to genotypes (development scope: one chromosome end to end)
 
