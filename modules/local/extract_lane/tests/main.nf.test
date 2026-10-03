@@ -62,6 +62,32 @@ nextflow_process {
         }
     }
 
+    test("per-sample FASTQ named as the output, first 10 pairs") {
+
+        when {
+            process {
+                """
+                input[0] = channel.of([
+                    [ id: 'LX_1' ],
+                    file("${projectDir}/tests/fixtures/fastq/LX_1/LX_1_R1.fastq.gz", checkIfExists: true),
+                    file("${projectDir}/tests/fixtures/fastq/LX_1/LX_1_R2.fastq.gz", checkIfExists: true),
+                    '',
+                    '',
+                    10,
+                ])
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert process.success },
+                { assert path(process.out.reads[0][1]).linesGzip.size() == 40 },
+                { assert path(process.out.reads[0][2]).linesGzip.size() == 40 }
+            )
+        }
+    }
+
     test("tar members - stub") {
 
         options "-stub"

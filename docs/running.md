@@ -7,10 +7,12 @@ Nextflow 26.04.6 (laptop, or hazel GPFS with tasks on Slurm compute nodes).
 ## Profiles and launch directories
 
 - `hpc_dev`: development on heads of one library; launch directory always `/share/maize/frodrig4/nf_work/zealgt_dev`;
-  `work/` kept; each stage's result published as hard links.
-- `hpc_prod`: whole libraries; launch directory always `/share/maize/frodrig4/nf_work/zealgt_prod`; only CRAMs and QC
-  published; `cleanup = true`; head job on the normal QOS.
-- Start: `sbatch scripts/submit_head_job.sbatch hpc_dev <nextflow run args>` (production: see the script's header).
+  `work/` kept; outputs published as hard links.
+- `hpc_prod`: whole libraries; launch directory always `/share/maize/frodrig4/nf_work/zealgt_prod`; outputs (the FASTQs
+  of `demultiplex`, the CRAMs and QC of `alignment`) copied; `cleanup = true`; head job on the normal QOS.
+- Start: `sbatch scripts/submit_head_job.sbatch hpc_dev --step <demultiplex|alignment> <nextflow run args>` (production:
+  see the script's header). `alignment` reads the `fastq/samplesheet.csv` a `demultiplex` run published, or some of its
+  rows; the two runs share the launch directory and its cache.
 - Compute nodes have no internet: the head job sets `NXF_OFFLINE=true`; a run that must download images runs its head
   job on the xfer partition with `NXF_OFFLINE=false` (see the script's header); Nextflow then pulls them into the cache.
 - Nextflow runs from the official image `/share/maize/frodrig4/apptainer/nextflow_26.04.6.sif` with the host's Slurm

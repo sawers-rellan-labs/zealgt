@@ -10,17 +10,21 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": ["input", "outdir"],
+            "required": ["input", "outdir", "step"],
             "properties": {
+                "step": {
+                    "type": "string",
+                    "enum": ["demultiplex", "alignment"],
+                    "description": "Workflow to run: demultiplex (libraries to per-sample FASTQs) or alignment (per-sample FASTQs to CRAMs).",
+                    "fa_icon": "fas fa-play"
+                },
                 "input": {
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
-                    "schema": "assets/schema_input.json",
                     "mimetype": "text/csv",
                     "pattern": "^\\S+\\.csv$",
-                    "description": "Path to comma-separated file containing information about the samples in the experiment.",
-                    "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row.",
+                    "description": "Samplesheet: meta/samples.csv rows for demultiplex (assets/schema_input.json), a fastq/samplesheet.csv for alignment (assets/schema_fastq.json).",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "outdir": {
@@ -38,7 +42,7 @@
                     "type": "integer",
                     "default": 0,
                     "minimum": 0,
-                    "description": "First N read pairs per library, before demultiplexing; test runs only (0 = all).",
+                    "description": "First N read pairs per library before demultiplexing (demultiplex) or per sample (alignment); test runs only (0 = all).",
                     "fa_icon": "fas fa-cut"
                 }
             }
@@ -152,13 +156,6 @@
                 "show_hidden": {
                     "type": "boolean",
                     "description": "Display hidden parameters in the help message (only works when --help or --help_full are provided)."
-                },
-                "publish_intermediates": {
-                    "type": "boolean",
-                    "default": false,
-                    "hidden": true,
-                    "fa_icon": "fas fa-copy",
-                    "description": "Publish every step's intermediate files (development)."
                 }
             }
         }
