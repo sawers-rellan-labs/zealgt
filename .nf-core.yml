@@ -32,7 +32,6 @@ lint:
     - docs/images/nf-core-zealgt_logo_light.png
     - docs/images/nf-core-zealgt_logo_dark.png
     - .github/ISSUE_TEMPLATE/config.yml
-    - .github/workflows/branch.yml
     - .github/workflows/awstest.yml
     - .github/workflows/awsfulltest.yml
     - conf/igenomes.config
@@ -51,7 +50,7 @@ template:
   name: zealgt
   description: "ZEAL genotyping: raw reads to genotypes, stopping at one CRAM per sample"
   author: Fausto Rodriguez Zapata
-  version: 0.1.0
+  version: 0.2.0dev
   force: true
   outdir: tpl2
   skip_features:
