@@ -10,9 +10,9 @@ Read top down; each level only names the one below it.
 | level    | file                                                  | holds                                                    | limit         |
 | -------- | ----------------------------------------------------- | -------------------------------------------------------- | ------------- |
 | pipeline | `main.nf`                                             | the two workflows and the `--step` entry                 | template size |
-| workflow | `workflows/<name>.nf`                                 | the list of stage calls, MultiQC and versions at the end | 80 lines      |
+| workflow | `workflows/<name>.nf`                                 | the list of stage calls, MultiQC and versions at the end | 100 lines     |
 | stage    | `subworkflows/local/<stage>/main.nf`                  | one stage's channel wiring                               | 100 lines     |
-| tool     | `modules/local/<tool>/main.nf`, `modules/nf-core/...` | one tool call                                            | 80 lines      |
+| tool     | `modules/local/<tool>/main.nf`, `modules/nf-core/...` | one tool call                                            | 100 lines     |
 | settings | `conf/*.config`                                       | resources, `ext.args`, publishing; no logic              |               |
 
 - A stage becomes a subworkflow when it chains two or more modules; a single module is called inline.
@@ -25,8 +25,8 @@ Read top down; each level only names the one below it.
 | stage                     | modules                                                                                                          | status              |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------- |
 | `FASTQ_DEMULTIPLEX_FQTK`  | `EXTRACT_LANE` -> `FQTK` -> `CAT_FASTQ`; reads per sample                                                        | built (milestone 1) |
-| `FASTQ_ALIGN_MINIBWA`     | `MINIBWA_MAP` -> `FGUMI_CLIP` -> `SAMTOOLS_FIXMATE` -> `SAMTOOLS_SORT` -> `SAMTOOLS_MARKDUP` -> `SAMTOOLS_INDEX` | milestone 2         |
-| `CRAM_QC_SAMTOOLS_PICARD` | `SAMTOOLS_STATS`, `PICARD_COLLECTWGSMETRICS`                                                                     | later               |
+| `FASTQ_ALIGN_MINIBWA`     | `MINIBWA_MAP` -> `FGUMI_CLIP` -> `SAMTOOLS_FIXMATE` -> `SAMTOOLS_SORT` -> `SAMTOOLS_MARKDUP` -> `SAMTOOLS_INDEX` | built (milestone 2) |
+| `CRAM_QC_SAMTOOLS_PICARD` | `SAMTOOLS_STATS`, `PICARD_COLLECTWGSMETRICS`, `MOSDEPTH`                                                         | built (milestone 3) |
 | inline                    | `MARKDUP_IMPORT` (`--step markduplicates`), `MULTIQC`                                                            | later               |
 
 ## GENOTYPE: CRAMs to genotypes (development scope: one chromosome end to end)

@@ -1,5 +1,6 @@
 include { FASTQ_DEMULTIPLEX_FQTK } from '../subworkflows/local/fastq_demultiplex_fqtk/main'
 include { FASTQ_ALIGN_MINIBWA   } from '../subworkflows/local/fastq_align_minibwa/main'
+include { CRAM_QC_SAMTOOLS_PICARD } from '../subworkflows/local/cram_qc_samtools_picard/main'
 include { MULTIQC                } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -24,6 +25,7 @@ workflow ALIGNMENT {
     // reference and its prebuilt minibwa index, read by every alignment task
     def ch_fasta = channel.value([[id: file(fasta).name], file(fasta, checkIfExists: true), file("${fasta}.fai", checkIfExists: true)])
     FASTQ_ALIGN_MINIBWA(FASTQ_DEMULTIPLEX_FQTK.out.reads, ch_fasta, channel.value([[id: file(fasta).name], files(minibwa_index, checkIfExists: true)]))
+    CRAM_QC_SAMTOOLS_PICARD(FASTQ_ALIGN_MINIBWA.out.cram, ch_fasta)
 
     // Collate and save software versions
     def topic_versions = channel.topic("versions")
@@ -75,5 +77,6 @@ workflow ALIGNMENT {
     multiqc_report = MULTIQC.out.report.map { _meta, report -> [report] }.toList() // channel: /path/to/multiqc_report.html
     reads          = FASTQ_DEMULTIPLEX_FQTK.out.reads // channel: [ meta, [ R1, R2 ] ], one per sample
     cram           = FASTQ_ALIGN_MINIBWA.out.cram     // channel: [ meta, cram, crai ], one per sample
+    cram_qc        = CRAM_QC_SAMTOOLS_PICARD.out.qc   // channel: [ meta, file ], several per sample
     versions       = ch_versions                      // channel: [ path(versions.yml) ]
 }

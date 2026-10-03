@@ -1,0 +1,78 @@
+nextflow_workflow {
+
+    name "Test Subworkflow CRAM_QC_SAMTOOLS_PICARD"
+    script "../main.nf"
+    workflow "CRAM_QC_SAMTOOLS_PICARD"
+    config "../../../../conf/modules.config"
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "cram_qc_samtools_picard"
+
+    // QC of the fixture library LIBX (3 samples) aligned to tiny.fa, every tool in its container
+    profile "test,docker"
+
+    setup {
+        run("FASTQ_DEMULTIPLEX_FQTK") {
+            script "../../fastq_demultiplex_fqtk/main.nf"
+            workflow {
+                """
+                input[0] = channel.fromPath("${projectDir}/tests/fixtures/samplesheet.csv").splitCsv(header: true).filter { r -> r.library == 'LIBX' }.map { r ->
+                    [[id: r.sample_id, library: r.library, kit: r.kit, barcode_r1: r.barcode_r1, barcode_r2: r.barcode_r2, exclude: r.exclude == 'TRUE'], "${projectDir}/" + r.raw_location, r.raw_r1, r.raw_r2]
+                }
+                input[1] = 0
+                """
+            }
+        }
+        run("FASTQ_ALIGN_MINIBWA") {
+            script "../../fastq_align_minibwa/main.nf"
+            workflow {
+                """
+                input[0] = FASTQ_DEMULTIPLEX_FQTK.out.reads
+                input[1] = channel.value([[id: 'tiny.fa'], file("${projectDir}/tests/fixtures/ref/tiny.fa"), file("${projectDir}/tests/fixtures/ref/tiny.fa.fai")])
+                input[2] = channel.value([[id: 'tiny.fa'], files("${projectDir}/tests/fixtures/ref/tiny.fa.{l2b,mbw}")])
+                """
+            }
+        }
+    }
+
+    test("LIBX CRAMs, tiny.fa") {
+
+        when {
+            workflow {
+                """
+                input[0] = FASTQ_ALIGN_MINIBWA.out.cram
+                input[1] = channel.value([[id: 'tiny.fa'], file("${projectDir}/tests/fixtures/ref/tiny.fa"), file("${projectDir}/tests/fixtures/ref/tiny.fa.fai")])
+                """
+            }
+        }
+
+        then {
+            def lx = ['LX_1', 'LX_2', 'LX_3']
+            // per sample: its QC files by name suffix
+            def qc = workflow.out.qc.groupBy { e -> e[0].id }.collectEntries { id, es -> [id, es.collectEntries { e -> [file(e[1]).name - "${id}.", file(e[1])] }] }
+            def sn = { f, key -> f.readLines().find { l -> l.startsWith("SN\t${key}:") }.tokenize('\t')[2] as long }
+            // Picard metrics: the first table, header line to values line
+            def wgs = { f -> def ls = f.readLines(); def i = ls.findIndexOf { l -> l.startsWith('GENOME_TERRITORY') }; [ls[i].tokenize('\t'), ls[i + 1].tokenize('\t')].transpose().collectEntries() }
+            def total = { f -> f.readLines().find { l -> l.startsWith('total\t') }.tokenize('\t')[3] as double }
+            def summary = lx.collectEntries { id -> [id, [
+                files: qc[id].keySet().sort(),
+                raw_total_sequences: sn(qc[id]['stats'], 'raw total sequences'),
+                reads_duplicated: sn(qc[id]['stats'], 'reads duplicated'),
+                pct_exc_total: wgs(qc[id]['CollectWgsMetrics.coverage_metrics']).PCT_EXC_TOTAL as double,
+                mean_coverage: wgs(qc[id]['CollectWgsMetrics.coverage_metrics']).MEAN_COVERAGE as double,
+                mosdepth_total: total(qc[id]['mosdepth.summary.txt'])
+            ]] }
+            assertAll(
+                { assert workflow.success },
+                // samtools stats, CollectWgsMetrics, mosdepth summary, distributions and windows; no per-base file
+                { assert summary.every { _id, x -> x.files == ['CollectWgsMetrics.coverage_metrics', 'mosdepth.global.dist.txt', 'mosdepth.region.dist.txt',
+                    'mosdepth.summary.txt', 'regions.bed.gz', 'regions.bed.gz.csi', 'stats'] } },
+                // every pair of the CRAM counted (600 records, all primary), duplicates seen
+                { assert summary.every { _id, x -> x.raw_total_sequences == 600 && x.reads_duplicated > 0 } },
+                // Picard under the default STRICT validation: PCT_EXC_TOTAL a fraction, raw depth >= usable depth
+                { assert summary.every { _id, x -> x.pct_exc_total > 0 && x.pct_exc_total < 1 && x.mosdepth_total >= x.mean_coverage } },
+                { assert snapshot(summary).match() }
+            )
+        }
+    }
+}

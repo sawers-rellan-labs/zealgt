@@ -54,6 +54,7 @@ workflow SAWERSRELLANLABS_ZEALGT {
     multiqc_report = ALIGNMENT.out.multiqc_report // channel: /path/to/multiqc_report.html
     demux_reads    = ALIGNMENT.out.reads          // channel: [ meta, [ R1, R2 ] ], one per sample
     cram           = ALIGNMENT.out.cram           // channel: [ meta, cram, crai ], one per sample
+    cram_qc        = ALIGNMENT.out.cram_qc        // channel: [ meta, file ], several per sample
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -93,8 +94,9 @@ workflow {
     )
 
     publish:
-    // CRAMs always, to permanent storage
+    // CRAMs and their QC always, to permanent storage
     cram = SAWERSRELLANLABS_ZEALGT.out.cram
+    cram_qc = SAWERSRELLANLABS_ZEALGT.out.cram_qc
     // each stage's result, published only during development
     demux_reads = params.publish_intermediates ? SAWERSRELLANLABS_ZEALGT.out.demux_reads : channel.empty()
 }
@@ -109,6 +111,11 @@ output {
     }
     // copied, not linked: the store is another filesystem and outlives work/
     cram {
+        path 'cram'
+        mode 'copy'
+    }
+    // QC next to its CRAM
+    cram_qc {
         path 'cram'
         mode 'copy'
     }
