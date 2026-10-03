@@ -32,6 +32,7 @@ lint:
     - docs/images/nf-core-zealgt_logo_light.png
     - docs/images/nf-core-zealgt_logo_dark.png
     - .github/ISSUE_TEMPLATE/config.yml
+    - .github/workflows/branch.yml
     - .github/workflows/awstest.yml
     - .github/workflows/awsfulltest.yml
     - conf/igenomes.config
