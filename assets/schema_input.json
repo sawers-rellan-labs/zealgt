@@ -11,52 +11,37 @@
                 "type": "string",
                 "pattern": "^[A-Za-z0-9_]+$",
                 "errorMessage": "sample_id must be letters, digits and underscores",
-                "meta": [
-                    "id"
-                ]
+                "meta": ["id"]
             },
             "library": {
                 "type": "string",
                 "pattern": "^[A-Za-z0-9_]+$",
                 "errorMessage": "library must be letters, digits and underscores",
-                "meta": [
-                    "library"
-                ]
+                "meta": ["library"]
             },
             "kit": {
                 "type": "string",
-                "enum": [
-                    "twist_flexprep",
-                    "twist_96plex"
-                ],
+                "enum": ["twist_flexprep", "twist_96plex"],
                 "errorMessage": "kit must be twist_flexprep or twist_96plex",
-                "meta": [
-                    "kit"
-                ]
+                "meta": ["kit"]
             },
             "barcode_r1": {
                 "type": "string",
                 "pattern": "^[ACGT]+$",
                 "errorMessage": "barcode_r1 must be an ACGT sequence",
-                "meta": [
-                    "barcode_r1"
-                ]
+                "meta": ["barcode_r1"]
             },
             "barcode_r2": {
                 "type": "string",
                 "pattern": "^[ACGT]*$",
                 "errorMessage": "barcode_r2 must be an ACGT sequence or empty",
-                "meta": [
-                    "barcode_r2"
-                ]
+                "meta": ["barcode_r2"]
             },
             "exclude": {
                 "type": "boolean",
                 "default": false,
                 "errorMessage": "exclude must be TRUE or FALSE",
-                "meta": [
-                    "exclude"
-                ]
+                "meta": ["exclude"]
             },
             "raw_location": {
                 "type": "string",
@@ -75,15 +60,7 @@
                 "pattern": "^([^;:'\"\\s]+:[^;:'\"\\s]+(;[^;:'\"\\s]+:[^;:'\"\\s]+)*)?$"
             }
         },
-        "required": [
-            "sample_id",
-            "library",
-            "kit",
-            "barcode_r1",
-            "raw_location"
-        ]
+        "required": ["sample_id", "library", "kit", "barcode_r1", "raw_location"]
     },
-    "uniqueEntries": [
-        "sample_id"
-    ]
+    "uniqueEntries": ["sample_id"]
 }

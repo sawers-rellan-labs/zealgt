@@ -5,6 +5,7 @@ How runs of this pipeline reuse earlier work. Each fact gives its source: the Ne
 Nextflow 26.04.6 (laptop, or hazel GPFS with tasks on Slurm compute nodes).
 
 ## Profiles and launch directories
+
 - `hpc_dev`: development on heads of one library; launch directory always `/share/maize/frodrig4/nf_work/zealgt_dev`;
   `work/` kept; each stage's result published as hard links.
 - `hpc_prod`: whole libraries; launch directory always `/share/maize/frodrig4/nf_work/zealgt_prod`; only CRAMs and QC
@@ -16,6 +17,7 @@ Nextflow 26.04.6 (laptop, or hazel GPFS with tasks on Slurm compute nodes).
   needs that cache and `work/` intact (docs). A new directory per attempt starts every run cold.
 
 ## When a run fails
+
 - Read the failing task's `.command.err` (also `.command.out`, `.command.sh`) in its task directory under `work/`; the
   head log names that directory.
 - Fix on the laptop, then rerun with `-resume` from the same launch directory: finished steps come from the cache.
@@ -23,6 +25,7 @@ Nextflow 26.04.6 (laptop, or hazel GPFS with tasks on Slurm compute nodes).
   launch directory's `.nextflow.log`, and on failure the task's `.command.err`.
 
 ## What reruns a step on `-resume`
+
 - Reruns: a change to the step's script, inputs, container, the `ext` values its script uses, or its process or calling
   workflow name (docs). Tested: changing `ext.args` reruns the step.
 - Does not rerun: a change to cpus or memory, even when the script uses `${task.cpus}` (tested). So a resumed run after
@@ -32,14 +35,18 @@ Nextflow 26.04.6 (laptop, or hazel GPFS with tasks on Slurm compute nodes).
 - `-resume` serves both failure recovery and development iteration (docs).
 
 ## Rerun from a given step
+
 `-resume` plus `cache = false` for that step, in a small config passed with `-c`:
+
 ```
 process { withName: 'FQTK' { cache = false } }
 ```
+
 Steps before it come from the cache; the step and every step after it run again (tested). Use it to measure a resource
 change: edit the resources in `conf/hpc_dev.config` or `conf/hpc_prod.config`, then rerun the step this way.
 
 ## Cleanup and published files
+
 - `cleanup = true` deletes the files of a run in `work/` when the run succeeds and prevents resuming that run (docs);
   a failed run keeps its `work/` (tested). A run that took every step from the cache leaves `work/` as it was (tested).
 - Hard-linked published files (`publish_dir_mode = 'link'`, output on `/share`) keep their content when cleanup deletes

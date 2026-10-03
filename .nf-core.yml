@@ -49,8 +49,8 @@ lint:
 template:
   org: sawers-rellan-labs
   name: zealgt
-  description: 'ZEAL genotyping: raw reads to genotypes, stopping at one CRAM per
-    sample'
+  description: "ZEAL genotyping: raw reads to genotypes, stopping at one CRAM per
+    sample"
   author: Fausto Rodriguez Zapata
   version: 0.1.0dev
   force: true

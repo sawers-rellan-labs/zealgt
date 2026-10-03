@@ -1,88 +1,88 @@
 {
-  "permissions": {
-    "allow": [
-      "Read",
-      "Edit",
-      "Write",
-      "Glob",
-      "Grep",
-      "Agent",
-      "Skill",
-      "WebFetch",
-      "WebSearch",
-      "Bash(git *)",
-      "Bash(gh *)",
-      "Bash(ssh hazel *)",
-      "Bash(sbatch *)",
-      "Bash(scp *)",
-      "Bash(nextflow *)",
-      "Bash(nf-test *)",
-      "Bash(nf-core *)",
-      "Bash(uvx *)",
-      "Bash(docker *)",
-      "Bash(python3 *)",
-      "Bash(bash *)",
-      "Bash(sh *)",
-      "Bash(ls *)",
-      "Bash(cat *)",
-      "Bash(head *)",
-      "Bash(tail *)",
-      "Bash(grep *)",
-      "Bash(find *)",
-      "Bash(sed *)",
-      "Bash(awk *)",
-      "Bash(cut *)",
-      "Bash(sort *)",
-      "Bash(uniq *)",
-      "Bash(wc *)",
-      "Bash(diff *)",
-      "Bash(cmp *)",
-      "Bash(tr *)",
-      "Bash(xargs *)",
-      "Bash(mkdir *)",
-      "Bash(cp *)",
-      "Bash(mv *)",
-      "Bash(touch *)",
-      "Bash(echo *)",
-      "Bash(printf *)",
-      "Bash(which *)",
-      "Bash(env *)",
-      "Bash(samtools *)",
-      "Bash(gzip *)",
-      "Bash(zcat *)",
-      "Bash(tar *)",
-      "Bash(du *)",
-      "Bash(df *)",
-      "Bash(date *)",
-      "Bash(sleep *)"
-    ],
-    "deny": [
-      "Bash(rm *)",
-      "Bash(rmdir *)",
-      "Bash(git clean *)",
-      "Bash(nextflow clean *)",
-      "Bash(chmod *)",
-      "Bash(chown *)",
-      "Bash(sudo *)",
-      "Bash(wget *)",
-      "Bash(scancel *)"
-    ]
-  },
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/block_delete.py"
-          },
-          {
-            "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/require_background.py"
-          }
+    "permissions": {
+        "allow": [
+            "Read",
+            "Edit",
+            "Write",
+            "Glob",
+            "Grep",
+            "Agent",
+            "Skill",
+            "WebFetch",
+            "WebSearch",
+            "Bash(git *)",
+            "Bash(gh *)",
+            "Bash(ssh hazel *)",
+            "Bash(sbatch *)",
+            "Bash(scp *)",
+            "Bash(nextflow *)",
+            "Bash(nf-test *)",
+            "Bash(nf-core *)",
+            "Bash(uvx *)",
+            "Bash(docker *)",
+            "Bash(python3 *)",
+            "Bash(bash *)",
+            "Bash(sh *)",
+            "Bash(ls *)",
+            "Bash(cat *)",
+            "Bash(head *)",
+            "Bash(tail *)",
+            "Bash(grep *)",
+            "Bash(find *)",
+            "Bash(sed *)",
+            "Bash(awk *)",
+            "Bash(cut *)",
+            "Bash(sort *)",
+            "Bash(uniq *)",
+            "Bash(wc *)",
+            "Bash(diff *)",
+            "Bash(cmp *)",
+            "Bash(tr *)",
+            "Bash(xargs *)",
+            "Bash(mkdir *)",
+            "Bash(cp *)",
+            "Bash(mv *)",
+            "Bash(touch *)",
+            "Bash(echo *)",
+            "Bash(printf *)",
+            "Bash(which *)",
+            "Bash(env *)",
+            "Bash(samtools *)",
+            "Bash(gzip *)",
+            "Bash(zcat *)",
+            "Bash(tar *)",
+            "Bash(du *)",
+            "Bash(df *)",
+            "Bash(date *)",
+            "Bash(sleep *)"
+        ],
+        "deny": [
+            "Bash(rm *)",
+            "Bash(rmdir *)",
+            "Bash(git clean *)",
+            "Bash(nextflow clean *)",
+            "Bash(chmod *)",
+            "Bash(chown *)",
+            "Bash(sudo *)",
+            "Bash(wget *)",
+            "Bash(scancel *)"
         ]
-      }
-    ]
-  }
+    },
+    "hooks": {
+        "PreToolUse": [
+            {
+                "matcher": "Bash",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/block_delete.py"
+                    },
+                    {
+                        "type": "command",
+                        "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/require_background.py"
+                    }
+                ]
+            }
+        ]
+    }
 }

@@ -4,15 +4,16 @@ A guide, not a contract: stages are split, merged or renamed when building and d
 are recorded here. Terms as in `TERMINOLOGY.md`, decisions in `decisions.md`.
 
 ## Levels
+
 Read top down; each level only names the one below it.
 
-| level | file | holds | limit |
-|---|---|---|---|
-| pipeline | `main.nf` | the two workflows and the `--step` entry | template size |
-| workflow | `workflows/<name>.nf` | the list of stage calls, MultiQC and versions at the end | 80 lines |
-| stage | `subworkflows/local/<stage>/main.nf` | one stage's channel wiring | 100 lines |
-| tool | `modules/local/<tool>/main.nf`, `modules/nf-core/...` | one tool call | 80 lines |
-| settings | `conf/*.config` | resources, `ext.args`, publishing; no logic | |
+| level    | file                                                  | holds                                                    | limit         |
+| -------- | ----------------------------------------------------- | -------------------------------------------------------- | ------------- |
+| pipeline | `main.nf`                                             | the two workflows and the `--step` entry                 | template size |
+| workflow | `workflows/<name>.nf`                                 | the list of stage calls, MultiQC and versions at the end | 80 lines      |
+| stage    | `subworkflows/local/<stage>/main.nf`                  | one stage's channel wiring                               | 100 lines     |
+| tool     | `modules/local/<tool>/main.nf`, `modules/nf-core/...` | one tool call                                            | 80 lines      |
+| settings | `conf/*.config`                                       | resources, `ext.args`, publishing; no logic              |               |
 
 - A stage becomes a subworkflow when it chains two or more modules; a single module is called inline.
 - Stage names follow nf-core: `<input>_<operation>_<tool>`.
@@ -21,27 +22,28 @@ Read top down; each level only names the one below it.
 
 ## ALIGNMENT: raw reads to one CRAM per sample
 
-| stage | modules | status |
-|---|---|---|
-| `FASTQ_DEMULTIPLEX_FQTK` | `EXTRACT_LANE` -> `FQTK` -> `CAT_FASTQ` | built (milestone 1) |
-| `FASTQ_ALIGN_MINIBWA` | `ALIGN_MARKDUP` -> `FGBIO_CLIPBAM` | milestone 2; ClipBam's place relative to markdup open |
-| `CRAM_QC_SAMTOOLS_PICARD` | `SAMTOOLS_STATS`, `PICARD_COLLECTWGSMETRICS` | later |
-| inline | `MARKDUP_IMPORT` (`--step markduplicates`), `MULTIQC` | later |
+| stage                     | modules                                               | status                                                |
+| ------------------------- | ----------------------------------------------------- | ----------------------------------------------------- |
+| `FASTQ_DEMULTIPLEX_FQTK`  | `EXTRACT_LANE` -> `FQTK` -> `CAT_FASTQ`               | built (milestone 1)                                   |
+| `FASTQ_ALIGN_MINIBWA`     | `ALIGN_MARKDUP` -> `FGBIO_CLIPBAM`                    | milestone 2; ClipBam's place relative to markdup open |
+| `CRAM_QC_SAMTOOLS_PICARD` | `SAMTOOLS_STATS`, `PICARD_COLLECTWGSMETRICS`          | later                                                 |
+| inline                    | `MARKDUP_IMPORT` (`--step markduplicates`), `MULTIQC` | later                                                 |
 
 ## GENOTYPE: CRAMs to genotypes (development scope: one chromosome end to end)
 
 Provisional, from the old repository's stages; which of them are kept is decided per milestone.
 
-| stage | modules (old names) |
-|---|---|
-| `PREPARE_REGIONS` | `REGION_BED`, `MASK_READ_STARTS`; once, passed to every stage below |
-| `CRAM_SAMPLEQC` | `MIN_COVERAGE`, `COVERAGE_QC`, `RELATEDNESS_QC`, `DONOR_CONTENT_QC`, `SAMPLE_QC_TABLE` |
-| `CRAM_VARIANT_DISCOVERY_CRISP` | `WITNESS_POOL` -> `CRISP` -> `BED_CLIP` -> `WITNESS_VETO`, site counts -> `POOLED_LIKELIHOOD_TIERS` |
-| `CRAM_ANCESTRY_RTIGER` | `RTIGER_MARKERS` -> `LINE_ALLELE_COUNTS` -> `LINE_MARKER_QC` -> `RTIGER` |
-| `CRAM_ALLELE_CALLING_POOLED` | union counts -> `JOINT_POOLED_LIKELIHOOD` -> `GAP_FILLING_BC1` / `GAP_FILLING_LINES` -> `DONOR_FOUNDER` |
-| `GENOTYPE_REPORTING` | `SAMPLE_LABELS`, `GENOTYPE_SUMMARY`, `CHROMOSOME_PAINTING`, `READ_POSITION_QC` |
-| inline | `MARKER_UNION`, `RASTERIZE` |
+| stage                          | modules (old names)                                                                                     |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| `PREPARE_REGIONS`              | `REGION_BED`, `MASK_READ_STARTS`; once, passed to every stage below                                     |
+| `CRAM_SAMPLEQC`                | `MIN_COVERAGE`, `COVERAGE_QC`, `RELATEDNESS_QC`, `DONOR_CONTENT_QC`, `SAMPLE_QC_TABLE`                  |
+| `CRAM_VARIANT_DISCOVERY_CRISP` | `WITNESS_POOL` -> `CRISP` -> `BED_CLIP` -> `WITNESS_VETO`, site counts -> `POOLED_LIKELIHOOD_TIERS`     |
+| `CRAM_ANCESTRY_RTIGER`         | `RTIGER_MARKERS` -> `LINE_ALLELE_COUNTS` -> `LINE_MARKER_QC` -> `RTIGER`                                |
+| `CRAM_ALLELE_CALLING_POOLED`   | union counts -> `JOINT_POOLED_LIKELIHOOD` -> `GAP_FILLING_BC1` / `GAP_FILLING_LINES` -> `DONOR_FOUNDER` |
+| `GENOTYPE_REPORTING`           | `SAMPLE_LABELS`, `GENOTYPE_SUMMARY`, `CHROMOSOME_PAINTING`, `READ_POSITION_QC`                          |
+| inline                         | `MARKER_UNION`, `RASTERIZE`                                                                             |
 
 ## Not built
+
 Store, checkpoints, run guards, registry snapshots, provenance files, cleanup scripts: Nextflow's `-resume`, `work/`,
 `publishDir` and `pipeline_info/` do these.
