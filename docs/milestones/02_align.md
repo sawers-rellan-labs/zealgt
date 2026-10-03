@@ -84,7 +84,7 @@ Stage `FASTQ_ALIGN_MINIBWA`, every module from nf-core, one task per sample each
 
 - Stub and tool tests pass; `nf-core pipelines lint` has no failures.
 - The DAG shows `CAT_FASTQ -> MINIBWA_MAP -> FGUMI_CLIP -> SAMTOOLS_FIXMATE -> SAMTOOLS_SORT -> SAMTOOLS_MARKDUP ->
-  SAMTOOLS_INDEX` per sample.
+SAMTOOLS_INDEX` per sample.
 - Resource numbers are in config, measured, one line per process.
 - `decisions.md`, `docs/structure.md` and `meta/PROVENANCE.md` record this milestone's choices.
 - The report lists the choices made during the work.
