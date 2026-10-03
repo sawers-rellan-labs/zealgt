@@ -19,9 +19,10 @@ include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_zeal
 include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_zealgt_pipeline'
 include { softwareVersionsToYAML  } from './subworkflows/nf-core/utils_nfcore_pipeline'
 
-// typed so that --head from the command line arrives as an integer
+// typed so that --head and --read_qc from the command line arrive as an integer and a boolean
 params {
     head: Integer = 0
+    read_qc: Boolean = false
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
