@@ -6,15 +6,17 @@
 %%metro line: demultiplex | --step demultiplex | #2db572
 %%metro line: alignment | --step alignment | #0570b0
 %%metro legend: bl
+%%metro grid: demux | 0,0
+%%metro grid: align | 0,1
 
 graph LR
     subgraph demux [Demultiplex]
         %%metro exit: right | alignment
-        samples_in[meta/samples.csv]
-        extract_lane_d[EXTRACT_LANE]
-        fqtk[FQTK]
-        cat_fastq[CAT_FASTQ]
-        fastq_sheet[per-sample FASTQ]
+        samples_in[samplesheet]
+        extract_lane_d[untar]
+        fqtk[fqtk]
+        cat_fastq[cat]
+        fastq_sheet[fastq]
 
         samples_in -->|demultiplex| extract_lane_d
         extract_lane_d -->|demultiplex| fqtk
@@ -24,13 +26,13 @@ graph LR
 
     subgraph align [Alignment]
         %%metro entry: left | alignment
-        minibwa[MINIBWA_MAP]
-        fgumi[FGUMI_CLIP]
-        fixmate[SAMTOOLS_FIXMATE]
-        sort[SAMTOOLS_SORT]
-        markdup[SAMTOOLS_MARKDUP]
-        index[SAMTOOLS_INDEX]
-        cram_out[CRAM]
+        minibwa[minibwa]
+        fgumi[fgumi clip]
+        fixmate[fixmate]
+        sort[sort]
+        markdup[markdup]
+        index[index]
+        cram_out[cram]
 
         minibwa -->|alignment| fgumi
         fgumi -->|alignment| fixmate
