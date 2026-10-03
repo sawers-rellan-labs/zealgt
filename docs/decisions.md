@@ -141,3 +141,11 @@ recommend. Supersedes the `MARKDUP_IMPORT` half of "MultiQC before imported CRAM
 Picard CollectWgsMetrics runs without `--USE_FAST_ALGORITHM`: on the deepest BC1 CRAM (5.5x) its output was not
 identical (MEAN_COVERAGE, SD_COVERAGE, PCT_EXC_TOTAL and 38 histogram bins differ) and it was only 13 % faster
 (36.6 vs 42.2 min). Test: `docs/later/picard_fast_algorithm.md`.
+
+## 2026-10-03 Demultiplexing as its own workflow
+
+Demultiplexing becomes its own workflow, run once per set of libraries; the per-sample FASTQs (lanes joined) and their
+samplesheet are kept on `/rsstu` next to the multiplexed originals, which stay; `ALIGNMENT` reads per-sample FASTQs. Why
+(user): demultiplexing inside every run ties up sample selection for development and production batches. Per-sample
+FASTQs ~0.85 x raw (~5.9 TB; BZea5 L001 fqtk test). Not nf-core/demultiplex 1.8.0: it unpacks whole `.tar.gz` run
+folders, takes one read-structure list, has no per-kit mismatches and does not join lanes.
