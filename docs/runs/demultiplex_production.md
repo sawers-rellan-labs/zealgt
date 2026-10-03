@@ -49,7 +49,10 @@ All numbers below are from `agent/plan/facts_report.md`; they are estimates.
    - Measured per process: wall time, peak memory and task disk for `EXTRACT_LANE`, `FQTK` and `CAT_FASTQ`. Also how
      long the copy to `/rsstu` takes.
    - The results go into `conf/hpc_prod.config`, one line per process; the output goes to `/share` scratch.
-3. **Your OK on the production submission.** After that the run is unattended.
+3. **`hpc_prod` stub run** of the whole `meta/samples.csv` (`-stub-run`, the production command otherwise). The
+   `hpc_dev` stubs never used `hpc_prod` settings: its `CAT_FASTQ` job arrays (50, above `queueSize` 40) failed the
+   full-size run (job 1067152).
+4. **Your OK on the production submission.** After that the run is unattended.
 
 ## The run
 
