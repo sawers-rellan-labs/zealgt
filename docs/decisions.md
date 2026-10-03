@@ -94,14 +94,12 @@ The head job runs Nextflow from a container, not from a conda environment or haz
 ## 2026-10-02 Alignment: one module per tool
 
 Alignment is a chain of nf-core modules, one per tool: `minibwa map` -> `fgumi clip` -> `samtools fixmate` -> `sort` ->
-`merge` -> `markdup`. Not the old one-pipe `ALIGN_MARKDUP`; the cost is three intermediate BAMs per lane in `work/`.
+`markdup`. Not the old one-pipe `ALIGN_MARKDUP`; the cost is three intermediate BAMs per sample in `work/`.
 
-## 2026-10-02 Read group per lane, SM = `sample_id`
+## 2026-10-03 Read group per sample
 
-One read group per lane: `ID:<sample_id>.<lane>`, `SM:<sample_id>`, `LB:<library>`, `PL:ILLUMINA`, `PU:<lane>`. This
-gives Picard metrics per lane. The nil_id stays out of CRAM headers; the 3 batch-2 replicate pairs (`replicate_of`) are
-merged in genotyping, through `bcftools mpileup`'s read-group-to-sample map. Not SM = `nil_id_resolved` with merged
-CRAMs, and not one read group per sample.
+One read group per sample: `ID` and `SM` = `sample_id`, `LB:<library>`, `PL:ILLUMINA`, `PU` lists the sample's lanes.
+Not one read group per lane: no use here, the samples are not diploid and there is no GATK/BQSR.
 
 ## 2026-10-02 minibwa 0.7
 

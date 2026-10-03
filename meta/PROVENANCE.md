@@ -215,8 +215,8 @@ uses 94 files: 5 + 39 (Zx.0540_P3), 5 + 43 (Zx.0570_P2), 2 B73 controls. Open: B
 
 - **The key everywhere is the well-level `sample_id`:**
   - BC1 `S_<pool>_<column>`, batch 2 `P<plot>`, batch 1 `PN<plate>_SID<n>`, BRB-seq `BRB_<Seq_ID>`.
-  - It names every file (FASTQ checkpoint, CRAM, QC), the CRAM read groups (`SM` = `sample_id`, `ID` =
-    `<sample_id>.<lane>`; see "Read groups") and every internal table.
+  - It names every file (FASTQ checkpoint, CRAM, QC), the CRAM read group (`ID` and `SM` = `sample_id`, `LB` = library, `PU` =
+    its lane list) and every internal table.
   - It never changes: it is where the DNA physically was.
 - **Biology lives only in the registry** `meta/registry.csv` (and its workflow-1 projection `meta/samples.csv`), built by
   `meta/build_samples.py` from `meta/sources/`, tracked in git.
@@ -241,10 +241,8 @@ uses 94 files: 5 + 39 (Zx.0540_P3), 5 + 43 (Zx.0570_P2), 2 B73 controls. Open: B
 - **Translate at the edge:** the genotype workflow joins on `sample_id` internally. It writes the short `nil_id_resolved` (or the line
   id where no nil_id exists, e.g. BC1 samples) only into its final outputs: genotype tables, VCF sample names, paintings, reports.
   This is one join on the current registry at the end, and it records the registry commit it used.
-- **Read groups (user, 2026-10-02; replaces 09-28's one read group per sample):** one read group per lane,
-  `ID:<sample_id>.<lane>`, `SM:<sample_id>`, `LB:<library>`, `PL:ILLUMINA`, `PU:<lane>` (the lane file stem); duplicate
-  marking reads flowcell/lane/tile from the read names. The nil_id is still never written into CRAM headers; the batch-2
-  replicate pairs (`replicate_of`) are merged in genotyping through the read-group-to-sample map.
+- **Read groups:** one read group per sample. The lanes of a library are one pool; `PU` lists the lanes; duplicate marking reads
+  flowcell/lane/tile from the read names. Per-lane read groups only if lane QC ever shows a lane effect.
 - **Status (2026-09-28):**
   - The CRAM workflow already follows the key and read-group rules.
   - On branch `simplify` the provenance record holds the registry snapshot from `meta/registry.csv` (`--registry`): `registry`
