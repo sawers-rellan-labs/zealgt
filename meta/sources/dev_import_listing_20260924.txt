@@ -1,0 +1,198 @@
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea 8943423931 Sep 19 02:14 b73_control/ERR3288215/B73_ERR3288215.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea 7296679956 Sep 18 21:03 b73_control/skim10/B73_skim10.bam
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  147620056 Sep 23 20:59 bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID464.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  168127862 Sep 23 21:01 bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID465.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  177470798 Sep 23 21:00 bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID466.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  132906484 Sep 23 20:59 bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID467.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  151782532 Sep 23 20:58 bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID469.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  123248529 Sep 23 20:58 bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID470.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  131945231 Sep 23 20:58 bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID471.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  139202752 Sep 23 20:58 bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID472.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  196587254 Sep 23 21:00 bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID473.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  163447933 Sep 23 21:00 bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID474.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  154324771 Sep 23 20:59 bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID475.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  119260754 Sep 23 20:58 bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID476.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  160129390 Sep 23 20:59 bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID477.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  161261236 Sep 23 20:59 bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID479.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  145143636 Sep 23 20:58 bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID480.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  122514059 Sep 23 20:57 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID481.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  174329594 Sep 23 20:59 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID482.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  178118869 Sep 23 21:00 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID483.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea    1822628 Sep 23 20:53 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID484.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  112174461 Sep 23 20:57 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID485.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  134118771 Sep 23 20:58 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID486.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  172404504 Sep 23 21:00 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID487.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  205109500 Sep 23 21:00 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID488.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  122910286 Sep 23 20:57 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID489.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  177110780 Sep 23 21:00 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID490.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  112280587 Sep 23 20:57 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID491.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  165165059 Sep 23 20:59 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID492.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  190035513 Sep 23 20:59 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID493.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  151312159 Sep 23 20:59 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID494.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  163963406 Sep 23 20:59 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID495.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  151733414 Sep 23 20:59 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID496.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  119571672 Sep 23 20:58 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID497.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea   92046006 Sep 23 20:57 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID498.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  141771526 Sep 23 20:57 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID499.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  149551903 Sep 23 20:57 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID500.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  176566525 Sep 23 20:59 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID501.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  180974686 Sep 23 20:59 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID502.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  217486771 Sep 23 21:02 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID503.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  190827674 Sep 23 21:00 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID504.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  126226857 Sep 23 20:58 bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID505.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  183924201 Sep 24 12:31 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID733.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  169847313 Sep 24 12:31 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID734.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  177549792 Sep 24 12:31 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID735.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea    5664130 Sep 24 12:24 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID736.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  166893024 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID737.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  223982539 Sep 24 12:31 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID738.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  188193995 Sep 24 12:32 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID740.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  203475176 Sep 24 12:33 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID741.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  180821308 Sep 24 12:31 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID742.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  181507945 Sep 24 12:31 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID743.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  170602418 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID744.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  251898042 Sep 24 12:32 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID745.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  197177561 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID746.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  201600381 Sep 24 12:31 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID747.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  237454503 Sep 24 12:32 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID748.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  207854696 Sep 24 12:31 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID749.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  163441262 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID750.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  182193526 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID752.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  215619911 Sep 24 12:31 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID753.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  185674704 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID754.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  197148753 Sep 24 12:31 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID755.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  129945595 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID756.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  154051474 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID757.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  151683964 Sep 24 12:29 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID758.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  181368734 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID759.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  158900255 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID760.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  189711802 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID761.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  190104427 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID762.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  240266289 Sep 24 12:31 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID763.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  157945737 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID764.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  203328247 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID765.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  211428570 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID766.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  213383866 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID767.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  199960022 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID768.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  195375865 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN9_SID769.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  215377898 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN9_SID770.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  147119578 Sep 24 12:29 bench_zx0570_chr10/bc2s3_realign/cram/PN9_SID771.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  199020842 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN9_SID772.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  197174272 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN9_SID773.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  192290812 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN9_SID774.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  188436994 Sep 24 12:30 bench_zx0570_chr10/bc2s3_realign/cram/PN9_SID775.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  161468625 Sep 24 12:29 bench_zx0570_chr10/bc2s3_realign/cram/PN9_SID776.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  104627466 Sep 24 12:28 bench_zx0570_chr10/bc2s3_realign/cram/PN9_SID777.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea  161195016 Sep 24 12:29 bench_zx0570_chr10/bc2s3_realign/cram/PN9_SID778.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea 1158133183 Sep 23 22:50 cram/S_2A_11.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea 2410085912 Sep 23 23:50 cram/S_2A_3.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea 2667185127 Sep 24 00:43 cram/S_2B_8.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea 1641474880 Sep 23 23:40 cram/S_2F_1.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea 1007783339 Sep 23 22:52 cram/S_2F_12.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea 2303411470 Sep 24 15:33 cram/S_2H_1.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea 1418492070 Sep 24 15:15 cram/S_3B_11.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea 1972618375 Sep 24 15:23 cram/S_3C_9.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea 1776454960 Sep 24 15:08 cram/S_3D_8.cram
+-rw-rw----+ 1 frodrig4 oit-rsrch-rrellan-bzea 1597290024 Sep 24 15:15 cram/S_3E_7.cram
+b73_control/ERR3288215/B73_ERR3288215.cram.crai
+b73_control/ERR3288215/B73_ERR3288215_12x.cram.crai
+b73_control/skim10/B73_skim10.bam.bai
+bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID464.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID465.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID466.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID467.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID469.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID470.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID471.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID472.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID473.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID474.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID475.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID476.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID477.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID479.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN5_SID480.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID481.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID482.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID483.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID484.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID485.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID486.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID487.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID488.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID489.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID490.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID491.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID492.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID493.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID494.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID495.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID496.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID497.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID498.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID499.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID500.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID501.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID502.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID503.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID504.cram.crai
+bench_zx0540_chr10/bc2s3_realign/cram/PN6_SID505.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID733.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID734.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID735.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID736.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID737.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID738.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID740.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID741.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID742.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID743.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID744.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID745.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID746.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID747.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID748.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID749.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID750.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID752.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID753.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID754.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID755.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID756.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID757.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID758.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID759.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID760.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID761.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID762.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID763.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID764.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID765.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID766.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID767.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN8_SID768.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN9_SID769.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN9_SID770.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN9_SID771.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN9_SID772.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN9_SID773.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN9_SID774.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN9_SID775.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN9_SID776.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN9_SID777.cram.crai
+bench_zx0570_chr10/bc2s3_realign/cram/PN9_SID778.cram.crai
+cram/S_1A_4.cram.crai
+cram/S_2A_11.cram.crai
+cram/S_2A_3.cram.crai
+cram/S_2B_8.cram.crai
+cram/S_2F_1.cram.crai
+cram/S_2F_12.cram.crai
+cram/S_2H_1.cram.crai
+cram/S_3B_11.cram.crai
+cram/S_3C_9.cram.crai
+cram/S_3D_8.cram.crai
+cram/S_3E_7.cram.crai
+cram/S_4E_12.cram.crai
+cram/S_4F_8.cram.crai
+cram/S_4G_11.cram.crai
+cram/S_4G_4.cram.crai
