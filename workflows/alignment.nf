@@ -26,6 +26,7 @@ workflow ALIGNMENT {
     def ch_fasta = channel.value([[id: file(fasta).name], file(fasta, checkIfExists: true), file("${fasta}.fai", checkIfExists: true)])
     FASTQ_ALIGN_MINIBWA(FASTQ_DEMULTIPLEX_FQTK.out.reads, ch_fasta, channel.value([[id: file(fasta).name], files(minibwa_index, checkIfExists: true)]))
     CRAM_QC_SAMTOOLS_PICARD(FASTQ_ALIGN_MINIBWA.out.cram, ch_fasta)
+    ch_multiqc_files = ch_multiqc_files.mix(CRAM_QC_SAMTOOLS_PICARD.out.qc.map { _meta, f -> f })
 
     // Collate and save software versions
     def topic_versions = channel.topic("versions")
