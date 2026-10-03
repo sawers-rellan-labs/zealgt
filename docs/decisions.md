@@ -118,3 +118,13 @@ the CRAM.
 
 nf-core `mosdepth` is patched to take an optional `.fai` with the FASTA; without it htslib builds the index in every task.
 An upstream PR to nf-core/modules comes later.
+
+## 2026-10-03 MultiQC before imported CRAMs
+
+The last `ALIGNMENT` row is split: MultiQC on the QC files first (Milestone 4), `MARKDUP_IMPORT` for the imported
+zealbc1/nilhmm CRAMs separately (Milestone 5).
+
+## 2026-10-03 markdup duplicate counts
+
+`samtools markdup` writes its counts (`--json -f`): duplicates split into PCR and optical (`-d 2500`) and the estimated
+library size, which samtools stats and Picard do not give. The file goes to `cram/` next to the CRAM and into MultiQC.
