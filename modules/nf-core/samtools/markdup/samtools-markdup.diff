@@ -4,7 +4,15 @@ Changes in component 'nf-core/samtools/markdup'
 Changes in 'samtools/markdup/main.nf':
 --- modules/nf-core/samtools/markdup/main.nf
 +++ modules/nf-core/samtools/markdup/main.nf
-@@ -46,6 +46,7 @@
+@@ -15,6 +15,7 @@
+     tuple val(meta), path("*.bam"), emit: bam, optional: true
+     tuple val(meta), path("*.cram"), emit: cram, optional: true
+     tuple val(meta), path("*.sam"), emit: sam, optional: true
++    tuple val(meta), path("*.markdup.stats"), emit: stats, optional: true
+     tuple val("${task.process}"), val('samtools'), eval("samtools version | sed '1!d;s/.* //'"), topic: versions, emit: versions_samtools
+ 
+     when:
+@@ -46,6 +47,7 @@
      """
  
      stub:
@@ -12,6 +20,13 @@ Changes in 'samtools/markdup/main.nf':
      def prefix = task.ext.prefix ?: "${meta.id}"
      def extension = args.contains("--output-fmt sam")
          ? "sam"
+@@ -59,5 +61,6 @@
+     }
+     """
+     touch ${prefix}.${extension}
++    ${args.contains("-f ") ? "touch ${prefix}.markdup.stats" : ""}
+     """
+ }
 
 'modules/nf-core/samtools/markdup/tests/main.nf.test.snap' is unchanged
 'modules/nf-core/samtools/markdup/tests/nextflow.config' is unchanged

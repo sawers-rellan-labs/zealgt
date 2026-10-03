@@ -26,5 +26,6 @@ workflow FASTQ_ALIGN_MINIBWA {
     SAMTOOLS_INDEX(SAMTOOLS_MARKDUP.out.cram)
 
     emit:
-    cram = SAMTOOLS_MARKDUP.out.cram.join(SAMTOOLS_INDEX.out.index, failOnMismatch: true) // channel: [ meta, cram, crai ], one per sample
+    cram          = SAMTOOLS_MARKDUP.out.cram.join(SAMTOOLS_INDEX.out.index, failOnMismatch: true) // channel: [ meta, cram, crai ], one per sample
+    markdup_stats = SAMTOOLS_MARKDUP.out.stats                                                    // channel: [ meta, markdup.stats ], one per sample
 }

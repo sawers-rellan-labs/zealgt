@@ -57,3 +57,10 @@ change: edit the resources in `conf/hpc_dev.config` or `conf/hpc_prod.config`, t
   a failed run keeps its `work/` (tested). A run that took every step from the cache leaves `work/` as it was (tested).
 - Hard-linked published files (`publish_dir_mode = 'link'`, output on `/share`) keep their content when cleanup deletes
   `work/` (tested on hazel); symlinks would break.
+
+## The DAG
+
+- Take it from a stub run on the laptop: `-profile test -stub -with-dag dag.dot` (seconds; `.mmd` and `.svg` work too).
+  Not with `-preview`: on 26.04.6 it logs success but never exits (operators wait for process output that preview
+  never makes), and the DAG written on its abort has unindexed nodes (`v-1`) that crash the Mermaid renderer (tested
+  2026-10-03).
