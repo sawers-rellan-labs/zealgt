@@ -50,7 +50,7 @@ workflow SAWERSRELLANLABS_ZEALGT {
     )
     emit:
     multiqc_report = ALIGNMENT.out.multiqc_report // channel: /path/to/multiqc_report.html
-    demux_reads    = ALIGNMENT.out.reads          // channel: [ meta, [ R1, R2 ] ], one per sample
+    demux_reads    = ALIGNMENT.out.reads          // channel: [ meta, [ R1, R2 ] ], one per sample x lane
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -96,7 +96,10 @@ workflow {
 
 output {
     demux_reads {
-        path { meta, _reads -> "demux/${meta.id}" }
+        path { meta, reads ->
+            reads[0] >> "demux/${meta.lane}/${reads[0].name}"
+            reads[1] >> "demux/${meta.lane}/${reads[1].name}"
+        }
     }
 }
 

@@ -1,6 +1,5 @@
 include { EXTRACT_LANE } from '../../../modules/local/extract_lane/main'
 include { FQTK         } from '../../../modules/nf-core/fqtk/main'
-include { CAT_FASTQ    } from '../../../modules/nf-core/cat/fastq/main'
 
 workflow FASTQ_DEMULTIPLEX_FQTK {
 
@@ -60,28 +59,18 @@ workflow FASTQ_DEMULTIPLEX_FQTK {
     // kept samples by id; excluded ones are demultiplexed only so their reads leave ours
     def ch_kept = ch_samplesheet.filter { meta, _loc, _r1, _r2 -> !meta.exclude }.map { meta, _loc, _r1, _r2 -> [meta.id, meta] }
 
-    // per sample: its lane pairs in lane order (R1, R2, R1, R2, ...), released when all lanes are in
+    // per sample x lane: its read pair, lane stem and the library's lane count in meta
     def ch_sample_lanes = FQTK.out.sample_fastq
         .flatMap { meta, files ->
             files.findAll { f -> !f.name.startsWith('unmatched') }
                 .groupBy { f -> f.name - ~/\.R[12]\.fq\.gz$/ }
-                .collect { sample, pair -> [sample, meta.n_lanes, meta.lane, pair.sort { f -> f.name }] }
+                .collect { sample, pair -> [sample, meta.lane, meta.n_lanes, pair.sort { f -> f.name }] }
         }
         // drops the lanes of excluded samples: only ids of kept rows match
         .combine(ch_kept, by: 0)
-        .map { sample, n_lanes, lane, pair, _meta -> [groupKey(sample, n_lanes), lane, pair] }
-        .groupTuple()
-        .map { sample, lanes, pairs -> [sample.toString(), [lanes, pairs].transpose().sort { l -> l[0] }.collect { l -> l[1] }.flatten()] }
-        .join(ch_kept, failOnMismatch: true)
-        .map { _id, reads, meta -> [meta + [single_end: false], reads] }
-        .branch { _meta, reads ->
-            one_lane: reads.size() == 2
-            lanes: true
-        }
-
-    CAT_FASTQ(ch_sample_lanes.lanes)
+        .map { _sample, lane, n_lanes, pair, meta -> [meta + [lane: lane, n_lanes: n_lanes, single_end: false], pair] }
 
     emit:
-    reads   = ch_sample_lanes.one_lane.mix(CAT_FASTQ.out.reads) // channel: [ meta, [ R1, R2 ] ], one per sample
-    metrics = FQTK.out.metrics                                   // channel: [ meta, demux-metrics.txt ], one per lane
+    reads   = ch_sample_lanes // channel: [ meta + lane + n_lanes, [ R1, R2 ] ], one per sample x lane
+    metrics = FQTK.out.metrics // channel: [ meta, demux-metrics.txt ], one per lane
 }
