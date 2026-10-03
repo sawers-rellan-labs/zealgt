@@ -159,8 +159,9 @@ Test: `docs/later/fqtk_vs_cutadapt.md`.
 
 fqtk runs once per lane, and `CAT_FASTQ` joins each sample's lanes (user). Reasons:
 
-- Data source: the reads arrive split by lane. Novogene delivers each FlexPrep library as one file pair per lane
-  (e.g. 1C `_L5`, `_L6`, `_L7`); the batch-1 tars hold one member per lane (`_L001`, `_L002`).
+- Data source: the reads arrive split by lane (providers: `meta/sources/SOURCES.tsv`, `meta/PROVENANCE.md`). Novogene
+  delivered BC1 and BC2S3 batch 2 as one file pair per lane (e.g. 1C `_L5`, `_L6`, `_L7`); the NCSU GSL tars of batch
+  1 hold one member per lane (`_L001`, `_L002`).
 - History:
   - Nirwan ran sabre per plate and lane (`github.com/nirwan1265/Mapping`, `src/demultiplex_sabre.csh`).
   - zealgt-old ran cutadapt per lane because cutadapt could not read the lanes as one stream (job 972171,
