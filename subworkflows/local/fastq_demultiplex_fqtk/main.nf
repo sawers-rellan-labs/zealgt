@@ -57,8 +57,9 @@ workflow FASTQ_DEMULTIPLEX_FQTK {
             }
     )
 
-    // kept samples by id; excluded ones are demultiplexed only so their reads leave ours
+    // kept samples by id; excluded ones are demultiplexed only so their reads leave ours; a sheet with none kept fails the run
     def ch_kept = ch_samplesheet.filter { meta, _loc, _r1, _r2 -> !meta.exclude }.map { meta, _loc, _r1, _r2 -> [meta.id, meta] }
+        .ifEmpty { error("No sample to align: every samplesheet row has exclude = TRUE") }
 
     // per sample: its lane stems (for the read group PU) and lane pairs in lane order (R1, R2, R1, R2, ...), once all lanes are in
     def ch_sample_lanes = FQTK.out.sample_fastq
