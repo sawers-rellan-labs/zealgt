@@ -19,9 +19,10 @@ include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_zeal
 include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_zealgt_pipeline'
 include { softwareVersionsToYAML  } from './subworkflows/nf-core/utils_nfcore_pipeline'
 
-// typed so that --head from the command line arrives as an integer
+// typed so that --head and --read_qc from the command line arrive as an integer and a boolean
 params {
     head: Integer = 0
+    read_qc: Boolean = false
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -68,12 +69,13 @@ workflow SAWERSRELLANLABS_ZEALGT {
     def ch_cram_qc = channel.empty()
     def ch_multiqc_report = channel.empty()
     if (params.step == 'demultiplex') {
-        DEMULTIPLEX(samplesheet, params.head)
+        DEMULTIPLEX(samplesheet, params.head, file(params.multiqc_config ?: "${projectDir}/assets/multiqc_config.yml", checkIfExists: true))
         ch_fastq = DEMULTIPLEX.out.fastq
     } else {
         ALIGNMENT (
             samplesheet,
             params.head,
+            params.read_qc,
             params.fasta,
             params.minibwa_index,
             ch_collated_versions,

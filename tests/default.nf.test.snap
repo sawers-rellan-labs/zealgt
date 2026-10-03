@@ -34,6 +34,9 @@
                 "SEQKIT_HEAD": {
                     "seqkit": "2.13.0"
                 },
+                "SEQUALI": {
+                    "sequali": "1.0.2"
+                },
                 "Workflow": {
                     "sawers-rellan-labs/zealgt": "v0.2.0dev"
                 }
@@ -70,48 +73,32 @@
                 "cram/LX_3.regions.bed.gz.csi",
                 "cram/LX_3.stats",
                 "cram/LX_3.summary.txt",
-                "cram/PB1_SID1.CollectWgsMetrics.coverage_metrics",
-                "cram/PB1_SID1.cram",
-                "cram/PB1_SID1.cram.crai",
-                "cram/PB1_SID1.global.dist.txt",
-                "cram/PB1_SID1.markdup.stats",
-                "cram/PB1_SID1.region.dist.txt",
-                "cram/PB1_SID1.regions.bed.gz",
-                "cram/PB1_SID1.regions.bed.gz.csi",
-                "cram/PB1_SID1.stats",
-                "cram/PB1_SID1.summary.txt",
-                "cram/PB1_SID2.CollectWgsMetrics.coverage_metrics",
-                "cram/PB1_SID2.cram",
-                "cram/PB1_SID2.cram.crai",
-                "cram/PB1_SID2.global.dist.txt",
-                "cram/PB1_SID2.markdup.stats",
-                "cram/PB1_SID2.region.dist.txt",
-                "cram/PB1_SID2.regions.bed.gz",
-                "cram/PB1_SID2.regions.bed.gz.csi",
-                "cram/PB1_SID2.stats",
-                "cram/PB1_SID2.summary.txt",
-                "cram/PB1_SID4.CollectWgsMetrics.coverage_metrics",
-                "cram/PB1_SID4.cram",
-                "cram/PB1_SID4.cram.crai",
-                "cram/PB1_SID4.global.dist.txt",
-                "cram/PB1_SID4.markdup.stats",
-                "cram/PB1_SID4.region.dist.txt",
-                "cram/PB1_SID4.regions.bed.gz",
-                "cram/PB1_SID4.regions.bed.gz.csi",
-                "cram/PB1_SID4.stats",
-                "cram/PB1_SID4.summary.txt",
                 "multiqc",
                 "multiqc/multiqc_data",
                 "multiqc/multiqc_data/.stub",
                 "multiqc/multiqc_plots",
                 "multiqc/multiqc_plots/.stub",
                 "multiqc/multiqc_report.html",
+                "multiqc/reads_alignment",
+                "multiqc/reads_alignment/multiqc_data",
+                "multiqc/reads_alignment/multiqc_data/.stub",
+                "multiqc/reads_alignment/multiqc_plots",
+                "multiqc/reads_alignment/multiqc_plots/.stub",
+                "multiqc/reads_alignment/multiqc_report.html",
                 "pipeline_info",
                 "pipeline_info/zealgt_software_mqc_versions.yml",
+                "reports",
+                "reports/sequali_alignment",
+                "reports/sequali_alignment/LX_1.html",
+                "reports/sequali_alignment/LX_1.json",
+                "reports/sequali_alignment/LX_2.html",
+                "reports/sequali_alignment/LX_2.json",
+                "reports/sequali_alignment/LX_3.html",
+                "reports/sequali_alignment/LX_3.json",
                 "samplesheet.csv"
             ]
         ],
-        "timestamp": "2026-10-03T16:29:17.965769",
+        "timestamp": "2026-10-03T19:03:42.930129",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
@@ -128,6 +115,9 @@
                 },
                 "FQTK": {
                     "fqtk": "0.4.0"
+                },
+                "SEQUALI": {
+                    "sequali": "1.0.2"
                 },
                 "Workflow": {
                     "sawers-rellan-labs/zealgt": "v0.2.0dev"
@@ -154,6 +144,13 @@
                 "fastq/PB1_SID4/PB1_SID4_R1.fastq.gz",
                 "fastq/PB1_SID4/PB1_SID4_R2.fastq.gz",
                 "fastq/samplesheet.csv",
+                "multiqc",
+                "multiqc/reads",
+                "multiqc/reads/multiqc_data",
+                "multiqc/reads/multiqc_data/.stub",
+                "multiqc/reads/multiqc_plots",
+                "multiqc/reads/multiqc_plots/.stub",
+                "multiqc/reads/multiqc_report.html",
                 "pipeline_info",
                 "pipeline_info/zealgt_software_mqc_versions.yml",
                 "reports",
@@ -162,10 +159,23 @@
                 "reports/demux/LIBB1.LIBB1_S1_L002.demux_metrics.txt",
                 "reports/demux/LIBX.LIBX_TESTFC01_L1.demux_metrics.txt",
                 "reports/demux/LIBX.LIBX_TESTFC01_L2.demux_metrics.txt",
+                "reports/sequali",
+                "reports/sequali/LX_1.html",
+                "reports/sequali/LX_1.json",
+                "reports/sequali/LX_2.html",
+                "reports/sequali/LX_2.json",
+                "reports/sequali/LX_3.html",
+                "reports/sequali/LX_3.json",
+                "reports/sequali/PB1_SID1.html",
+                "reports/sequali/PB1_SID1.json",
+                "reports/sequali/PB1_SID2.html",
+                "reports/sequali/PB1_SID2.json",
+                "reports/sequali/PB1_SID4.html",
+                "reports/sequali/PB1_SID4.json",
                 "samplesheet.csv"
             ]
         ],
-        "timestamp": "2026-10-03T14:48:42.110869",
+        "timestamp": "2026-10-03T18:06:53.389324",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

@@ -36,7 +36,10 @@ nextflow_pipeline {
             assert workflow.success
             assertAll(
                 // 2 tar lanes extracted, fqtk per lane (2 per library), one lane join per kept sample
-                { assert tasks == [EXTRACT_LANE: 2, FQTK: 4, CAT_FASTQ: 6] },
+                { assert tasks == [EXTRACT_LANE: 2, FQTK: 4, CAT_FASTQ: 6, SEQUALI: 6, MULTIQC: 1] },
+                { assert stable_path.findAll { p -> p.startsWith('reports/sequali/') }*.toString().sort() ==
+                    kept.collectMany { s -> ["reports/sequali/${s}.html", "reports/sequali/${s}.json"] }*.toString().sort() },
+                { assert stable_path.contains('multiqc/reads/multiqc_report.html') },
                 { assert stable_path.findAll { p -> p.startsWith('fastq/') && p.endsWith('.fastq.gz') }*.toString().sort() ==
                     kept.collectMany { s -> ["fastq/${s}/${s}_R1.fastq.gz", "fastq/${s}/${s}_R2.fastq.gz"] }*.toString().sort() },
                 { assert lines[0] == '"sample_id","fastq_1","fastq_2","library","lanes","kit"' },
@@ -57,27 +60,30 @@ nextflow_pipeline {
         when {
             def sheet = new File("$outputDir/samplesheet.csv")
             sheet.parentFile.mkdirs()
-            sheet.text = new File("$baseDir/tests/fixtures/samplesheet_fastq.csv").text.replace('tests/fixtures/', "$baseDir/tests/fixtures/")
+            // LIBX's 3 samples: alignment wiring does not depend on the kit
+            sheet.text = new File("$baseDir/tests/fixtures/samplesheet_fastq.csv").readLines().findAll { l -> !l.startsWith('PB1_') }.join('\n').replace('tests/fixtures/', "$baseDir/tests/fixtures/") + '\n'
             params {
                 outdir = "$outputDir"
                 input  = sheet.path
                 step   = 'alignment'
                 head   = 10
+                read_qc = true
             }
         }
 
         then {
-            // every published path, one fixture library per kit
+            // every published path
             def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
-            // tasks per process: one per sample (6), the head cut included; no demultiplexing
+            // tasks per process: one per sample (3), the head cut included; no demultiplexing
             def tasks = workflow.trace.tasks().countBy { t -> t.name.tokenize(':')[-1].tokenize(' ')[0] }
             assert workflow.success
             assertAll(
-                { assert ['SEQKIT_HEAD', 'MINIBWA_MAP', 'FGUMI_CLIP', 'SAMTOOLS_FIXMATE', 'SAMTOOLS_SORT', 'SAMTOOLS_MARKDUP', 'SAMTOOLS_INDEX', 'SAMTOOLS_STATS', 'PICARD_COLLECTWGSMETRICS', 'MOSDEPTH'].every { p -> tasks[p] == 6 } },
+                { assert ['SEQKIT_HEAD', 'MINIBWA_MAP', 'FGUMI_CLIP', 'SAMTOOLS_FIXMATE', 'SAMTOOLS_SORT', 'SAMTOOLS_MARKDUP', 'SAMTOOLS_INDEX', 'SAMTOOLS_STATS', 'PICARD_COLLECTWGSMETRICS', 'MOSDEPTH'].every { p -> tasks[p] == 3 } },
                 { assert !tasks.keySet().intersect(['EXTRACT_LANE', 'FQTK', 'CAT_FASTQ', 'SAMTOOLS_MERGE']) },
-                { assert tasks.MULTIQC == 1 },
+                { assert tasks.SEQUALI == 3 },
+                { assert tasks.MULTIQC == 2 },
                 { assert !stable_path.any { p -> p.startsWith('fastq') } },
-                { assert stable_path.findAll { p -> p.startsWith('cram/') }.sort() == ['LX_1', 'LX_2', 'LX_3', 'PB1_SID1', 'PB1_SID2', 'PB1_SID4'].collectMany { s ->
+                { assert stable_path.findAll { p -> p.startsWith('cram/') }.sort() == ['LX_1', 'LX_2', 'LX_3'].collectMany { s ->
                     // the CRAM, then its QC and duplicate counts (stub names); no mosdepth per-base file
                     ["cram/${s}.cram", "cram/${s}.cram.crai", "cram/${s}.markdup.stats", "cram/${s}.stats", "cram/${s}.CollectWgsMetrics.coverage_metrics"] +
                     ['global.dist.txt', 'region.dist.txt', 'summary.txt', 'regions.bed.gz', 'regions.bed.gz.csi'].collect { x -> "cram/${s}.${x}" }
@@ -111,6 +117,7 @@ nextflow_pipeline {
             def kept = ['LX_1', 'LX_2', 'LX_3', 'PB1_SID1', 'PB1_SID2', 'PB1_SID4']
             assertAll(
                 { assert workflow.success },
+                { assert !workflow.trace.tasks().any { t -> t.name.contains(':SEQUALI') } },
                 { assert sources.keySet().sort() == ['Mosdepth genome_results', 'Mosdepth summary', 'Picard WgsMetrics', 'Samtools markdup', 'Samtools stats'] },
                 { assert sources.every { _k, samples -> samples == kept } }
             )

@@ -3,6 +3,7 @@
 %%metro file: samples_in | CSV
 %%metro file: fastq_sheet | FASTQ
 %%metro file: cram_out | CRAM
+%%metro file: reads_report | HTML
 %%metro file: report_out | HTML
 %%metro line: demultiplex | --step demultiplex | #2db572
 %%metro line: alignment | --step alignment | #0570b0
@@ -16,11 +17,17 @@ graph LR
         fqtk[fqtk]
         cat_fastq[cat]
         fastq_sheet[fastq]
+        sequali[sequali]
+        multiqc_reads[multiqc]
+        reads_report[ ]
 
         samples_in -->|demultiplex| extract_lane_d
         extract_lane_d -->|demultiplex| fqtk
         fqtk -->|demultiplex| cat_fastq
         cat_fastq -->|demultiplex| fastq_sheet
+        cat_fastq -->|demultiplex| sequali
+        sequali -->|demultiplex| multiqc_reads
+        multiqc_reads -->|demultiplex| reads_report
     end
 
     subgraph align [Alignment]
