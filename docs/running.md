@@ -58,6 +58,11 @@ change: edit the resources in `conf/hpc_dev.config` or `conf/hpc_prod.config`, t
 - Hard-linked published files (`publish_dir_mode = 'link'`, output on `/share`) keep their content when cleanup deletes
   `work/` (tested on hazel); symlinks would break.
 
+## Laptop runs
+
+- Launch from `agent/run/` (gitignored): `cd agent/run && nextflow run ../.. -profile test ...`; the launch directory
+  gets `.nextflow.log*`, `.nextflow/` and `work/`, so the repository root stays clean.
+
 ## The DAG
 
 - Take it from a stub run on the laptop: `-profile test -stub -with-dag dag.dot` (seconds; `.mmd` and `.svg` work too).

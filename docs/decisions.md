@@ -135,3 +135,9 @@ Every BC1 and BC2S3 CRAM is made from raw reads by `ALIGNMENT`; existing alignme
 exists to replace Nirwan's BC2S3 BAMs (demultiplexed and clipped with Trimmomatic) with processing as the Twist guides
 recommend. Supersedes the `MARKDUP_IMPORT` half of "MultiQC before imported CRAMs". The B73 control BAMs belong to
 `GENOTYPE`.
+
+## 2026-10-03 CollectWgsMetrics default algorithm
+
+Picard CollectWgsMetrics runs without `--USE_FAST_ALGORITHM`: on the deepest BC1 CRAM (5.5x) its output was not
+identical (MEAN_COVERAGE, SD_COVERAGE, PCT_EXC_TOTAL and 38 histogram bins differ) and it was only 13 % faster
+(36.6 vs 42.2 min). Test: `docs/later/picard_fast_algorithm.md`.

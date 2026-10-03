@@ -14,3 +14,10 @@ agent/
 .nf-test-*.nf
 .claude/worktrees/
 meta/sources/drive/
+# LaTeX intermediates of docs/math_supplement.tex (the .tex and .pdf are tracked)
+docs/*.aux
+docs/*.fdb_latexmk
+docs/*.fls
+docs/*.log
+docs/*.out
+docs/*.synctex.gz

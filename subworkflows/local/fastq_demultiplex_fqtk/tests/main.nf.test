@@ -71,4 +71,27 @@ nextflow_workflow {
             )
         }
     }
+
+    test("every row excluded - stub") {
+
+        options "-stub"
+
+        when {
+            workflow {
+                """
+                input[0] = channel.fromPath("${projectDir}/tests/fixtures/samplesheet.csv").splitCsv(header: true).map { r ->
+                    [[id: r.sample_id, library: r.library, kit: r.kit, barcode_r1: r.barcode_r1, barcode_r2: r.barcode_r2, exclude: true], "${projectDir}/" + r.raw_location, r.raw_r1, r.raw_r2]
+                }
+                input[1] = 10
+                """
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.failed },
+                { assert workflow.stdout.any { l -> l.contains('No sample to align') } }
+            )
+        }
+    }
 }
