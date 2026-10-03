@@ -27,7 +27,7 @@ APPTAINER=/usr/local/apps/apptainer/1.4.2-1
 # host Slurm client with its config cache, munge and SSSD user lookups; the data paths; apptainer to pull task images
 BINDS=/usr/bin/sbatch,/usr/bin/squeue,/usr/bin/scancel,/usr/lib64/slurm,/var/spool/slurmd/conf-cache
 BINDS=$BINDS,/usr/lib64/libmunge.so.2,/run/munge,/usr/lib64/libnss_sss.so.2,/var/lib/sss/pipes
-BINDS=$BINDS,/share/maize/frodrig4,/rsstu/users/r/rrellan/BZea,$APPTAINER
+BINDS=$BINDS,/share/maize/frodrig4,/rsstu/users/r/rrellan,$APPTAINER
 export NXF_OFFLINE="${NXF_OFFLINE:-true}" APPTAINERENV_PREPEND_PATH="$APPTAINER/bin"
 mkdir -p "$LAUNCH"
 cd "$LAUNCH"
