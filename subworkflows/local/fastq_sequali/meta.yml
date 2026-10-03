@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: "fastq_sequali"
+description: Read QC of each sample's FASTQ pair with Sequali, and one MultiQC report over the Sequali results
+keywords:
+  - qc
+  - fastq
+  - sequali
+  - multiqc
+components:
+  - sequali
+  - multiqc
+input:
+  - ch_reads:
+      type: file
+      description: "Channel with one entry per sample: [ meta, [ R1, R2 ] ]."
+      pattern: "*.{fastq,fq}.gz"
+  - multiqc_config:
+      type: file
+      description: "MultiQC config file."
+      pattern: "*.{yml,yaml}"
+output:
+  - html:
+      type: file
+      description: "Channel with one entry per sample: [ meta, html ], the Sequali report."
+      pattern: "*.html"
+  - json:
+      type: file
+      description: "Channel with one entry per sample: [ meta, json ], the Sequali data MultiQC reads."
+      pattern: "*.json"
+  - report:
+      type: file
+      description: "Channel with one entry: [ meta, multiqc_report.html ], the read-QC report."
+      pattern: "*.html"
+  - data:
+      type: directory
+      description: "Channel with one entry: [ meta, multiqc_data ], MultiQC's parsed data."
+      pattern: "multiqc_data"
+authors:
+  - "@faustovrz"
+maintainers:
+  - "@faustovrz"

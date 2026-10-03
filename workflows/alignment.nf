@@ -1,4 +1,5 @@
 include { SEQKIT_HEAD             } from '../modules/nf-core/seqkit/head/main'
+include { FASTQ_SEQUALI           } from '../subworkflows/local/fastq_sequali/main'
 include { FASTQ_ALIGN_MINIBWA     } from '../subworkflows/local/fastq_align_minibwa/main'
 include { CRAM_QC_SAMTOOLS_PICARD } from '../subworkflows/local/cram_qc_samtools_picard/main'
 include { MULTIQC                } from '../modules/nf-core/multiqc/main'
@@ -10,7 +11,8 @@ workflow ALIGNMENT {
     take:
     ch_samplesheet // channel: [ meta, fastq_1, fastq_2 ], one per sample
     head_pairs     // integer: first N read pairs per sample, 0 = all
-    fasta          // string: reference FASTA, its .fai next to it
+    read_qc        // boolean: run Sequali and the read-QC report
+    fasta         // string: reference FASTA, its .fai next to it
     minibwa_index  // string: glob of the minibwa index files (.l2b, .mbw)
     ch_versions    // channel: the collated software versions YAML
     multiqc_config
@@ -27,6 +29,8 @@ workflow ALIGNMENT {
         }
     SEQKIT_HEAD(ch_input.head.map { meta, reads -> [meta, reads, head_pairs] })
     def ch_reads = ch_input.all.mix(SEQKIT_HEAD.out.subset)
+    // --read_qc: Sequali and its read-QC report, for FASTQs that did not come from our demultiplexing
+    FASTQ_SEQUALI(ch_reads.filter { _meta, _reads -> read_qc }, file(multiqc_config ?: "${projectDir}/assets/multiqc_config.yml", checkIfExists: true))
 
     // reference and its prebuilt minibwa index, read by every alignment task
     def ch_fasta = channel.value([[id: file(fasta).name], file(fasta, checkIfExists: true), file("${fasta}.fai", checkIfExists: true)])

@@ -1,0 +1,41 @@
+nextflow_workflow {
+
+    name "Test Subworkflow FASTQ_SEQUALI"
+    script "../main.nf"
+    workflow "FASTQ_SEQUALI"
+    config "../../../../conf/modules.config"
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "fastq_sequali"
+
+    // Sequali and MultiQC in their containers on the tracked demultiplexed fixture FASTQs (6 samples)
+    profile "test,docker"
+
+    test("fixture FASTQs") {
+
+        when {
+            workflow {
+                """
+                input[0] = channel.fromPath("${projectDir}/tests/fixtures/samplesheet_fastq.csv").splitCsv(header: true).map { r ->
+                    [[id: r.sample_id, single_end: false], [file("${projectDir}/" + r.fastq_1), file("${projectDir}/" + r.fastq_2)]]
+                }
+                input[1] = file("${projectDir}/assets/multiqc_config.yml")
+                """
+            }
+        }
+
+        then {
+            // samples MultiQC parsed from the Sequali JSON files
+            def kept = ['LX_1', 'LX_2', 'LX_3', 'PB1_SID1', 'PB1_SID2', 'PB1_SID4']
+            def sources = path("${workflow.out.data[0][1]}/multiqc_sources.txt").readLines().drop(1)*.tokenize('\t')
+            assertAll(
+                { assert workflow.success },
+                { assert workflow.out.json.collect { meta, _f -> meta.id }.sort() == kept },
+                { assert workflow.out.html.size() == 6 },
+                { assert workflow.out.report.size() == 1 },
+                // PB1_SID4 has no reads: its Sequali files exist, the report leaves it out
+                { assert sources.findAll { r -> r[0] == 'Sequali' }*.getAt(2).unique().sort() == kept - 'PB1_SID4' }
+            )
+        }
+    }
+}
