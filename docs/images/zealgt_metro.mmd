@@ -1,0 +1,62 @@
+%%metro title: sawers-rellan-labs/zealgt
+%%metro style: nfcore
+%%metro file: samples_in | CSV
+%%metro file: fastq_sheet | FASTQ
+%%metro file: cram_out | CRAM
+%%metro file: report_out | HTML
+%%metro line: demultiplex | --step demultiplex | #2db572
+%%metro line: alignment | --step alignment | #0570b0
+%%metro legend: bl
+
+graph LR
+    subgraph demux [Demultiplex]
+        %%metro exit: right | alignment
+        samples_in[meta/samples.csv]
+        extract_lane_d[EXTRACT_LANE]
+        fqtk[FQTK]
+        cat_fastq[CAT_FASTQ]
+        fastq_sheet[per-sample FASTQ]
+
+        samples_in -->|demultiplex| extract_lane_d
+        extract_lane_d -->|demultiplex| fqtk
+        fqtk -->|demultiplex| cat_fastq
+        cat_fastq -->|demultiplex| fastq_sheet
+    end
+
+    subgraph align [Alignment]
+        %%metro entry: left | alignment
+        minibwa[MINIBWA_MAP]
+        fgumi[FGUMI_CLIP]
+        fixmate[SAMTOOLS_FIXMATE]
+        sort[SAMTOOLS_SORT]
+        markdup[SAMTOOLS_MARKDUP]
+        index[SAMTOOLS_INDEX]
+        cram_out[CRAM]
+
+        minibwa -->|alignment| fgumi
+        fgumi -->|alignment| fixmate
+        fixmate -->|alignment| sort
+        sort -->|alignment| markdup
+        markdup -->|alignment| index
+        index -->|alignment| cram_out
+    end
+
+    subgraph qc [CRAM QC]
+        %%metro entry: left | alignment
+        samtools_stats[SAMTOOLS_STATS]
+        picard_wgs[PICARD_COLLECTWGSMETRICS]
+        mosdepth[MOSDEPTH]
+        multiqc[MULTIQC]
+        report_out[ ]
+
+        samtools_stats -->|alignment| multiqc
+        picard_wgs -->|alignment| multiqc
+        mosdepth -->|alignment| multiqc
+        multiqc -->|alignment| report_out
+    end
+
+    fastq_sheet -->|alignment| minibwa
+    index -->|alignment| samtools_stats
+    index -->|alignment| picard_wgs
+    index -->|alignment| mosdepth
+    markdup -->|alignment| multiqc

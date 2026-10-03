@@ -2,9 +2,6 @@
     "--step alignment --head 10 - stub": {
         "content": [
             {
-                "EXTRACT_LANE": {
-                    "tar": 1.34
-                },
                 "FGUMI_CLIP": {
                     "fgumi": "0.7.0"
                 },
@@ -33,6 +30,9 @@
                 },
                 "SAMTOOLS_STATS": {
                     "samtools": 1.24
+                },
+                "SEQKIT_HEAD": {
+                    "seqkit": "2.13.0"
                 },
                 "Workflow": {
                     "sawers-rellan-labs/zealgt": "v0.2.0dev"
@@ -111,7 +111,7 @@
                 "samplesheet.csv"
             ]
         ],
-        "timestamp": "2026-10-03T14:43:57.640222",
+        "timestamp": "2026-10-03T16:29:17.965769",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

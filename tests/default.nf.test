@@ -73,8 +73,8 @@ nextflow_pipeline {
             def tasks = workflow.trace.tasks().countBy { t -> t.name.tokenize(':')[-1].tokenize(' ')[0] }
             assert workflow.success
             assertAll(
-                { assert ['EXTRACT_LANE', 'MINIBWA_MAP', 'FGUMI_CLIP', 'SAMTOOLS_FIXMATE', 'SAMTOOLS_SORT', 'SAMTOOLS_MARKDUP', 'SAMTOOLS_INDEX', 'SAMTOOLS_STATS', 'PICARD_COLLECTWGSMETRICS', 'MOSDEPTH'].every { p -> tasks[p] == 6 } },
-                { assert !tasks.keySet().intersect(['FQTK', 'CAT_FASTQ', 'SAMTOOLS_MERGE']) },
+                { assert ['SEQKIT_HEAD', 'MINIBWA_MAP', 'FGUMI_CLIP', 'SAMTOOLS_FIXMATE', 'SAMTOOLS_SORT', 'SAMTOOLS_MARKDUP', 'SAMTOOLS_INDEX', 'SAMTOOLS_STATS', 'PICARD_COLLECTWGSMETRICS', 'MOSDEPTH'].every { p -> tasks[p] == 6 } },
+                { assert !tasks.keySet().intersect(['EXTRACT_LANE', 'FQTK', 'CAT_FASTQ', 'SAMTOOLS_MERGE']) },
                 { assert tasks.MULTIQC == 1 },
                 { assert !stable_path.any { p -> p.startsWith('fastq') } },
                 { assert stable_path.findAll { p -> p.startsWith('cram/') }.sort() == ['LX_1', 'LX_2', 'LX_3', 'PB1_SID1', 'PB1_SID2', 'PB1_SID4'].collectMany { s ->
