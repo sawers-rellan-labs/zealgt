@@ -79,3 +79,8 @@ a failed copy fails the run. No separate move step after the workflow.
 A plate shared with another project gives fqtk all its barcodes, so the other project's reads (96-Plex barcodes are as
 close as 2 apart, one error from ours) go to their own wells; those wells (`exclude` = TRUE in `meta/samples.csv`, e.g. the
 21 `LANTEO` wells of BZea2) are dropped right after demultiplexing. A library with no kept well (BZea1) is not run.
+
+## 2026-10-02 nf-core branch flow from Milestone 2 on
+
+Milestone 1 went straight into `main` as 0.1.0. From Milestone 2 on, we use nf-core's branch flow: feature branches go
+into `dev` by PR; `dev` goes into `main` only for a release; `patch` is for fixes to a release.
