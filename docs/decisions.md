@@ -105,3 +105,16 @@ Not one read group per lane: no use here, the samples are not diploid and there 
 
 nf-core `minibwa/map` (minibwa 0.2) is patched to minibwa 0.7: the version of the old runs, of the prebuilt B73 index and
 the current bioconda release. 0.2 would need a new B73 index.
+
+## 2026-10-03 CRAM QC
+
+Per CRAM, in parallel: samtools stats (alignment summary, duplicates, mapped bases), Picard CollectWgsMetrics (usable
+depth and `PCT_EXC_*`; `PCT_EXC_TOTAL` is the floor π of the missing-data model) and mosdepth with nf-core/sarek's WGS
+settings `-n --fast-mode --by 500` (raw depth per 500 bp window). Not Picard CollectMultipleMetrics: it repeats samtools
+stats. CollectWgsMetrics on the whole genome, default STRICT validation, Picard defaults. QC files go to `cram/` next to
+the CRAM.
+
+## 2026-10-03 mosdepth stages the reference index
+
+nf-core `mosdepth` is patched to take an optional `.fai` with the FASTA; without it htslib builds the index in every task.
+An upstream PR to nf-core/modules comes later.
