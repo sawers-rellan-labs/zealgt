@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
 name: "fastq_align_minibwa"
-description: Align lane reads with minibwa, soft-clip bases past the mate, merge each sample's lanes and mark duplicates into one CRAM
+description: Align each sample's reads with minibwa, soft-clip bases past the mate and mark duplicates into one CRAM
 keywords:
   - alignment
   - minibwa
@@ -12,15 +12,14 @@ components:
   - fgumi/clip
   - samtools/fixmate
   - samtools/sort
-  - samtools/merge
   - samtools/markdup
   - samtools/index
 input:
   - ch_reads:
       type: file
       description: |
-        Channel with one entry per sample x lane: [ meta, [ R1, R2 ] ].
-        meta holds id (sample_id), library, lane (the lane file stem) and n_lanes (the library's lane count).
+        Channel with one entry per sample: [ meta, [ R1, R2 ] ], lanes joined.
+        meta holds id (sample_id), library and lanes (the lane file stems, comma-joined).
       pattern: "*.{fq,fastq}.gz"
   - ch_fasta:
       type: file
@@ -34,7 +33,7 @@ output:
   - cram:
       type: file
       description: |
-        Channel with one entry per sample: [ meta, cram, crai ], duplicates flagged, one read group per lane.
+        Channel with one entry per sample: [ meta, cram, crai ], duplicates flagged, one read group per sample.
       pattern: "*.{cram,crai}"
 authors:
   - "@faustovrz"

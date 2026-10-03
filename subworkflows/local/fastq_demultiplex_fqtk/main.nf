@@ -60,7 +60,7 @@ workflow FASTQ_DEMULTIPLEX_FQTK {
     // kept samples by id; excluded ones are demultiplexed only so their reads leave ours
     def ch_kept = ch_samplesheet.filter { meta, _loc, _r1, _r2 -> !meta.exclude }.map { meta, _loc, _r1, _r2 -> [meta.id, meta] }
 
-    // per sample: its lane pairs in lane order (R1, R2, R1, R2, ...), released when all lanes are in
+    // per sample: its lane stems (for the read group PU) and lane pairs in lane order (R1, R2, R1, R2, ...), once all lanes are in
     def ch_sample_lanes = FQTK.out.sample_fastq
         .flatMap { meta, files ->
             files.findAll { f -> !f.name.startsWith('unmatched') }
@@ -71,9 +71,9 @@ workflow FASTQ_DEMULTIPLEX_FQTK {
         .combine(ch_kept, by: 0)
         .map { sample, n_lanes, lane, pair, _meta -> [groupKey(sample, n_lanes), lane, pair] }
         .groupTuple()
-        .map { sample, lanes, pairs -> [sample.toString(), [lanes, pairs].transpose().sort { l -> l[0] }.collect { l -> l[1] }.flatten()] }
+        .map { sample, lanes, pairs -> [sample.toString(), lanes.sort(false).join(','), [lanes, pairs].transpose().sort { l -> l[0] }.collect { l -> l[1] }.flatten()] }
         .join(ch_kept, failOnMismatch: true)
-        .map { _id, reads, meta -> [meta + [single_end: false], reads] }
+        .map { _id, lanes, reads, meta -> [meta + [single_end: false, lanes: lanes], reads] }
         .branch { _meta, reads ->
             one_lane: reads.size() == 2
             lanes: true

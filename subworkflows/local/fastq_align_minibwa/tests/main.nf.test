@@ -8,7 +8,7 @@ nextflow_workflow {
     tag "subworkflows_local"
     tag "fastq_align_minibwa"
 
-    // aligns to tiny.fa, every tool in its container: the demultiplexed fixture library LIBX (3 samples, 2 lanes, inserts
+    // aligns to tiny.fa, every tool in its container: the demultiplexed fixture library LIBX (3 samples, 2 lanes joined, inserts
     // >= 250 bp) and SI_1 (1 lane, 20 pairs whose reads run 20 bases past their mate)
     profile "test,docker"
 
@@ -32,7 +32,7 @@ nextflow_workflow {
             workflow {
                 """
                 input[0] = FASTQ_DEMULTIPLEX_FQTK.out.reads.mix(channel.of(
-                    [[id: 'SI_1', library: 'LIBS', lane: 'LIBS_TESTFC02_L1', n_lanes: 1, single_end: false], [file("${projectDir}/tests/fixtures/reads/SI_1_1.fq.gz"), file("${projectDir}/tests/fixtures/reads/SI_1_2.fq.gz")]]
+                    [[id: 'SI_1', library: 'LIBS', lanes: 'LIBS_TESTFC02_L1', single_end: false], [file("${projectDir}/tests/fixtures/reads/SI_1_1.fq.gz"), file("${projectDir}/tests/fixtures/reads/SI_1_2.fq.gz")]]
                 ))
                 input[1] = channel.value([[id: 'tiny.fa'], file("${projectDir}/tests/fixtures/ref/tiny.fa"), file("${projectDir}/tests/fixtures/ref/tiny.fa.fai")])
                 input[2] = channel.value([[id: 'tiny.fa'], files("${projectDir}/tests/fixtures/ref/tiny.fa.{l2b,mbw}")])
@@ -65,9 +65,9 @@ nextflow_workflow {
             def lx = ['LX_1', 'LX_2', 'LX_3']
             assertAll(
                 { assert workflow.success },
-                // one read group per lane, SM = sample_id
-                { assert rgs == lx.collectEntries { x -> [x, ['LIBX_TESTFC01_L1', 'LIBX_TESTFC01_L2'].collect { l -> "@RG\tID:${x}.${l}\tSM:${x}\tLB:LIBX\tPL:ILLUMINA\tPU:${l}".toString() }] } +
-                    [SI_1: ["@RG\tID:SI_1.LIBS_TESTFC02_L1\tSM:SI_1\tLB:LIBS\tPL:ILLUMINA\tPU:LIBS_TESTFC02_L1"]] },
+                // one read group per sample, ID and SM = sample_id, PU lists its lanes
+                { assert rgs == lx.collectEntries { x -> [x, ["@RG\tID:${x}\tSM:${x}\tLB:LIBX\tPL:ILLUMINA\tPU:LIBX_TESTFC01_L1,LIBX_TESTFC01_L2".toString()]] } +
+                    [SI_1: ["@RG\tID:SI_1\tSM:SI_1\tLB:LIBS\tPL:ILLUMINA\tPU:LIBS_TESTFC02_L1"]] },
                 // every pair kept and mapped, reads on chrA (LIBX templates also come from chrB)
                 { assert summary.collectEntries { id, x -> [id, [x.records, x.unmapped]] } == lx.collectEntries { x -> [x, [600, 0]] } + [SI_1: [40, 0]] },
                 { assert summary.every { _id, x -> x.on_chrA > 0 } && summary.SI_1.on_chrA == 40 },

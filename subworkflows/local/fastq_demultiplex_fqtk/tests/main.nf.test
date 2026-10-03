@@ -37,6 +37,10 @@ nextflow_workflow {
                 { assert workflow.success },
                 { assert lanes == ['LIBX.LIBX_TESTFC01_L1': libx, 'LIBX.LIBX_TESTFC01_L2': libx, 'LIBB1.LIBB1_S1_L001': libb1, 'LIBB1.LIBB1_S1_L002': libb1] },
                 { assert reads.collectEntries { id, r -> [id, r*.size()] } == [LX_1: [300, 300], LX_2: [300, 300], LX_3: [300, 300], PB1_SID1: [60, 60], PB1_SID2: [40, 40], PB1_SID4: [0, 0]] },
+                // per sample: its lane stems in order, for the read group's PU
+                { assert workflow.out.reads.collectEntries { meta, _fq -> [meta.id, meta.lanes] } == ['LX_1', 'LX_2', 'LX_3', 'PB1_SID1', 'PB1_SID2', 'PB1_SID4'].collectEntries { s ->
+                    [s, s.startsWith('LX_') ? 'LIBX_TESTFC01_L1,LIBX_TESTFC01_L2' : 'LIBB1_S1_L001,LIBB1_S1_L002']
+                } },
                 // FlexPrep 108 -> 100 bp both reads; 96-Plex R1 loses 8 + 12, R2 loses 8
                 { assert reads.findAll { id, _r -> id.startsWith('LX_') }.every { _id, r -> r.flatten().every { n -> n == 100 } } },
                 { assert reads.findAll { id, _r -> id.startsWith('PB1_') }.every { _id, r -> r[0].every { n -> n == 80 } && r[1].every { n -> n == 92 } } }

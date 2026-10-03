@@ -73,7 +73,7 @@ workflow ALIGNMENT {
     )
     emit:
     multiqc_report = MULTIQC.out.report.map { _meta, report -> [report] }.toList() // channel: /path/to/multiqc_report.html
-    reads          = FASTQ_DEMULTIPLEX_FQTK.out.reads // channel: [ meta, [ R1, R2 ] ], one per sample x lane
+    reads          = FASTQ_DEMULTIPLEX_FQTK.out.reads // channel: [ meta, [ R1, R2 ] ], one per sample
     cram           = FASTQ_ALIGN_MINIBWA.out.cram     // channel: [ meta, cram, crai ], one per sample
     versions       = ch_versions                      // channel: [ path(versions.yml) ]
 }
