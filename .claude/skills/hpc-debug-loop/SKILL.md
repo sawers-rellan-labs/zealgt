@@ -20,7 +20,9 @@ description: How an agent operates on the hazel HPC cluster from the laptop - th
    review takes minutes. Stubs and shorter runs need none.
 4. **Submit as a Slurm job**; the workflow's head job runs inside Slurm too.
 5. **On failure**: fix on the laptop and repeat from 2 (reading a failed run, resuming it: `docs/running.md`).
-6. **Report to the user after every submission**: the job id and the log paths (which ones: `docs/running.md`).
+6. **Report to the user after every submission**: the job id and the log paths (which ones: `docs/running.md`), with
+   a ready `tail -f <log>` line per log to paste in a terminal on hazel itself: no `ssh hazel` in front, no wrapper.
+   For jobs outside the pipeline, the log path from `scontrol show job <id>` (`StdOut=`).
 
 ## How to connect
 
