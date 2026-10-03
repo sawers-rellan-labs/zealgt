@@ -4,11 +4,10 @@
 %%metro file: fastq_sheet | FASTQ
 %%metro file: cram_out | CRAM
 %%metro file: reads_report | HTML
+%%metro file: report_out | HTML
 %%metro line: demultiplex | --step demultiplex | #2db572
 %%metro line: alignment | --step alignment | #0570b0
 %%metro legend: bl
-%%metro grid: demux | 0,0
-%%metro grid: align | 0,1
 
 graph LR
     subgraph demux [Demultiplex]
@@ -49,5 +48,22 @@ graph LR
         index -->|alignment| cram_out
     end
 
+    subgraph qc [CRAM QC]
+        %%metro entry: left | alignment
+        samtools_stats[samtools stats]
+        picard_wgs[picard wgsmetrics]
+        mosdepth[mosdepth]
+        multiqc[multiqc]
+        report_out[ ]
+
+        samtools_stats -->|alignment| multiqc
+        picard_wgs -->|alignment| multiqc
+        mosdepth -->|alignment| multiqc
+        multiqc -->|alignment| report_out
+    end
 
     fastq_sheet -->|alignment| minibwa
+    index -->|alignment| samtools_stats
+    index -->|alignment| picard_wgs
+    index -->|alignment| mosdepth
+    markdup -->|alignment| multiqc
