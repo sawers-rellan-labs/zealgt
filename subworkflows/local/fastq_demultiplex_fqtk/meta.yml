@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
 name: "fastq_demultiplex_fqtk"
-description: Demultiplex Twist inline-barcoded libraries per lane with fqtk
+description: Demultiplex Twist inline-barcoded libraries per lane with fqtk and join each sample's lanes
 keywords:
   - demultiplexing
   - inline barcodes
@@ -8,6 +8,7 @@ keywords:
   - twist
 components:
   - fqtk
+  - cat/fastq
   - extract_lane
 input:
   - ch_samplesheet:
@@ -23,8 +24,7 @@ output:
   - reads:
       type: file
       description: |
-        Channel with one entry per sample x lane: [ meta, [ R1, R2 ] ], barcode and skipped bases removed;
-        meta adds lane (the lane file stem) and n_lanes (the library's lane count).
+        Channel with one entry per sample: [ meta, [ R1, R2 ] ], barcode and skipped bases removed.
       pattern: "*.{fq,fastq}.gz"
   - metrics:
       type: file

@@ -52,7 +52,7 @@ workflow SAWERSRELLANLABS_ZEALGT {
     )
     emit:
     multiqc_report = ALIGNMENT.out.multiqc_report // channel: /path/to/multiqc_report.html
-    demux_reads    = ALIGNMENT.out.reads          // channel: [ meta, [ R1, R2 ] ], one per sample x lane
+    demux_reads    = ALIGNMENT.out.reads          // channel: [ meta, [ R1, R2 ] ], one per sample
     cram           = ALIGNMENT.out.cram           // channel: [ meta, cram, crai ], one per sample
 }
 /*
@@ -101,10 +101,7 @@ workflow {
 
 output {
     demux_reads {
-        path { meta, reads ->
-            reads[0] >> "demux/${meta.lane}/${reads[0].name}"
-            reads[1] >> "demux/${meta.lane}/${reads[1].name}"
-        }
+        path { meta, _reads -> "demux/${meta.id}" }
     }
     // copied, not linked: the store is another filesystem and outlives work/
     cram {
