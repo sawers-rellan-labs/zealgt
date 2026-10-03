@@ -12,7 +12,6 @@ lint:
     - docs/images/nf-core-zealgt_logo_dark.png
     - .github/ISSUE_TEMPLATE/bug_report.yml
     - .github/PULL_REQUEST_TEMPLATE.md
-    - .github/workflows/linting.yml
     - assets/email_template.txt
     - docs/README.md
     - .prettierignore
@@ -50,10 +49,9 @@ lint:
 template:
   org: sawers-rellan-labs
   name: zealgt
-  description: "ZEAL genotyping: raw reads to genotypes, stopping at one CRAM per
-    sample"
+  description: "ZEAL genotyping: raw reads to genotypes, stopping at one CRAM per sample"
   author: Fausto Rodriguez Zapata
-  version: 0.1.0dev
+  version: 0.1.0
   force: true
   outdir: tpl2
   skip_features:
