@@ -44,6 +44,12 @@
                     "minimum": 0,
                     "description": "First N read pairs per library before demultiplexing (demultiplex) or per sample (alignment); test runs only (0 = all).",
                     "fa_icon": "fas fa-cut"
+                },
+                "read_qc": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Alignment: run Sequali and its read-QC MultiQC report on the input FASTQs (demultiplexing always does).",
+                    "fa_icon": "fas fa-check-double"
                 }
             }
         },

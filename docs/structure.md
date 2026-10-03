@@ -25,12 +25,14 @@ Read top down; each level only names the one below it.
 | stage                    | modules                                                                     | status                  |
 | ------------------------ | --------------------------------------------------------------------------- | ----------------------- |
 | `FASTQ_DEMULTIPLEX_FQTK` | `EXTRACT_LANE` -> `FQTK` -> `CAT_FASTQ`; FASTQs and `fastq/samplesheet.csv` | built (milestones 1, 5) |
+| `FASTQ_SEQUALI`          | `SEQUALI` per sample -> `MULTIQC` (read-QC report)                          | built (milestone 6)     |
 
 ## ALIGNMENT (`--step alignment`): per-sample FASTQs to one CRAM per sample
 
 | stage                     | modules                                                                                                          | status              |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------- |
 | inline                    | `SEQKIT_HEAD` with `--head N` only (test runs): the first N pairs per sample                                     | built               |
+| `FASTQ_SEQUALI`           | with `--read_qc` only: `SEQUALI` per sample -> `MULTIQC` (read-QC report)                                        | built (milestone 6) |
 | `FASTQ_ALIGN_MINIBWA`     | `MINIBWA_MAP` -> `FGUMI_CLIP` -> `SAMTOOLS_FIXMATE` -> `SAMTOOLS_SORT` -> `SAMTOOLS_MARKDUP` -> `SAMTOOLS_INDEX` | built (milestone 2) |
 | `CRAM_QC_SAMTOOLS_PICARD` | `SAMTOOLS_STATS`, `PICARD_COLLECTWGSMETRICS`, `MOSDEPTH`                                                         | built (milestone 3) |
 | inline                    | `MULTIQC` on the CRAM QC files                                                                                   | built (milestone 4) |

@@ -68,12 +68,13 @@ workflow SAWERSRELLANLABS_ZEALGT {
     def ch_cram_qc = channel.empty()
     def ch_multiqc_report = channel.empty()
     if (params.step == 'demultiplex') {
-        DEMULTIPLEX(samplesheet, params.head)
+        DEMULTIPLEX(samplesheet, params.head, file(params.multiqc_config ?: "${projectDir}/assets/multiqc_config.yml", checkIfExists: true))
         ch_fastq = DEMULTIPLEX.out.fastq
     } else {
         ALIGNMENT (
             samplesheet,
             params.head,
+            params.read_qc,
             params.fasta,
             params.minibwa_index,
             ch_collated_versions,
