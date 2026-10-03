@@ -17,7 +17,9 @@ downsampling in genotyping.
   - 96-Plex (BC2S3 batch 1): `8B12S+T 8S+T`, default mismatches (the guide sets none).
   - FlexPrep (BC1, BC2S3 batch 2): `6B2S+T 6B2S+T --max-mismatches 1 --min-mismatch-delta 2`.
 - No adapter trimming, as both guides say. Twist publishes no adapter sequences; none are needed.
-- After alignment: `fgbio ClipBam --clip-bases-past-mate`, both kits.
+- After alignment, before duplicate marking: `fgumi clip --clipping-mode soft --clip-bases-past-mate true`, both kits.
+  - Replaces `fgbio ClipBam --clip-bases-past-mate` (same option, a slower JVM tool); markdup sees the clipped reads and
+    no extra sort is needed. Soft, not fgumi's default hard clipping.
   - Removes read-through into the mate's barcode, random bases and adapter: clips at the insert end in 94-97 % of reads.
   - Differs from the 96-Plex guide's `--clip-overlapping-reads` (the FlexPrep guide has no clipping): that option keeps
     one mate's half of the overlap by position, often the lower-quality base; past-mate leaves the overlap to mpileup,
@@ -88,3 +90,18 @@ into `dev` by PR; `dev` goes into `main` only for a release; `patch` is for fixe
 ## 2026-10-02 Nextflow from a container on hazel
 
 The head job runs Nextflow from a container, not from a conda environment or hazel's modules.
+
+## 2026-10-02 Alignment: one module per tool
+
+Alignment is a chain of nf-core modules, one per tool: `minibwa map` -> `fgumi clip` -> `samtools fixmate` -> `sort` ->
+`markdup`. Not the old one-pipe `ALIGN_MARKDUP`; the cost is three intermediate BAMs per sample in `work/`.
+
+## 2026-10-03 Read group per sample
+
+One read group per sample: `ID` and `SM` = `sample_id`, `LB:<library>`, `PL:ILLUMINA`, `PU` lists the sample's lanes.
+Not one read group per lane: no use here, the samples are not diploid and there is no GATK/BQSR.
+
+## 2026-10-02 minibwa 0.7
+
+nf-core `minibwa/map` (minibwa 0.2) is patched to minibwa 0.7: the version of the old runs, of the prebuilt B73 index and
+the current bioconda release. 0.2 would need a new B73 index.

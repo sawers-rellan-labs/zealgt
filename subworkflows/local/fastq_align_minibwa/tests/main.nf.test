@@ -1,0 +1,83 @@
+nextflow_workflow {
+
+    name "Test Subworkflow FASTQ_ALIGN_MINIBWA"
+    script "../main.nf"
+    workflow "FASTQ_ALIGN_MINIBWA"
+    config "../../../../conf/modules.config"
+    tag "subworkflows"
+    tag "subworkflows_local"
+    tag "fastq_align_minibwa"
+
+    // aligns to tiny.fa, every tool in its container: the demultiplexed fixture library LIBX (3 samples, 2 lanes joined, inserts
+    // >= 250 bp) and SI_1 (1 lane, 20 pairs whose reads run 20 bases past their mate)
+    profile "test,docker"
+
+    setup {
+        run("FASTQ_DEMULTIPLEX_FQTK") {
+            script "../../fastq_demultiplex_fqtk/main.nf"
+            workflow {
+                """
+                input[0] = channel.fromPath("${projectDir}/tests/fixtures/samplesheet.csv").splitCsv(header: true).filter { r -> r.library == 'LIBX' }.map { r ->
+                    [[id: r.sample_id, library: r.library, kit: r.kit, barcode_r1: r.barcode_r1, barcode_r2: r.barcode_r2, exclude: r.exclude == 'TRUE'], "${projectDir}/" + r.raw_location, r.raw_r1, r.raw_r2]
+                }
+                input[1] = 0
+                """
+            }
+        }
+    }
+
+    test("LIBX 2 lanes, SI_1 1 lane, tiny.fa") {
+
+        when {
+            workflow {
+                """
+                input[0] = FASTQ_DEMULTIPLEX_FQTK.out.reads.mix(channel.of(
+                    [[id: 'SI_1', library: 'LIBS', lanes: 'LIBS_TESTFC02_L1', single_end: false], [file("${projectDir}/tests/fixtures/reads/SI_1_1.fq.gz"), file("${projectDir}/tests/fixtures/reads/SI_1_2.fq.gz")]]
+                ))
+                input[1] = channel.value([[id: 'tiny.fa'], file("${projectDir}/tests/fixtures/ref/tiny.fa"), file("${projectDir}/tests/fixtures/ref/tiny.fa.fai")])
+                input[2] = channel.value([[id: 'tiny.fa'], files("${projectDir}/tests/fixtures/ref/tiny.fa.{l2b,mbw}")])
+                """
+            }
+        }
+
+        then {
+            def fasta = "${projectDir}/tests/fixtures/ref/tiny.fa"
+            // per sample: its @RG lines and its records as SAM fields
+            def rgs  = workflow.out.cram.collectEntries { meta, f, _i -> [meta.id, cram(f, fasta).getHeader().findAll { h -> h.startsWith('@RG') }.sort()] }
+            def recs = workflow.out.cram.collectEntries { meta, f, _i -> [meta.id, cram(f, fasta).getSamLines().collect { l -> l.trim().tokenize('\t') }] }
+            def ref_len = { String cigar -> (cigar =~ /(\d+)[MDN=X]/).collect { m -> m[1] as int }.sum(0) }
+            def mc = { r -> r.find { t -> t.startsWith('MC:Z:') }?.substring(5) }
+            def flag = { r, bit -> ((r[1] as int) & bit) != 0 }
+            // mapped FR pairs on one contig: the forward read ends at or before its mate's end, the reverse read starts at or after its mate's start
+            def fr = { rs -> rs.findAll { r -> !flag(r, 0x4) && !flag(r, 0x8) && r[6] == '=' && flag(r, 0x10) != flag(r, 0x20) && mc(r) } }
+            def past_mate = { rs -> fr(rs).findAll { r ->
+                flag(r, 0x10) ? (r[3] as int) < (r[7] as int) : (r[3] as int) + ref_len(r[5]) > (r[7] as int) + ref_len(mc(r))
+            } }
+            def summary = recs.collectEntries { id, rs -> [id, [
+                records: rs.size(),
+                unmapped: rs.count { r -> flag(r, 0x4) },
+                on_chrA: rs.count { r -> !flag(r, 0x4) && r[2] == 'chrA' },
+                soft_clipped: rs.count { r -> r[5].contains('S') },
+                hard_clipped: rs.count { r -> r[5].contains('H') },
+                past_mate: past_mate(rs).size(),
+                duplicates: rs.count { r -> flag(r, 0x400) }
+            ]] }
+            def lx = ['LX_1', 'LX_2', 'LX_3']
+            assertAll(
+                { assert workflow.success },
+                // one read group per sample, ID and SM = sample_id, PU lists its lanes
+                { assert rgs == lx.collectEntries { x -> [x, ["@RG\tID:${x}\tSM:${x}\tLB:LIBX\tPL:ILLUMINA\tPU:LIBX_TESTFC01_L1,LIBX_TESTFC01_L2".toString()]] } +
+                    [SI_1: ["@RG\tID:SI_1\tSM:SI_1\tLB:LIBS\tPL:ILLUMINA\tPU:LIBS_TESTFC02_L1"]] },
+                // every pair kept and mapped, reads on chrA (LIBX templates also come from chrB)
+                { assert summary.collectEntries { id, x -> [id, [x.records, x.unmapped]] } == lx.collectEntries { x -> [x, [600, 0]] } + [SI_1: [40, 0]] },
+                { assert summary.every { _id, x -> x.on_chrA > 0 } && summary.SI_1.on_chrA == 40 },
+                // soft clips where reads pass their mate (all of SI_1, 20 bases each), none after clipping, no hard clips
+                { assert recs.SI_1.collect { r -> r[5] }.toSet() == ['80M20S', '20S80M'].toSet() },
+                { assert summary.every { _id, x -> x.past_mate == 0 && x.hard_clipped == 0 } },
+                // duplicates flagged, not removed
+                { assert lx.every { x -> summary[x].duplicates > 0 } },
+                { assert snapshot(summary).match() }
+            )
+        }
+    }
+}

@@ -43,6 +43,8 @@ workflow SAWERSRELLANLABS_ZEALGT {
     ALIGNMENT (
         samplesheet,
         params.head,
+        params.fasta,
+        params.minibwa_index,
         params.multiqc_config,
         params.multiqc_logo,
         params.multiqc_methods_description,
@@ -51,6 +53,7 @@ workflow SAWERSRELLANLABS_ZEALGT {
     emit:
     multiqc_report = ALIGNMENT.out.multiqc_report // channel: /path/to/multiqc_report.html
     demux_reads    = ALIGNMENT.out.reads          // channel: [ meta, [ R1, R2 ] ], one per sample
+    cram           = ALIGNMENT.out.cram           // channel: [ meta, cram, crai ], one per sample
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -90,13 +93,24 @@ workflow {
     )
 
     publish:
+    // CRAMs always, to permanent storage
+    cram = SAWERSRELLANLABS_ZEALGT.out.cram
     // each stage's result, published only during development
     demux_reads = params.publish_intermediates ? SAWERSRELLANLABS_ZEALGT.out.demux_reads : channel.empty()
 }
 
 output {
     demux_reads {
-        path { meta, _reads -> "demux/${meta.id}" }
+        // one name for one-lane (fqtk) and joined (cat/fastq) samples
+        path { meta, reads ->
+            reads[0] >> "demux/${meta.id}/${meta.id}_R1.fastq.gz"
+            reads[1] >> "demux/${meta.id}/${meta.id}_R2.fastq.gz"
+        }
+    }
+    // copied, not linked: the store is another filesystem and outlives work/
+    cram {
+        path 'cram'
+        mode 'copy'
     }
 }
 

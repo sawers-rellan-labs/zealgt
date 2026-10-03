@@ -24,7 +24,8 @@ output:
   - reads:
       type: file
       description: |
-        Channel with one entry per sample: [ meta, [ R1, R2 ] ], barcode and skipped bases removed.
+        Channel with one entry per sample: [ meta, [ R1, R2 ] ], barcode and skipped bases removed;
+        meta.lanes lists its lane file stems, comma-joined.
       pattern: "*.{fq,fastq}.gz"
   - metrics:
       type: file
