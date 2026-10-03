@@ -30,7 +30,7 @@ Read top down; each level only names the one below it.
 
 | stage                     | modules                                                                                                          | status              |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------- |
-| inline                    | `EXTRACT_LANE` with `--head N` only: the first N pairs per sample                                                | built (milestone 5) |
+| inline                    | `SEQKIT_HEAD` with `--head N` only (test runs): the first N pairs per sample                                     | built               |
 | `FASTQ_ALIGN_MINIBWA`     | `MINIBWA_MAP` -> `FGUMI_CLIP` -> `SAMTOOLS_FIXMATE` -> `SAMTOOLS_SORT` -> `SAMTOOLS_MARKDUP` -> `SAMTOOLS_INDEX` | built (milestone 2) |
 | `CRAM_QC_SAMTOOLS_PICARD` | `SAMTOOLS_STATS`, `PICARD_COLLECTWGSMETRICS`, `MOSDEPTH`                                                         | built (milestone 3) |
 | inline                    | `MULTIQC` on the CRAM QC files                                                                                   | built (milestone 4) |

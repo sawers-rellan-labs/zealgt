@@ -1,7 +1,7 @@
 %%metro title: sawers-rellan-labs/zealgt
 %%metro style: nfcore
 %%metro file: samples_in | CSV
-%%metro file: fastq_sheet | CSV
+%%metro file: fastq_sheet | FASTQ
 %%metro file: cram_out | CRAM
 %%metro file: report_out | HTML
 %%metro line: demultiplex | --step demultiplex | #2db572
@@ -15,7 +15,7 @@ graph LR
         extract_lane_d[EXTRACT_LANE]
         fqtk[FQTK]
         cat_fastq[CAT_FASTQ]
-        fastq_sheet[fastq/samplesheet.csv]
+        fastq_sheet[per-sample FASTQ]
 
         samples_in -->|demultiplex| extract_lane_d
         extract_lane_d -->|demultiplex| fqtk
@@ -25,7 +25,6 @@ graph LR
 
     subgraph align [Alignment]
         %%metro entry: left | alignment
-        extract_lane_a[EXTRACT_LANE --head]
         minibwa[MINIBWA_MAP]
         fgumi[FGUMI_CLIP]
         fixmate[SAMTOOLS_FIXMATE]
@@ -34,7 +33,6 @@ graph LR
         index[SAMTOOLS_INDEX]
         cram_out[CRAM]
 
-        extract_lane_a -->|alignment| minibwa
         minibwa -->|alignment| fgumi
         fgumi -->|alignment| fixmate
         fixmate -->|alignment| sort
@@ -57,7 +55,7 @@ graph LR
         multiqc -->|alignment| report_out
     end
 
-    fastq_sheet -->|alignment| extract_lane_a
+    fastq_sheet -->|alignment| minibwa
     index -->|alignment| samtools_stats
     index -->|alignment| picard_wgs
     index -->|alignment| mosdepth

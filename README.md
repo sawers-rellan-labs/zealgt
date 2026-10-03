@@ -6,7 +6,7 @@
 
 ![zealgt metro map](docs/images/zealgt_metro.svg)
 
-- `--step demultiplex` reads the library lanes listed in `meta/samples.csv`, extracts each lane's reads (`EXTRACT_LANE`, for tar members or `--head`), demultiplexes them per lane by barcode (`FQTK`) and joins each sample's lanes (`CAT_FASTQ`), writing `fastq/<sample>/` and `fastq/samplesheet.csv`.
+- `--step demultiplex` reads the library lanes listed in `meta/samples.csv`, extracts each lane's reads (`EXTRACT_LANE`, for batch-1 tar members), demultiplexes them per lane by barcode (`FQTK`) and joins each sample's lanes (`CAT_FASTQ`), writing `fastq/<sample>/` and `fastq/samplesheet.csv`.
 - `--step alignment` reads `fastq/samplesheet.csv` and aligns each sample with `minibwa`, soft-clips bases that run past the mate (`fgumi clip`), then fixes mates, sorts, marks duplicates and indexes with `samtools`, writing one CRAM per sample; `samtools stats`, Picard `CollectWgsMetrics` and `mosdepth` feed a `MultiQC` report.
 
 ## Usage
