@@ -101,7 +101,11 @@ workflow {
 
 output {
     demux_reads {
-        path { meta, _reads -> "demux/${meta.id}" }
+        // one name for one-lane (fqtk) and joined (cat/fastq) samples
+        path { meta, reads ->
+            reads[0] >> "demux/${meta.id}/${meta.id}_R1.fastq.gz"
+            reads[1] >> "demux/${meta.id}/${meta.id}_R2.fastq.gz"
+        }
     }
     // copied, not linked: the store is another filesystem and outlives work/
     cram {
