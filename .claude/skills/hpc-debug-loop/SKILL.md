@@ -52,8 +52,8 @@ description: How an agent operates on the hazel HPC cluster from the laptop - th
 
 ## Stopping a run
 
-- `scancel --signal=INT --full <head job id>`: the workflow's head job cancels its own task jobs and exits. A plain
-  `scancel <head>` leaves the task jobs running.
+- `scancel --signal=INT --batch <head job id>`: the head job's shell passes INT to Nextflow, which cancels its task jobs
+  and exits (`--full` also kills the image's mount, and Nextflow can no longer run `scancel`).
 - Leftover task jobs: cancel by the exact job ids in that run's log. Never `scancel` by job name (other pipelines run on
   the same account).
 

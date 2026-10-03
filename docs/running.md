@@ -18,6 +18,7 @@ Nextflow 26.04.6 (laptop, or hazel GPFS with tasks on Slurm compute nodes).
   `NXF_HOME` is read-only). After a scratch purge, pull both again from an xfer job (`--partition=xfer`):
   `apptainer pull <sif> docker://nextflow/nextflow:26.04.6`, then
   `apptainer exec -B /share/maize/frodrig4 --env NXF_OFFLINE=false,NXF_PLUGINS_DIR=/share/maize/frodrig4/nextflow_home/plugins <sif> nextflow plugin install nf-schema@2.5.1`.
+- Stop a run: `scancel --signal=INT --batch <head job id>`; the head job passes INT to Nextflow, which cancels its tasks.
 - One fixed launch directory per profile: the task cache lives in `<launch directory>/.nextflow/cache`, and resuming
   needs that cache and `work/` intact (docs). A new directory per attempt starts every run cold.
 

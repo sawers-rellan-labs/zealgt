@@ -32,9 +32,16 @@ export NXF_OFFLINE="${NXF_OFFLINE:-true}" APPTAINERENV_PREPEND_PATH="$APPTAINER/
 mkdir -p "$LAUNCH"
 cd "$LAUNCH"
 echo "$(date '+%F %T') job=$SLURM_JOB_ID profile=$PROFILE qos=$SLURM_JOB_QOS commit=$(git -C "$REPO" rev-parse --short HEAD) offline=$NXF_OFFLINE args: $*"
-set +e
+set +e -m
+# Nextflow in the background (job control on, so INT is not ignored there) while this shell waits for signals
 "$APPTAINER/bin/apptainer" exec -B "$BINDS" "$SIF" env NXF_OFFLINE="$NXF_OFFLINE" \
-    NXF_PLUGINS_DIR="$NXF_DIR/plugins" NXF_SECRETS_FILE="$NXF_DIR/secrets/store.json" nextflow run "$REPO" -profile "$PROFILE" "$@" 2>&1 | awk '{ print strftime("%F %T"), $0; fflush() }'
-rc=${PIPESTATUS[0]}
+    NXF_PLUGINS_DIR="$NXF_DIR/plugins" NXF_SECRETS_FILE="$NXF_DIR/secrets/store.json" nextflow run "$REPO" -profile "$PROFILE" "$@" \
+    > >(awk '{ print strftime("%F %T"), $0; fflush() }') 2>&1 &
+pid=$!
+# scancel --signal=INT --batch (or TERM) reaches only this shell: hand INT to apptainer, which passes it to Nextflow
+trap 'echo "$(date "+%F %T") signal: INT to nextflow"; kill -INT $pid' INT TERM
+wait $pid; rc=$?
+[ "$rc" -le 128 ] || { wait $pid; rc=$?; }
+wait
 echo "$(date '+%F %T') nextflow exit=$rc"
 exit "$rc"
