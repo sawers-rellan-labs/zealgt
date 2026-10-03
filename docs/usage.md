@@ -21,13 +21,13 @@ sample_id,fastq_1,fastq_2,library,lanes,kit
 LX_1,/path/fastq/LX_1/LX_1_R1.fastq.gz,/path/fastq/LX_1/LX_1_R2.fastq.gz,LIBX,"LIBX_TESTFC01_L1,LIBX_TESTFC01_L2",twist_flexprep
 ```
 
-| Column    | Description                                                              |
-| --------- | ------------------------------------------------------------------------ |
-| `sample_id` | Sample name: the CRAM's name and its read group `ID` and `SM`.         |
-| `fastq_1`, `fastq_2` | The sample's read pair, gzipped.                              |
-| `library` | Read group `LB`.                                                         |
-| `lanes`   | The sample's lane file stems, comma-joined (quoted): read group `PU`.    |
-| `kit`     | `twist_flexprep` or `twist_96plex`; information only after demultiplexing. |
+| Column               | Description                                                                |
+| -------------------- | -------------------------------------------------------------------------- |
+| `sample_id`          | Sample name: the CRAM's name and its read group `ID` and `SM`.             |
+| `fastq_1`, `fastq_2` | The sample's read pair, gzipped.                                           |
+| `library`            | Read group `LB`.                                                           |
+| `lanes`              | The sample's lane file stems, comma-joined (quoted): read group `PU`.      |
+| `kit`                | `twist_flexprep` or `twist_96plex`; information only after demultiplexing. |
 
 `--head N` takes the first N read pairs per library before demultiplexing, or per sample before alignment; test runs only.
 

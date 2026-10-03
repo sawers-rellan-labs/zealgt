@@ -7,13 +7,13 @@ are recorded here. Terms as in `TERMINOLOGY.md`, decisions in `decisions.md`.
 
 Read top down; each level only names the one below it.
 
-| level    | file                                                  | holds                                                    | limit         |
-| -------- | ----------------------------------------------------- | -------------------------------------------------------- | ------------- |
-| pipeline | `main.nf`                                             | the `--step` choice and the software versions           | template size |
-| workflow | `workflows/<name>.nf`                                 | the list of stage calls, MultiQC at the end             | 100 lines     |
-| stage    | `subworkflows/local/<stage>/main.nf`                  | one stage's channel wiring                               | 100 lines     |
-| tool     | `modules/local/<tool>/main.nf`, `modules/nf-core/...` | one tool call                                            | 100 lines     |
-| settings | `conf/*.config`                                       | resources, `ext.args`, publishing; no logic              |               |
+| level    | file                                                  | holds                                         | limit         |
+| -------- | ----------------------------------------------------- | --------------------------------------------- | ------------- |
+| pipeline | `main.nf`                                             | the `--step` choice and the software versions | template size |
+| workflow | `workflows/<name>.nf`                                 | the list of stage calls, MultiQC at the end   | 100 lines     |
+| stage    | `subworkflows/local/<stage>/main.nf`                  | one stage's channel wiring                    | 100 lines     |
+| tool     | `modules/local/<tool>/main.nf`, `modules/nf-core/...` | one tool call                                 | 100 lines     |
+| settings | `conf/*.config`                                       | resources, `ext.args`, publishing; no logic   |               |
 
 - A stage becomes a subworkflow when it chains two or more modules; a single module is called inline.
 - Stage names follow nf-core: `<input>_<operation>_<tool>`.
@@ -22,15 +22,15 @@ Read top down; each level only names the one below it.
 
 ## DEMULTIPLEX (`--step demultiplex`): library reads to one FASTQ pair per sample
 
-| stage                    | modules                                                                       | status                   |
-| ------------------------ | ----------------------------------------------------------------------------- | ------------------------ |
-| `FASTQ_DEMULTIPLEX_FQTK` | `EXTRACT_LANE` -> `FQTK` -> `CAT_FASTQ`; FASTQs and `fastq/samplesheet.csv`   | built (milestones 1, 5) |
+| stage                    | modules                                                                     | status                  |
+| ------------------------ | --------------------------------------------------------------------------- | ----------------------- |
+| `FASTQ_DEMULTIPLEX_FQTK` | `EXTRACT_LANE` -> `FQTK` -> `CAT_FASTQ`; FASTQs and `fastq/samplesheet.csv` | built (milestones 1, 5) |
 
 ## ALIGNMENT (`--step alignment`): per-sample FASTQs to one CRAM per sample
 
 | stage                     | modules                                                                                                          | status              |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------- |
-| inline                    | `EXTRACT_LANE` with `--head N` only: the first N pairs per sample                                               | built (milestone 5) |
+| inline                    | `EXTRACT_LANE` with `--head N` only: the first N pairs per sample                                                | built (milestone 5) |
 | `FASTQ_ALIGN_MINIBWA`     | `MINIBWA_MAP` -> `FGUMI_CLIP` -> `SAMTOOLS_FIXMATE` -> `SAMTOOLS_SORT` -> `SAMTOOLS_MARKDUP` -> `SAMTOOLS_INDEX` | built (milestone 2) |
 | `CRAM_QC_SAMTOOLS_PICARD` | `SAMTOOLS_STATS`, `PICARD_COLLECTWGSMETRICS`, `MOSDEPTH`                                                         | built (milestone 3) |
 | inline                    | `MULTIQC` on the CRAM QC files                                                                                   | built (milestone 4) |

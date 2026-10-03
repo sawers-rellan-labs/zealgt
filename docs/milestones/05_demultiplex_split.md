@@ -88,6 +88,7 @@ per-sample FASTQs. A development run is then a sheet with a few rows, and a prod
    - For each sample, compared by read name: pairs both tools give the same sample, pairs only one tool assigns, and
      pairs they give different samples. Also unmatched pairs per tool, and read lengths after barcode removal.
    - Output: `docs/later/fqtk_vs_cutadapt.md`, with the setup, the table and a recommendation. The user decides.
+
 - No resource profile: no new process. `EXTRACT_LANE` runs per sample only on headed development runs.
 
 ## Done when
