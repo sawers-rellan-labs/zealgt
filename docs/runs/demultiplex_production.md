@@ -3,8 +3,8 @@
 ## Why
 
 User, 2026-10-03, once the split passed its tests: plan the production run of the demultiplex step. Every library is
-demultiplexed once. Its per-sample FASTQs and samplesheets are then kept, and `ALIGNMENT` batches are chosen from them
-(Milestone 5).
+demultiplexed once; its per-sample FASTQs, read QC and samplesheets are kept, and `ALIGNMENT` batches are chosen from
+them (Milestone 5).
 
 The `/share` quota (20 TB) is the whole group's, and others work there or may (user, 2026-10-03), so the run is split
 into waves that each hold a bounded amount of `work/`.
@@ -13,66 +13,112 @@ into waves that each hold a bounded amount of `work/`.
 
 - Input: `meta/samples.csv`: 80 libraries, 2,304 rows, 2,283 kept. Every library has a kept well.
 - Wave sheets: `meta/waves/demultiplex_<NN>.csv`, the rows of `meta/samples.csv` for that wave's libraries, unchanged.
-  A library is never split across waves, because fqtk needs every barcode of a lane.
-- Output per wave, `--outdir /rsstu/users/r/rrellan/BZea/ZEAL/demultiplex/wave_<NN>` (base folder: user, 2026-10-03):
-  - `fastq/<sample_id>/<sample_id>_R{1,2}.fastq.gz` and `fastq/samplesheet.csv` (that wave's samples);
-  - `reports/demux/<library>.<lane>.demux_metrics.txt` and `pipeline_info/`.
+  A library is never split across waves (fqtk needs all its barcodes and lanes); a wave never mixes sequencing
+  batches (`source`).
+- Outputs, `--outdir /rsstu/users/r/rrellan/BZea/ZEAL/demultiplex` (user):
+  - `<source>/<sample_id>_R{1,2}.fastq.gz`, flat per sequencing batch (`bc1`, `bc2s3_batch1`, `bc2s3_batch2`; user).
+  - `<source>/demultiplex_<NN>.csv`: the wave's FASTQ samplesheet (`sample_id,fastq_1,fastq_2,library,lanes,kit`).
+  - `reports/demux/<library>.<lane>.demux_metrics.txt` (fqtk), `reports/sequali/<sample_id>.{html,json}`.
+  - `multiqc/reads/demultiplex_<NN>/multiqc_report.html`, one read-QC report per wave; `pipeline_info/` (timestamped).
 - The multiplexed originals stay where they are.
 
-## Disk
+## Waves (cap: 2 TB of `work/` per wave, user)
 
-Estimates from `agent/plan/facts_report.md`, to be replaced by the full-size measurement (1C, BZea5).
+From `agent/demux_split/plan_waves.py 2.0` on real per-library sizes (lane files on hazel; batch 1 from the tar
+listing). Peak factors per GB of raw: bc1 1.7 (measured on 1C), batch 2 0.85 (one lane, no join), batch 1 2.7 (tar
+members extracted, then lanes and joins).
 
-- Raw data: 6.9 TB in total. FlexPrep ~5.4 TB (BC1 libraries up to ~370 GB each, batch 2 small); batch 1 1.46 TB
-  (16 libraries, ~90 GB each, in plate tars).
-- `work/` held by a wave until it succeeds, per GB of raw:
-  - FlexPrep: lane FASTQs from fqtk 0.85 + joined per-sample FASTQs 0.85 ≈ 1.7;
-  - batch 1: extracted tar members 1.0 + 1.7 ≈ 2.7.
-- A wave's peak = sum over its libraries of raw x factor. Waves are filled in `meta/samples.csv` order up to a cap
-  **C** (open: the user's number, e.g. 2 or 3 TB of `/share`).
-- Example at C = 3 TB: ~1.7 TB raw FlexPrep or ~1.1 TB raw batch 1 per wave, ~5 waves in all.
-- `/rsstu` gets the published copies: ~5.8 TB of 18 TB free (CRAMs ~2.4 TB later).
+| wave | source       | libraries         | kept samples | raw TB | `work/` peak TB | final TB |
+| ---- | ------------ | ----------------- | ------------ | ------ | --------------- | -------- |
+| 01   | bc1          | 1A-1D (4)         | 48           | 1.07   | 1.82            | 0.91     |
+| 02   | bc1          | 1E-2B (6)         | 72           | 1.07   | 1.81            | 0.91     |
+| 03   | bc1          | 2C-3C (9)         | 108          | 1.10   | 1.88            | 0.94     |
+| 04   | bc1          | 3D-4D (9)         | 108          | 0.97   | 1.66            | 0.83     |
+| 05   | bc1          | 4E-4H (4)         | 48           | 0.75   | 1.28            | 0.64     |
+| 06   | bc2s3_batch2 | V21A-V24H (32)    | 384          | 0.51   | 0.43            | 0.43     |
+| 07   | bc2s3_batch1 | BZea2-BZea9 (8)   | 747          | 0.73   | 1.97            | 0.62     |
+| 08   | bc2s3_batch1 | BZea10-BZea17 (8) | 768          | 0.73   | 1.96            | 0.62     |
+| all  |              | 80                | 2,283        | 6.94   | max 1.97        | 5.90     |
+
+- `/share` holds at most one wave (<= 2 TB), plus the leftovers of a failed attempt until they are removed (below).
+  Group use was 0.97 TB of 20 TB on 2026-10-03 (0.8 TB of it this project's measurement `work/`, to remove).
+- `/rsstu` gets 5.9 TB of FASTQs (18 TB free; CRAMs need ~2.4 TB later).
+
+## Measured (full libraries 1C and BZea5, `hpc_prod`, jobs 1067152 / 1067407)
+
+| step             | measured                                                                                  | in production         |
+| ---------------- | ----------------------------------------------------------------------------------------- | --------------------- |
+| untar (batch 1)  | <= 2 min per lane, 35 GB per BZea5 lane                                                   | BZea2 ~4 min          |
+| fqtk             | 1C lanes (713 M pairs) 43-48 min, BZea5 lanes (224-230 M) 19 min; 1.6 GB; ~3.5 of 5 cores | bc1 waves ~50 min     |
+| lane joins       | <= 1 min 46 s per 1C sample (28 GB)                                                       | 4E's largest ~2.5 min |
+| Sequali          | 12 min, 1.3 cores, 0.6 GB on a 236 M-pair 1C sample (job 1068396)                         | <= ~16 min            |
+| copy to `/rsstu` | 307 GB in 15.5 min (~330 MB/s)                                                            | ~5 h over all waves   |
+| unmatched        | 1C 2.1 %, BZea5 6.0 %                                                                     |                       |
+
+Per wave about 1.5-3 h; 8 waves about 12-24 h plus queue waits.
 
 ## Choices this plan settles
 
-- **One Nextflow run per wave, waves one after another.** Each run ends with `cleanup = true` (`hpc_prod`), which deletes
-  that run's `work/` only after it succeeded and published every output. So at most one wave's `work/` exists at a time.
-  - Rejected: one run for all libraries (~13.5 TB peak in the group's quota).
-  - Rejected: `buffer` or a barrier inside one run. Nothing deletes a finished batch's files before the run ends, so the
-    peak is the same.
-  - Rejected: nf-boost's early cleanup (experimental, untested here).
-  - Rejected: deleting a wave's `work/` by hand or by script (`rm -rf`). `cleanup` does it, only after success.
-- **One launch directory, `nf_work/zealgt_prod`, for every wave.** Its cache serves `-resume` of any failed wave.
-  Rejected: a `-work-dir` per wave, which only matters if waves run at the same time.
-- **The chain is Slurm dependencies.** One submission (`scripts/submit_demultiplex_waves.sh`, to write) submits one head
-  job per wave with `--dependency=afterok:<previous head job>`; each runs
-  `submit_head_job.sbatch hpc_prod --step demultiplex --input meta/waves/demultiplex_<NN>.csv --outdir .../wave_<NN> -resume`.
-  - If a wave fails, `afterok` never releases the later ones. Its `work/` stays for `-resume`; the failed wave is fixed,
-    resubmitted, and the remaining waves are chained again.
-  - Rejected: a loop of `nextflow run` inside one long head job. One job's time limit would cover every wave, and a
-    failure would need the loop's restart logic.
-- **Outputs are copied to `/rsstu` during each run.** A failed copy fails the run, so `cleanup` never runs before the
-  outputs are safe.
-- **One samplesheet per wave.** No overwrite between runs. The whole-dataset sheet is the wave sheets joined under one
-  header; `ALIGNMENT` waves can reuse the same wave sheets.
+- **One Nextflow run per wave, waves one after another**, each with `cleanup = true` (`hpc_prod`): Nextflow deletes a
+  run's `work/` only after it succeeded and published every output (publishing finishes before cleanup; a failed copy
+  fails the run). Rejected: one run (~13.8 TB peak in the group's quota); `buffer`/barriers inside one run (nothing
+  deletes a finished batch's files before the run ends); nf-boost (experimental); deleting `work/` by hand or script.
+- **The chain is Slurm dependencies**: `scripts/submit_demultiplex_waves.sh <first wave>` submits one head job per wave
+  from `<first wave>` on, each `--dependency=afterok:<previous>`, on the normal QOS with `--time=1-00:00:00`. Rejected:
+  a loop inside one long head job (one time limit for all waves); a Slurm array `%1` (failed waves would pile up
+  `work/`).
+- **First attempts run without `-resume`** (a fresh session each); recovery uses `-resume <session id>` (`nextflow log`
+  in `nf_work/zealgt_prod`). A bare `-resume` takes the last session in the launch directory, whichever run it was.
+- **One launch directory, `nf_work/zealgt_prod`, and nothing else runs there during the chain** (two runs there at once
+  fail on the cache lock).
+- **A frozen checkout runs production**: a git worktree of the merged commit, e.g. `/rsstu/.../ZEAL/zealgt_prod` at tag
+  `demux-prod-<date>`, with `scripts/submit_head_job.sbatch` taking `REPO` from the environment (default unchanged).
+  Development can then pull into the usual checkout during the chain.
+- **`CAT_FASTQ` arrays of 20**, half of `queueSize` (40). An array equal to the queue waits for the queue to drain; 50
+  was rejected by Nextflow and failed job 1067152.
+- **Waves cut along sequencing batches and filled to 2 TB** (user). Rejected: waves by library count.
+
+## When a wave fails
+
+1. `afterok` never releases the later waves: they stay pending (`DependencyNeverSatisfied`); `scancel` them.
+2. Read the failed task's `.command.err` (`docs/running.md`); fix on the laptop; merge; move the production tag.
+3. Resubmit from the failed wave: `scripts/submit_demultiplex_waves.sh <NN>` with `-resume <session id>` for that wave.
+4. **The failed attempt's task folders stay in `work/` after the recovery succeeds** (`cleanup` deletes only what the
+   successful run made; shown on Nextflow 26.04.6 by the adversarial review). They go on the user's removal list
+   (`nextflow clean -f <failed run name>`, run by the user) before the next wave can add another 2 TB.
+
+## Code still to change before the run (next session)
+
+1. `--outdir` layout: FASTQs to `<source>/<sample_id>_R{1,2}.fastq.gz` (add `source` to `assets/schema_input.json` meta
+   and to the FASTQ record); the samplesheet index to `<source>/<input basename>.csv`; the read-QC MultiQC to
+   `multiqc/reads/<input basename>/`, so waves never overwrite each other's sheet or report.
+2. `conf/hpc_prod.config`: `CAT_FASTQ` array 20; `FQTK` time 2 h kept (48 min measured; GPFS contention), the comments
+   with the measured numbers; `EXTRACT_LANE` 30 min.
+3. `scripts/submit_head_job.sbatch`: `REPO=${ZEALGT_REPO:-/rsstu/users/r/rrellan/BZea/ZEAL/zealgt}`.
+4. `scripts/submit_demultiplex_waves.sh` (the chain) and `meta/waves/demultiplex_<NN>.csv` (from
+   `agent/demux_split/plan_waves.py`, moved to `meta/` as `write_wave_sheets.py`).
+5. Check on the laptop why no lane join started before every fqtk lane had finished (1067407: BZea5's joins waited 50
+   min for 1C's lanes): job-array batching or the channel wiring. Arrays of 20 may be enough; test with arrays off.
 
 ## Before the run
 
-1. **Full-size measurement** of 1C and BZea5 (running, `hpc_prod`, `ZEAL/demultiplex_measure`): per-process time, memory,
-   task disk; the copy time to `/rsstu`. Sets `conf/hpc_prod.config` and the factors above.
-2. **The cap C** from the user, then the wave sheets.
-3. **`hpc_prod` stub run** of every wave sheet, chained as in production (`-stub-run`). The `hpc_dev` stubs never used
-   `hpc_prod` settings: its `CAT_FASTQ` arrays (50, above `queueSize` 40) failed the first full-size run (job 1067152).
+1. The code changes above, laptop tests (<= 5 min), CodeRabbit on the new code, PR merged.
+2. **`hpc_prod` stub of all 8 waves**, chained by the same script, `--outdir .../ZEAL/demultiplex_stub` (never the real
+   outdir: stub files would land among the real FASTQs). The `hpc_dev` stubs never used `hpc_prod` settings; that is how
+   the array bug reached a full-size run.
+3. The measurement's scratch removed by the user: `/rsstu/.../ZEAL/demultiplex_measure` (307 GB),
+   `nf_work/zealgt_prod/work` (0.8 TB), `nf_work/prod_measure/`.
 4. **The user's OK on the submission.** After that the waves run unattended.
 
 ## Done when
 
 - Every wave succeeded and `cleanup` emptied its `work/`.
 - The wave samplesheets together have 2,283 rows, each with both files present.
-- Per lane, assigned + unmatched pairs in the fqtk metrics equal the lane's pairs. Unmatched rates per lane go into one
+- Per lane, assigned + unmatched pairs in the fqtk metrics equal the lane's pairs; the unmatched rates per lane in one
   table in the report.
-- `decisions.md` has the outdir and the wave design; the measured resources are in `conf/hpc_prod.config`.
+- `decisions.md` has the outdir, the folders by `source`, the 2 TB waves and the chain; the measured resources are in
+  `conf/hpc_prod.config`.
 
 ## Not here
 
-`ALIGNMENT` production waves: their own run plan, reading these wave samplesheets.
+`ALIGNMENT` production waves: their own run plan, reading these samplesheets.

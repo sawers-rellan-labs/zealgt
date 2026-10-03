@@ -172,3 +172,10 @@ fqtk runs once per lane, and `CAT_FASTQ` joins each sample's lanes (user). Reaso
 - Cost: `CAT_FASTQ`'s tasks and a second copy of the FASTQs in `work/` (~6.2 TB at peak), which fits the `/share` quota.
 - Rejected: one fqtk task per library on a stream of its lanes; and copying the lanes into one file first, which costs
   the same disk as the per-lane outputs.
+
+## 2026-10-03 Production demultiplexing in waves
+
+- Outputs on `/rsstu/users/r/rrellan/BZea/ZEAL/demultiplex`, flat per sequencing batch: `<source>/<sample_id>_R{1,2}.fastq.gz`
+  (`source` = `bc1`, `bc2s3_batch1`, `bc2s3_batch2`), not one folder per sample and not one per run.
+- The `/share` quota is the group's, so the run goes in waves of whole libraries, one sequencing batch per wave, each
+  holding at most 2 TB of `work/`; 8 waves, chained, `cleanup` after each. Plan: `docs/runs/demultiplex_production.md`.
