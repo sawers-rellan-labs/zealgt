@@ -14,7 +14,8 @@ downsampling in genotyping. Since Milestone 5, `--step alignment` takes the firs
 ## 2026-10-02 Read processing, both kits
 
 - Demultiplexing: read structures and mismatches as the Twist guides say (tool: see "Demultiplexing with fqtk").
-  - 96-Plex (BC2S3 batch 1): `8B12S+T 8S+T`, default mismatches (the guide sets none).
+  - 96-Plex (BC2S3 batch 1): `8B12S+T 8S+T`, fqtk's default mismatches (the guide sets none), which are the same
+    `--max-mismatches 1 --min-mismatch-delta 2` (`fqtk demux --help`, 0.4.0): both kits allow one mismatch.
   - FlexPrep (BC1, BC2S3 batch 2): `6B2S+T 6B2S+T --max-mismatches 1 --min-mismatch-delta 2`.
 - No adapter trimming, as both guides say. Twist publishes no adapter sequences; none are needed.
 - After alignment, before duplicate marking: `fgumi clip --clipping-mode soft --clip-bases-past-mate true`, both kits.
@@ -147,3 +148,9 @@ samplesheet are kept on `/rsstu` next to the multiplexed originals, which stay; 
 (user): demultiplexing inside every run ties up sample selection for development and production batches. Per-sample
 FASTQs ~0.85 x raw (~5.9 TB; BZea5 L001 fqtk test). Not nf-core/demultiplex 1.8.0: it unpacks whole `.tar.gz` run
 folders, takes one read-structure list, has no per-kit mismatches and does not join lanes.
+
+## 2026-10-03 fqtk, not cutadapt
+
+fqtk stays the demultiplexer (user). On 5 M pairs of a FlexPrep and a 96-Plex lane, every pair zealgt-old's cutadapt
+(`-e 0`) assigned went to the same sample under fqtk, none to another; fqtk's one mismatch kept 1.9-2.7 % more pairs.
+Test: `docs/later/fqtk_vs_cutadapt.md`.
