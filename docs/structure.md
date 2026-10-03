@@ -26,7 +26,7 @@ Read top down; each level only names the one below it.
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------- |
 | `FASTQ_DEMULTIPLEX_FQTK`  | `EXTRACT_LANE` -> `FQTK` -> `CAT_FASTQ`; reads per sample                                                        | built (milestone 1) |
 | `FASTQ_ALIGN_MINIBWA`     | `MINIBWA_MAP` -> `FGUMI_CLIP` -> `SAMTOOLS_FIXMATE` -> `SAMTOOLS_SORT` -> `SAMTOOLS_MARKDUP` -> `SAMTOOLS_INDEX` | built (milestone 2) |
-| `CRAM_QC_SAMTOOLS_PICARD` | `SAMTOOLS_STATS`, `PICARD_COLLECTWGSMETRICS`, `MOSDEPTH`                                                         | milestone 3         |
+| `CRAM_QC_SAMTOOLS_PICARD` | `SAMTOOLS_STATS`, `PICARD_COLLECTWGSMETRICS`, `MOSDEPTH`                                                         | built (milestone 3) |
 | inline                    | `MARKDUP_IMPORT` (`--step markduplicates`), `MULTIQC`                                                            | later               |
 
 ## GENOTYPE: CRAMs to genotypes (development scope: one chromosome end to end)
