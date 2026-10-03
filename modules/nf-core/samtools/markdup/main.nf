@@ -15,6 +15,7 @@ process SAMTOOLS_MARKDUP {
     tuple val(meta), path("*.bam"), emit: bam, optional: true
     tuple val(meta), path("*.cram"), emit: cram, optional: true
     tuple val(meta), path("*.sam"), emit: sam, optional: true
+    tuple val(meta), path("*.markdup.stats"), emit: stats, optional: true
     tuple val("${task.process}"), val('samtools'), eval("samtools version | sed '1!d;s/.* //'"), topic: versions, emit: versions_samtools
 
     when:
@@ -60,5 +61,6 @@ process SAMTOOLS_MARKDUP {
     }
     """
     touch ${prefix}.${extension}
+    ${args.contains("-f ") ? "touch ${prefix}.markdup.stats" : ""}
     """
 }

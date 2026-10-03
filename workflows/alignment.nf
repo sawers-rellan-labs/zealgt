@@ -26,7 +26,9 @@ workflow ALIGNMENT {
     def ch_fasta = channel.value([[id: file(fasta).name], file(fasta, checkIfExists: true), file("${fasta}.fai", checkIfExists: true)])
     FASTQ_ALIGN_MINIBWA(FASTQ_DEMULTIPLEX_FQTK.out.reads, ch_fasta, channel.value([[id: file(fasta).name], files(minibwa_index, checkIfExists: true)]))
     CRAM_QC_SAMTOOLS_PICARD(FASTQ_ALIGN_MINIBWA.out.cram, ch_fasta)
-    ch_multiqc_files = ch_multiqc_files.mix(CRAM_QC_SAMTOOLS_PICARD.out.qc.map { _meta, f -> f })
+    // QC per sample: duplicate counts from markdup, then the CRAM QC tools
+    def ch_cram_qc = FASTQ_ALIGN_MINIBWA.out.markdup_stats.mix(CRAM_QC_SAMTOOLS_PICARD.out.qc)
+    ch_multiqc_files = ch_multiqc_files.mix(ch_cram_qc.map { _meta, f -> f })
 
     // Collate and save software versions
     def topic_versions = channel.topic("versions")
@@ -78,6 +80,6 @@ workflow ALIGNMENT {
     multiqc_report = MULTIQC.out.report.map { _meta, report -> [report] }.toList() // channel: /path/to/multiqc_report.html
     reads          = FASTQ_DEMULTIPLEX_FQTK.out.reads // channel: [ meta, [ R1, R2 ] ], one per sample
     cram           = FASTQ_ALIGN_MINIBWA.out.cram     // channel: [ meta, cram, crai ], one per sample
-    cram_qc        = CRAM_QC_SAMTOOLS_PICARD.out.qc   // channel: [ meta, file ], several per sample
+    cram_qc        = ch_cram_qc                       // channel: [ meta, file ], several per sample
     versions       = ch_versions                      // channel: [ path(versions.yml) ]
 }
