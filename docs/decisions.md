@@ -154,3 +154,19 @@ folders, takes one read-structure list, has no per-kit mismatches and does not j
 fqtk stays the demultiplexer (user). On 5 M pairs of a FlexPrep and a 96-Plex lane, every pair zealgt-old's cutadapt
 (`-e 0`) assigned went to the same sample under fqtk, none to another; fqtk's one mismatch kept 1.9-2.7 % more pairs.
 Test: `docs/later/fqtk_vs_cutadapt.md`.
+
+## 2026-10-03 Demultiplexing per lane
+
+fqtk runs once per lane, and `CAT_FASTQ` joins each sample's lanes (user). Reasons:
+
+- Data source: the reads arrive split by lane. Novogene delivers each FlexPrep library as one file pair per lane
+  (e.g. 1C `_L5`, `_L6`, `_L7`); the batch-1 tars hold one member per lane (`_L001`, `_L002`).
+- History:
+  - Nirwan ran sabre per plate and lane (`github.com/nirwan1265/Mapping`, `src/demultiplex_sabre.csh`).
+  - zealgt-old ran cutadapt per lane because cutadapt could not read the lanes as one stream (job 972171,
+    2026-09-28, its `docs/PLAN_pipeline.md:48-50`).
+  - zealbc1 copied each library's lanes into one file per read before cutadapt (`nilhmm/modules/demux.nf`).
+- Not tested: whether fqtk reads a library's lanes as one stream.
+- Cost: `CAT_FASTQ`'s tasks and a second copy of the FASTQs in `work/` (~6.2 TB at peak), which fits the `/share` quota.
+- Rejected: one fqtk task per library on a stream of its lanes; and copying the lanes into one file first, which costs
+  the same disk as the per-lane outputs.
