@@ -2,17 +2,12 @@
 
 ## Introduction
 
-**sawers-rellan-labs/zealgt** is a bioinformatics pipeline that ...
+**sawers-rellan-labs/zealgt** takes the ZEAL maize samples from raw sequencing lanes to aligned CRAMs, one run per step chosen with `--step demultiplex | alignment`:
 
-<!-- TODO nf-core:
-   Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
-   major pipeline sections and the types of output it produces. You're giving an overview to someone new
-   to nf-core here, in 15-20 seconds. For an example, see https://github.com/nf-core/rnaseq/blob/master/README.md#introduction
--->
+![zealgt metro map](docs/images/zealgt_metro.svg)
 
-<!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
-     workflows use the "tube map" design for that. See https://nf-co.re/docs/community/brand/workflow-schematics#examples for examples.   -->
-<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
+- `--step demultiplex` reads the library lanes listed in `meta/samples.csv`, extracts each lane's reads (`EXTRACT_LANE`, for tar members or `--head`), demultiplexes them per lane by barcode (`FQTK`) and joins each sample's lanes (`CAT_FASTQ`), writing `fastq/<sample>/` and `fastq/samplesheet.csv`.
+- `--step alignment` reads `fastq/samplesheet.csv` and aligns each sample with `minibwa`, soft-clips bases that run past the mate (`fgumi clip`), then fixes mates, sorts, marks duplicates and indexes with `samtools`, writing one CRAM per sample; `samtools stats`, Picard `CollectWgsMetrics` and `mosdepth` feed a `MultiQC` report.
 
 ## Usage
 
