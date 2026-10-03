@@ -4,6 +4,8 @@ Work is done one milestone at a time; each has a one-page spec in this folder (`
 
 ## Before: the spec (the user approves it)
 
+- Why: the user's reason for the milestone, in their words. A row in `../structure.md`, a handover or an old repository's
+  feature is not a reason; without one on record, ask whether the milestone is needed before writing the spec.
 - Inputs and outputs, with file names and samplesheet columns.
 - Tools and settings, taken from `../decisions.md`.
 - The choices the spec settles, each with the rejected alternative.
