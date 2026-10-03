@@ -128,3 +128,10 @@ zealbc1/nilhmm CRAMs separately (Milestone 5).
 
 `samtools markdup` writes its counts (`--json -f`): duplicates split into PCR and optical (`-d 2500`) and the estimated
 library size, which samtools stats and Picard do not give. The file goes to `cram/` next to the CRAM and into MultiQC.
+
+## 2026-10-03 No import step
+
+Every BC1 and BC2S3 CRAM is made from raw reads by `ALIGNMENT`; existing alignments are not imported. The pipeline
+exists to replace Nirwan's BC2S3 BAMs (demultiplexed and clipped with Trimmomatic) with processing as the Twist guides
+recommend. Supersedes the `MARKDUP_IMPORT` half of "MultiQC before imported CRAMs". The B73 control BAMs belong to
+`GENOTYPE`.
