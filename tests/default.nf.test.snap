@@ -50,6 +50,7 @@
                 "cram/LX_1.cram",
                 "cram/LX_1.cram.crai",
                 "cram/LX_1.global.dist.txt",
+                "cram/LX_1.markdup.stats",
                 "cram/LX_1.region.dist.txt",
                 "cram/LX_1.regions.bed.gz",
                 "cram/LX_1.regions.bed.gz.csi",
@@ -59,6 +60,7 @@
                 "cram/LX_2.cram",
                 "cram/LX_2.cram.crai",
                 "cram/LX_2.global.dist.txt",
+                "cram/LX_2.markdup.stats",
                 "cram/LX_2.region.dist.txt",
                 "cram/LX_2.regions.bed.gz",
                 "cram/LX_2.regions.bed.gz.csi",
@@ -68,6 +70,7 @@
                 "cram/LX_3.cram",
                 "cram/LX_3.cram.crai",
                 "cram/LX_3.global.dist.txt",
+                "cram/LX_3.markdup.stats",
                 "cram/LX_3.region.dist.txt",
                 "cram/LX_3.regions.bed.gz",
                 "cram/LX_3.regions.bed.gz.csi",
@@ -77,6 +80,7 @@
                 "cram/PB1_SID1.cram",
                 "cram/PB1_SID1.cram.crai",
                 "cram/PB1_SID1.global.dist.txt",
+                "cram/PB1_SID1.markdup.stats",
                 "cram/PB1_SID1.region.dist.txt",
                 "cram/PB1_SID1.regions.bed.gz",
                 "cram/PB1_SID1.regions.bed.gz.csi",
@@ -86,6 +90,7 @@
                 "cram/PB1_SID2.cram",
                 "cram/PB1_SID2.cram.crai",
                 "cram/PB1_SID2.global.dist.txt",
+                "cram/PB1_SID2.markdup.stats",
                 "cram/PB1_SID2.region.dist.txt",
                 "cram/PB1_SID2.regions.bed.gz",
                 "cram/PB1_SID2.regions.bed.gz.csi",
@@ -95,6 +100,7 @@
                 "cram/PB1_SID4.cram",
                 "cram/PB1_SID4.cram.crai",
                 "cram/PB1_SID4.global.dist.txt",
+                "cram/PB1_SID4.markdup.stats",
                 "cram/PB1_SID4.region.dist.txt",
                 "cram/PB1_SID4.regions.bed.gz",
                 "cram/PB1_SID4.regions.bed.gz.csi",
@@ -136,7 +142,7 @@
                 "samplesheet.csv"
             ]
         ],
-        "timestamp": "2026-10-03T01:46:28.482382",
+        "timestamp": "2026-10-03T10:35:14.817583",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

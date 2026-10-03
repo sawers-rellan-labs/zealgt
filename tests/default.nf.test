@@ -33,8 +33,8 @@ nextflow_pipeline {
                 { assert !tasks.containsKey('SAMTOOLS_MERGE') },
                 { assert tasks.MULTIQC == 1 },
                 { assert stable_path.findAll { p -> p.startsWith('cram/') }.sort() == ['LX_1', 'LX_2', 'LX_3', 'PB1_SID1', 'PB1_SID2', 'PB1_SID4'].collectMany { s ->
-                    // the CRAM, then its QC (stub names); no mosdepth per-base file
-                    ["cram/${s}.cram", "cram/${s}.cram.crai", "cram/${s}.stats", "cram/${s}.CollectWgsMetrics.coverage_metrics"] +
+                    // the CRAM, then its QC and duplicate counts (stub names); no mosdepth per-base file
+                    ["cram/${s}.cram", "cram/${s}.cram.crai", "cram/${s}.markdup.stats", "cram/${s}.stats", "cram/${s}.CollectWgsMetrics.coverage_metrics"] +
                     ['global.dist.txt', 'region.dist.txt', 'summary.txt', 'regions.bed.gz', 'regions.bed.gz.csi'].collect { x -> "cram/${s}.${x}" }
                 }*.toString().sort() },
                 { assert snapshot(
@@ -65,7 +65,7 @@ nextflow_pipeline {
             def kept = ['LX_1', 'LX_2', 'LX_3', 'PB1_SID1', 'PB1_SID2', 'PB1_SID4']
             assertAll(
                 { assert workflow.success },
-                { assert sources.keySet().sort() == ['Mosdepth genome_results', 'Mosdepth summary', 'Picard WgsMetrics', 'Samtools stats'] },
+                { assert sources.keySet().sort() == ['Mosdepth genome_results', 'Mosdepth summary', 'Picard WgsMetrics', 'Samtools markdup', 'Samtools stats'] },
                 { assert sources.every { _k, samples -> samples == kept } }
             )
         }
