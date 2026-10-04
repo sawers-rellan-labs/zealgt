@@ -2,6 +2,7 @@
 # Nextflow head job: sbatch scripts/submit_head_job.sbatch <hpc_dev|hpc_prod> <nextflow run args...>
 # One fixed launch directory per profile (nf_work/zealgt_dev, nf_work/zealgt_prod), so -resume always finds the cache.
 # Production outlives the short QOS: sbatch --partition=compute --qos=normal --time=3-00:00:00 scripts/submit_head_job.sbatch hpc_prod ...
+# The checkout run is $ZEALGT_REPO (default: the development checkout); production waves pass their frozen worktree.
 # Pulling missing images needs internet: sbatch --partition=xfer --export=ALL,NXF_OFFLINE=false ...
 #SBATCH --job-name=zealgt_head
 #SBATCH --account=maize_cpu
@@ -19,7 +20,7 @@ case "$PROFILE" in
               [ "$SLURM_JOB_QOS" != short ] || { echo "hpc_prod needs a head job on the normal QOS (see line 4)" >&2; exit 2; } ;;
     *)        echo "first argument: hpc_dev or hpc_prod" >&2; exit 2 ;;
 esac
-REPO=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt
+REPO=${ZEALGT_REPO:-/rsstu/users/r/rrellan/BZea/ZEAL/zealgt}
 # Nextflow image; its own NXF_HOME is read-only, so plugins and the secrets file live on /share (docs/running.md)
 SIF=/share/maize/frodrig4/apptainer/nextflow_26.04.6.sif
 NXF_DIR=/share/maize/frodrig4/nextflow_home

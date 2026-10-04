@@ -14,6 +14,6 @@ workflow DEMULTIPLEX {
     emit:
     // one samplesheet row per kept sample, the columns of assets/schema_fastq.json
     fastq = FASTQ_DEMULTIPLEX_FQTK.out.reads.map { meta, reads ->
-        [sample_id: meta.id, fastq_1: reads[0], fastq_2: reads[1], library: meta.library, lanes: meta.lanes, kit: meta.kit]
+        [sample_id: meta.id, fastq_1: reads[0], fastq_2: reads[1], source: meta.source, library: meta.library, lanes: meta.lanes, kit: meta.kit]
     }
 }

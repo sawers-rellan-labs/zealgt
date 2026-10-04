@@ -27,10 +27,10 @@ Read top down; each level only names the one below it.
 
 ## DEMULTIPLEX (`--step demultiplex`): library reads to one FASTQ pair per sample
 
-| stage                    | modules                                                                     | status                  |
-| ------------------------ | --------------------------------------------------------------------------- | ----------------------- |
-| `FASTQ_DEMULTIPLEX_FQTK` | `EXTRACT_LANE` -> `FQTK` -> `CAT_FASTQ`; FASTQs and `fastq/samplesheet.csv` | built (milestones 1, 5) |
-| `FASTQ_SEQUALI`          | `SEQUALI` per sample -> `MULTIQC` (read-QC report)                          | built (milestone 6)     |
+| stage                    | modules                                                                             | status                  |
+| ------------------------ | ----------------------------------------------------------------------------------- | ----------------------- |
+| `FASTQ_DEMULTIPLEX_FQTK` | `EXTRACT_LANE` -> `FQTK` -> `CAT_FASTQ`; FASTQs and `samplesheets/<input name>.csv` | built (milestones 1, 5) |
+| `FASTQ_SEQUALI`          | `SEQUALI` per sample -> `MULTIQC` (read-QC report)                                  | built (milestone 6)     |
 
 ## ALIGNMENT (`--step alignment`): per-sample FASTQs to one CRAM per sample
 

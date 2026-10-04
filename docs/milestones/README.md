@@ -1,6 +1,7 @@
 # Milestones
 
-Work is done one milestone at a time; each has a one-page spec in this folder (`NN_<name>.md`).
+Work is done one milestone at a time; each has a one-page spec in this folder (`NN_<name>.md`). A milestone builds a
+stage (a row in `../structure.md`); a run of built stages on real data has a run plan in `../runs/`.
 
 ## Before: the spec (the user approves it)
 

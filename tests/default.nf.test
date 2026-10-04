@@ -28,10 +28,11 @@ nextflow_pipeline {
             def tasks = workflow.trace.tasks().countBy { t -> t.name.tokenize(':')[-1].tokenize(' ')[0] }
             def kept = ['LX_1', 'LX_2', 'LX_3', 'PB1_SID1', 'PB1_SID2', 'PB1_SID4']
             // the published samplesheet: one quoted row per kept sample, paths to the published files
-            def lines = path("$outputDir/fastq/samplesheet.csv").readLines()
+            def lines = path("$outputDir/samplesheets/samplesheet.csv").readLines()
+            def source = { s -> s.startsWith('LX_') ? 'bc1' : 'bc2s3_batch1' }
             def expected = kept.collect { s ->
                 def (lib, lanes, kit) = s.startsWith('LX_') ? ['LIBX', 'LIBX_TESTFC01_L1,LIBX_TESTFC01_L2', 'twist_flexprep'] : ['LIBB1', 'LIBB1_S1_L001,LIBB1_S1_L002', 'twist_96plex']
-                [s, "$outputDir/fastq/${s}/${s}_R1.fastq.gz", "$outputDir/fastq/${s}/${s}_R2.fastq.gz", lib, lanes, kit].collect { v -> "\"${v}\"" }.join(',')
+                [s, "$outputDir/${source(s)}/${s}_R1.fastq.gz", "$outputDir/${source(s)}/${s}_R2.fastq.gz", source(s), lib, lanes, kit].collect { v -> "\"${v}\"" }.join(',')
             }
             assert workflow.success
             assertAll(
@@ -39,10 +40,10 @@ nextflow_pipeline {
                 { assert tasks == [EXTRACT_LANE: 2, FQTK: 4, CAT_FASTQ: 6, SEQUALI: 6, MULTIQC: 1] },
                 { assert stable_path.findAll { p -> p.startsWith('reports/sequali/') }*.toString().sort() ==
                     kept.collectMany { s -> ["reports/sequali/${s}.html", "reports/sequali/${s}.json"] }*.toString().sort() },
-                { assert stable_path.contains('multiqc/reads/multiqc_report.html') },
-                { assert stable_path.findAll { p -> p.startsWith('fastq/') && p.endsWith('.fastq.gz') }*.toString().sort() ==
-                    kept.collectMany { s -> ["fastq/${s}/${s}_R1.fastq.gz", "fastq/${s}/${s}_R2.fastq.gz"] }*.toString().sort() },
-                { assert lines[0] == '"sample_id","fastq_1","fastq_2","library","lanes","kit"' },
+                { assert stable_path.contains('multiqc/reads/samplesheet/multiqc_report.html') },
+                { assert stable_path.findAll { p -> p.endsWith('.fastq.gz') }*.toString().sort() ==
+                    kept.collectMany { s -> ["${source(s)}/${s}_R1.fastq.gz", "${source(s)}/${s}_R2.fastq.gz"] }*.toString().sort() },
+                { assert lines[0] == '"sample_id","fastq_1","fastq_2","source","library","lanes","kit"' },
                 { assert lines.drop(1).sort() == expected*.toString().sort() },
                 { assert !stable_path.any { p -> p.startsWith('cram') } },
                 { assert snapshot(
@@ -82,7 +83,7 @@ nextflow_pipeline {
                 { assert !tasks.keySet().intersect(['EXTRACT_LANE', 'FQTK', 'CAT_FASTQ', 'SAMTOOLS_MERGE']) },
                 { assert tasks.SEQUALI == 3 },
                 { assert tasks.MULTIQC == 2 },
-                { assert !stable_path.any { p -> p.startsWith('fastq') } },
+                { assert !stable_path.any { p -> p.endsWith('.fastq.gz') || p.startsWith('samplesheets') } },
                 { assert stable_path.findAll { p -> p.startsWith('cram/') }.sort() == ['LX_1', 'LX_2', 'LX_3'].collectMany { s ->
                     // the CRAM, then its QC and duplicate counts (stub names); no mosdepth per-base file
                     ["cram/${s}.cram", "cram/${s}.cram.crai", "cram/${s}.markdup.stats", "cram/${s}.stats", "cram/${s}.CollectWgsMetrics.coverage_metrics"] +

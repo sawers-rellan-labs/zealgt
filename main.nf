@@ -90,7 +90,7 @@ workflow SAWERSRELLANLABS_ZEALGT {
 
     emit:
     multiqc_report = ch_multiqc_report // channel: /path/to/multiqc_report.html
-    fastq          = ch_fastq          // channel: [ sample_id:, fastq_1:, fastq_2:, library:, lanes:, kit: ], one per sample
+    fastq          = ch_fastq          // channel: [ sample_id:, fastq_1:, fastq_2:, source:, library:, lanes:, kit: ], one per sample
     cram           = ch_cram           // channel: [ meta, cram, crai ], one per sample
     cram_qc        = ch_cram_qc        // channel: [ meta, file ], several per sample
 }
@@ -140,16 +140,17 @@ workflow {
 }
 
 output {
-    // per-sample FASTQs and the samplesheet ALIGNMENT reads, with the published paths
+    // per-sample FASTQs, flat per sequencing batch, and the samplesheet ALIGNMENT reads
     fastq {
         // off for alignment runs: an empty channel still writes an empty index over a demultiplex run's sheet
         enabled params.step == 'demultiplex'
         path { r ->
-            r.fastq_1 >> "fastq/${r.sample_id}/${r.sample_id}_R1.fastq.gz"
-            r.fastq_2 >> "fastq/${r.sample_id}/${r.sample_id}_R2.fastq.gz"
+            r.fastq_1 >> "${r.source}/${r.sample_id}_R1.fastq.gz"
+            r.fastq_2 >> "${r.source}/${r.sample_id}_R2.fastq.gz"
         }
         index {
-            path 'fastq/samplesheet.csv'
+            // one sheet per input sheet, so runs into one outdir keep theirs
+            path "samplesheets/${file(params.input).baseName}.csv"
             header true
         }
     }
