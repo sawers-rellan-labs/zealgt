@@ -31,8 +31,13 @@ Measured on full libraries in `hpc_prod`: 1C (bc1, 3 lanes) and BZea5 (batch 1, 
 
 | process   | measured                                                                                                     | `hpc_prod`                           | `hpc_dev`         |
 | --------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------ | ----------------- |
-| `SEQUALI` | 236 M-pair 1C sample (S_1C_6, job 1068396): 12 min, 1.3 of 2 cpus, 0.6 GB; 35-42 k pairs: 0.4-0.5 GB, < 10 s | 2 cpus, 2 GB, 1 h                    | 2 cpus, 2 GB, 1 h |
+| `SEQUALI` | 236 M-pair 1C sample (S_1C_6, job 1068396): 12 min, 1.3 of 2 cpus, 0.6 GB; 35-42 k pairs: 0.4-0.5 GB, < 10 s | 1 cpu, 2 GB, 1 h                     | 2 cpus, 2 GB, 1 h |
 | `MULTIQC` | 4 samples: 0.15 cpu, 0.7 GB, 1.5 min; grows with samples, unmeasured on a whole library                      | 1 cpu, 4 GB x attempt, 1 h x attempt | 1 cpu, 2 GB, 1 h  |
+
+`SEQUALI` 1 cpu in production: wave 07 failed twice on PN7_SID583 with `UnicodeDecodeError` in the R1/R2 name check
+(garbage bytes, different each time) although its FASTQs are intact (gzip ok, 6,256,639 records each, all names ASCII).
+Under Nextflow's task wrapper on the same node, `-t 2` failed 9 of 9 and `-t 1` passed 3 of 3 (jobs 1078114, 1078222,
+1078347); outside the wrapper `-t 2` passed 29 of 29. Waves 01-06 ran with `-t 2`; their Sequali reports are QC only.
 
 `MULTIQC` memory and time double on the retry: waves 07/08 summarise ~750 Sequali reports, never measured above 4
 samples; measure wave 01's (48) and 07's before setting a fixed value.
