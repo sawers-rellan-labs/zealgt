@@ -13,6 +13,12 @@
                 "errorMessage": "sample_id must be letters, digits and underscores",
                 "meta": ["id"]
             },
+            "source": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_]+$",
+                "errorMessage": "source must be letters, digits and underscores",
+                "meta": ["source"]
+            },
             "library": {
                 "type": "string",
                 "pattern": "^[A-Za-z0-9_]+$",
@@ -60,7 +66,7 @@
                 "pattern": "^([^;:'\"\\s]+:[^;:'\"\\s]+(;[^;:'\"\\s]+:[^;:'\"\\s]+)*)?$"
             }
         },
-        "required": ["sample_id", "library", "kit", "barcode_r1", "raw_location"]
+        "required": ["sample_id", "source", "library", "kit", "barcode_r1", "raw_location"]
     },
     "uniqueEntries": ["sample_id"]
 }

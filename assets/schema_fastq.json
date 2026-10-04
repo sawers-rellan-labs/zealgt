@@ -2,7 +2,7 @@
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/sawers-rellan-labs/zealgt/main/assets/schema_fastq.json",
     "title": "sawers-rellan-labs/zealgt pipeline - params.input schema for --step alignment",
-    "description": "One row per sample: its FASTQ pair, as DEMULTIPLEX writes fastq/samplesheet.csv",
+    "description": "One row per sample: its FASTQ pair, as DEMULTIPLEX writes samplesheets/<input basename>.csv",
     "type": "array",
     "items": {
         "type": "object",
@@ -26,6 +26,12 @@
                 "exists": true,
                 "pattern": "^\\S+\\.f(ast)?q\\.gz$",
                 "errorMessage": "fastq_2 must be an existing .fastq.gz file"
+            },
+            "source": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_]+$",
+                "errorMessage": "source must be letters, digits and underscores",
+                "meta": ["source"]
             },
             "library": {
                 "type": "string",

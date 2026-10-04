@@ -11,20 +11,21 @@
 The pipeline runs one of two workflows, chosen with `--step`; they are separate runs linked by a samplesheet.
 
 - `--step demultiplex`: library rows of `meta/samples.csv` (`assets/schema_input.json`) to one FASTQ pair per kept
-  sample. Publishes `fastq/<sample_id>/<sample_id>_R{1,2}.fastq.gz`, `fastq/samplesheet.csv` and the fqtk metrics in
-  `reports/demux/`. Rows with `exclude` = TRUE are demultiplexed and not published.
+  sample. Publishes `<source>/<sample_id>_R{1,2}.fastq.gz`, the samplesheet `samplesheets/<input name>.csv`
+  and the fqtk metrics in `reports/demux/`. Rows with `exclude` = TRUE are demultiplexed and not published.
 - `--step alignment`: rows of a FASTQ samplesheet (`assets/schema_fastq.json`), e.g. the one `demultiplex` published or
   a subset of its rows, to one CRAM per sample with its QC in `cram/`.
 
-```csv title="fastq/samplesheet.csv"
-sample_id,fastq_1,fastq_2,library,lanes,kit
-LX_1,/path/fastq/LX_1/LX_1_R1.fastq.gz,/path/fastq/LX_1/LX_1_R2.fastq.gz,LIBX,"LIBX_TESTFC01_L1,LIBX_TESTFC01_L2",twist_flexprep
+```csv title="samplesheets/samplesheet.csv"
+sample_id,fastq_1,fastq_2,source,library,lanes,kit
+LX_1,/path/bc1/LX_1_R1.fastq.gz,/path/bc1/LX_1_R2.fastq.gz,bc1,LIBX,"LIBX_TESTFC01_L1,LIBX_TESTFC01_L2",twist_flexprep
 ```
 
 | Column               | Description                                                                |
 | -------------------- | -------------------------------------------------------------------------- |
 | `sample_id`          | Sample name: the CRAM's name and its read group `ID` and `SM`.             |
 | `fastq_1`, `fastq_2` | The sample's read pair, gzipped.                                           |
+| `source`             | Sequencing batch (`meta/samples.csv`); the FASTQs' folder.                 |
 | `library`            | Read group `LB`.                                                           |
 | `lanes`              | The sample's lane file stems, comma-joined (quoted): read group `PU`.      |
 | `kit`                | `twist_flexprep` or `twist_96plex`; information only after demultiplexing. |

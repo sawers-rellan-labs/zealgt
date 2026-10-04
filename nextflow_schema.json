@@ -24,7 +24,7 @@
                     "exists": true,
                     "mimetype": "text/csv",
                     "pattern": "^\\S+\\.csv$",
-                    "description": "Samplesheet: meta/samples.csv rows for demultiplex (assets/schema_input.json), a fastq/samplesheet.csv for alignment (assets/schema_fastq.json).",
+                    "description": "Samplesheet: meta/samples.csv rows for demultiplex (assets/schema_input.json), a published samplesheets/<name>.csv for alignment (assets/schema_fastq.json).",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "outdir": {
