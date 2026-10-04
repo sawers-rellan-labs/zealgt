@@ -48,6 +48,10 @@ for lib in dict.fromkeys(r['library'] for r in rows):
     cur['libs'].append(lib); cur['raw'] += raw; cur['peak'] += peak; cur['samples'] += k
 
 os.makedirs(os.path.join(HERE, 'waves'), exist_ok=True)
+# the chain submits every sheet in meta/waves/: stale sheets from a run with more waves would demultiplex libraries twice
+stale = sorted(f for f in os.listdir(os.path.join(HERE, 'waves')) if f.startswith('demultiplex_') and f[12:14].isdigit() and int(f[12:14]) > len(waves))
+if stale:
+    sys.exit(f'{len(waves)} waves, but meta/waves/ also holds {", ".join(stale)}: remove them first')
 print(f'| wave | source | libraries | kept samples | raw TB | work/ peak TB | final TB |  (cap {CAP_TB} TB)')
 for i, w in enumerate(waves, 1):
     with open(os.path.join(HERE, 'waves', f'demultiplex_{i:02d}.csv'), 'w', newline='') as f:
