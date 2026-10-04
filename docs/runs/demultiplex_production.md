@@ -94,6 +94,10 @@ Per wave about 1.5-3 h; 8 waves about 12-24 h plus queue waits.
 - 2026-10-04, jobs 1078372-1078373 (tag `.4`): wave 07 succeeded (MultiQC out of memory at 4 GB, passed on the 8 GB
   retry); wave 08 failed at 07:55 on Sequali (PN11_SID979, segmentation fault, also at 1 thread). User: Sequali failures
   never stop a wave (`errorStrategy 'ignore'`); wave 08 resumed.
+- 2026-10-04, job 1084546 (tag `.5`): wave 08 succeeded at 16:36; Sequali ignored on PN11_SID979 and PN10_SID907 (both
+  exit 139, Sequali 1.0.2 use-after-free, reported as rhpvorderman/sequali#263); MultiQC out of memory at 4 GB, passed
+  at 8 GB (5.7 GB). Their Sequali reports were made outside Nextflow (production image, `-t 1`) and wave 08's MultiQC
+  rebuilt the same way as the pipeline does it (Slurm job 1087685).
 
 ## When a wave fails
 
@@ -131,12 +135,15 @@ Per wave about 1.5-3 h; 8 waves about 12-24 h plus queue waits.
 
 ## Done when
 
-- Every wave succeeded and `cleanup` emptied its `work/`.
-- The wave samplesheets together have 2,283 rows, each with both files present.
+- Every wave succeeded and `cleanup` emptied its `work/`. **Done 2026-10-04 16:36**: all 8 succeeded; `cleanup` removed
+  every task folder of the successful runs; failed attempts' folders of waves 07 and 08 (2.7 TB) listed for the user.
+- The wave samplesheets together have 2,283 rows, each with both files present. **Done**: 2,283 rows, no file missing
+  or empty.
 - Per lane, assigned + unmatched pairs in the fqtk metrics equal the lane's pairs; the unmatched rates per lane in one
-  table in the report.
+  table in the report. **Done in part**: per-lane pairs and unmatched rates in `docs/RESOURCES.md` (175 lanes); the
+  pairs come from fqtk's own metrics, so no independent count of the raw lanes was made (it would read 6.9 TB again).
 - `decisions.md` has the outdir, the folders by `source`, the 2 TB waves and the chain; the measured resources are in
-  `docs/RESOURCES.md` and their values in `conf/hpc_prod.config`.
+  `docs/RESOURCES.md` and their values in `conf/hpc_prod.config`. **Done.**
 
 ## Not here
 

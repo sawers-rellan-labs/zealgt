@@ -29,10 +29,10 @@ Measured on full libraries in `hpc_prod`: 1C (bc1, 3 lanes) and BZea5 (batch 1, 
 
 ## Read QC
 
-| process   | measured                                                                                                     | `hpc_prod`                           | `hpc_dev`         |
-| --------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------ | ----------------- |
-| `SEQUALI` | 236 M-pair 1C sample (S_1C_6, job 1068396): 12 min, 1.3 of 2 cpus, 0.6 GB; 35-42 k pairs: 0.4-0.5 GB, < 10 s | 1 cpu, 2 GB, 1 h                     | 2 cpus, 2 GB, 1 h |
-| `MULTIQC` | 4 samples: 0.15 cpu, 0.7 GB, 1.5 min; grows with samples, unmeasured on a whole library                      | 1 cpu, 4 GB x attempt, 1 h x attempt | 1 cpu, 2 GB, 1 h  |
+| process   | measured                                                                                                                       | `hpc_prod`                           | `hpc_dev`         |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------ | ----------------- |
+| `SEQUALI` | 236 M-pair 1C sample (S_1C_6, job 1068396): 12 min, 1.3 of 2 cpus, 0.6 GB; 35-42 k pairs: 0.4-0.5 GB, < 10 s                   | 1 cpu, 2 GB, 1 h                     | 2 cpus, 2 GB, 1 h |
+| `MULTIQC` | read QC, peak by samples: 4: 0.7 GB; 48: 1.0; 72: 1.1; 108: 1.3; 384: 2.9 (3.4 min); 747: 5.5 (4.5 min); 768: 5.7 GB (5.4 min) | 1 cpu, 7 GB x attempt, 1 h x attempt | 1 cpu, 2 GB, 1 h  |
 
 `SEQUALI` 1 cpu in production: wave 07 failed twice on PN7_SID583 with `UnicodeDecodeError` in the R1/R2 name check
 (garbage bytes, different each time) although its FASTQs are intact (gzip ok, 6,256,639 records each, all names ASCII).
@@ -43,8 +43,8 @@ Wave 08 then failed on PN11_SID979 with a segmentation fault (exit 139) at `-t 1
 records each, names and quality lengths clean); outside the wrapper `-t 1` and `-t 2` passed 4 of 4, the wrapper replay
 failed (jobs 1080540, 1080545). One thread is not the fix; `SEQUALI` is `errorStrategy 'ignore'` in production.
 
-`MULTIQC` memory and time double on the retry: waves 07/08 summarise ~750 Sequali reports, never measured above 4
-samples; measure wave 01's (48) and 07's before setting a fixed value.
+`MULTIQC` 7 GB: measured 5.7 GB at 768 samples (wave 08) plus ~20 %. At 4 GB waves 07 and 08 ran out of memory (exit 137) and passed on the 8 GB retry, ~3 min lost each. Rule: a base is the measured trend plus ~20 %; the doubling retry
+covers scales never measured (user, 2026-10-04).
 
 ## Alignment
 
@@ -78,6 +78,24 @@ Estimates for full samples (BC1 166-311 M pairs; S_1A_6 ~259 M, the deepest; PN2
 | `MOSDEPTH`                 | threads help only CRAM decoding at full size       | 4 cpus, 4 GB, 2 h                           |
 
 `hpc_dev` runs heads of up to ~6 M pairs per sample: minutes per task, 1 h each.
+
+## Production demultiplexing, measured (2026-10-03/04, `hpc_prod`)
+
+| wave | source       | samples | head job | run time                             |
+| ---- | ------------ | ------- | -------- | ------------------------------------ |
+| 01   | bc1          | 48      | 1071107  | 1 h 32 min                           |
+| 02   | bc1          | 72      | 1071108  | 1 h 17 min                           |
+| 03   | bc1          | 108     | 1071109  | 1 h 14 min                           |
+| 04   | bc1          | 108     | 1071110  | 1 h 03 min                           |
+| 05   | bc1          | 48      | 1071111  | 1 h 14 min                           |
+| 06   | bc2s3_batch2 | 384     | 1071112  | 50 min                               |
+| 07   | bc2s3_batch1 | 747     | 1078372  | 1 h 27 min (third attempt, resumed)  |
+| 08   | bc2s3_batch1 | 768     | 1084546  | 1 h 32 min (second attempt, resumed) |
+
+- 2,283 samples, 5.6 TB of FASTQs (estimate 5.9 TB). `/share` stayed under 2 TB per wave plus failed attempts' leftovers
+  (peak ~3.3 TB).
+- Read pairs and unmatched fraction per lane (fqtk metrics, 175 lanes): bc1 111 lanes, 36.4 G pairs, unmatched 2.3 %
+  (lanes 2.1-2.9 %); batch 2 32 lanes, 3.7 G, 2.2 % (2.0-2.5 %); batch 1 32 lanes, 8.9 G, 5.8 % (5.1-6.4 %).
 
 ## Disk: production demultiplexing waves
 
