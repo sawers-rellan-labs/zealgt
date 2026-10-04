@@ -34,11 +34,15 @@ the `ALIGNMENT` workflow stops at one CRAM per sample, then the `GENOTYPE` workf
 - `workflows/<name>.nf`: the list of stage calls only, <= 100 lines.
 - `subworkflows/local/<stage>/main.nf`: one stage's channel wiring, <= 100 lines; `modules/local/<tool>/main.nf`: one tool call, <= 100 lines.
 - `subworkflows/local/utils_nfcore_zealgt_pipeline/`: template code plus the samplesheet-to-channel step only; no Groovy function files.
+- Analysis steps (Python, R, bash) are command-line tools, not module templates; a module's script is one tool call.
+- R code passes `lintr` and is formatted with `styler`.
 
 ## Testing
 
 - Before running or rerunning the pipeline, read `docs/running.md`.
+- Each tool works alone on small fixtures (unit tests, reference outputs) before it goes into a module.
 - Wiring tests run on the laptop on stubs, in seconds, and give the channel-level DAG; all laptop tests together <= 5 min.
+- Slice runs: the pipeline on the laptop on a real-data slice (a few samples, a few Mb); own budget, <= 15 min per run.
 - Resource profiling runs on hazel, at most 30 min per process.
 - No runs on full libraries without the user's OK.
 

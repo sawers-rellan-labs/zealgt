@@ -10,8 +10,15 @@ description: How an agent operates on the hazel HPC cluster from the laptop - th
 ## The loop
 
 1. **Edit on the laptop only.** Never edit files on hazel.
-2. **Test on the laptop first** (fixtures, stubs, Docker): minutes, no queue, no cost; it catches wiring bugs.
-   Hazel is only for what the laptop cannot test: real data, Slurm, Apptainer, resource numbers.
+2. **Test on the laptop first**, smallest loop first; no queue, no cost:
+   1. each tool alone on small fixtures (unit tests, lint; old runs' outputs as reference answers): seconds;
+   2. the pipeline on stubs (Docker): seconds; catches wiring bugs;
+   3. the pipeline on a real-data slice (a few samples, a few Mb, cut from hazel once): minutes; catches tool logic on
+      real reads.
+
+   Hazel is only for what the laptop cannot test: full data, Slurm, Apptainer, GPFS, resource numbers. Laptop fixes
+   cut the number of hazel runs, not the need for one.
+
 3. **Move code by git only**: commit, `git push`, then `ssh hazel 'git -C <checkout> pull'`. No scp, rsync or pasting of
    code; data and assets may go by `scp`. Every hazel run is then a commit. Do not pull while a run is active.
    **CodeRabbit per commit range, not per run:** before the first run on real sequencing files estimated at 15 min or more
