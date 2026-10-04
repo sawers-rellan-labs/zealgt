@@ -88,6 +88,9 @@ Per wave about 1.5-3 h; 8 waves about 12-24 h plus queue waits.
 - 2026-10-03 20:43, jobs 1071011-1071018 (tag `demux-prod-20261003.2`): stopped by the user 16 min into wave 01's fqtk,
   after an adversarial review found that `EXTRACT_LANE` (30 min, 16 tar lanes at once) and `MULTIQC` (~750 samples)
   could run short and their retry would get the same limits; resubmitted with limits that double on the retry.
+- 2026-10-04, jobs 1071107-1071114 (tag `.3`): waves 01-06 succeeded; wave 07 failed at 04:59 on Sequali (PN7_SID583,
+  `UnicodeDecodeError`), and again after `-resume` (job 1077669). Sequali's two-thread mode, under Nextflow's wrapper,
+  corrupts read names on this sample (`docs/RESOURCES.md`); `SEQUALI` set to 1 cpu, waves 07-08 resubmitted.
 
 ## When a wave fails
 
