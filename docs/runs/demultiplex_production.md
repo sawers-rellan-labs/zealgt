@@ -83,6 +83,12 @@ Per wave about 1.5-3 h; 8 waves about 12-24 h plus queue waits.
   was rejected by Nextflow and failed job 1067152.
 - **Waves cut along sequencing batches and filled to 2 TB** (user). Rejected: waves by library count.
 
+## Attempts
+
+- 2026-10-03 20:43, jobs 1071011-1071018 (tag `demux-prod-20261003.2`): stopped by the user 16 min into wave 01's fqtk,
+  after an adversarial review found that `EXTRACT_LANE` (30 min, 16 tar lanes at once) and `MULTIQC` (~750 samples)
+  could run short and their retry would get the same limits; resubmitted with limits that double on the retry.
+
 ## When a wave fails
 
 1. `afterok` never releases the later waves: they stay pending (`DependencyNeverSatisfied`); `scancel` them.
