@@ -177,6 +177,9 @@ fqtk runs once per lane, and `CAT_FASTQ` joins each sample's lanes (user). Reaso
 
 - Outputs on `/rsstu/users/r/rrellan/BZea/ZEAL/demultiplex`, flat per sequencing batch: `<source>/<sample_id>_R{1,2}.fastq.gz`
   (`source` = `bc1`, `bc2s3_batch1`, `bc2s3_batch2`), not one folder per sample and not one per run.
+- Limits that may be short at an unmeasured scale (`EXTRACT_LANE` time, `MULTIQC` memory and time in waves 07/08) are
+  the measured value times `task.attempt`, so the retry doubles them; not padded requests (12 GB for MultiQC would be
+  < 10 % efficient). The first chain (jobs 1071011-1071018) was stopped 16 min into wave 01 to run every wave with it.
 - Each wave's FASTQ samplesheet in one folder, `samplesheets/<wave sheet name>.csv` (the output index cannot take its
   folder from `source`).
 - The `/share` quota is the group's, so the run goes in waves of whole libraries, one sequencing batch per wave, each

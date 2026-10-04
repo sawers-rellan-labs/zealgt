@@ -4,7 +4,9 @@ The central record of what each process used on hazel and what the profiles requ
 `conf/hpc_prod.config` hold only the values; run plans copy the numbers they rest on and point here.
 
 A new measurement adds a row (job id, input, numbers) and changes the value in the config; peak from the Nextflow trace
-(`peak_rss`, `realtime`, `%cpu`) or `sacct`.
+(`peak_rss`, `realtime`, `%cpu`) or `sacct`. A limit that may be short at a scale never measured is the measured value
+times `task.attempt`, not a padded guess: `base.config` retries once on exit 130-145, so only the failed task reruns,
+with double the limit (user, 2026-10-03).
 
 ## Demultiplex
 
@@ -12,7 +14,7 @@ Measured on full libraries in `hpc_prod`: 1C (bc1, 3 lanes) and BZea5 (batch 1, 
 
 | process        | measured                                                                                   | `hpc_prod`                          | `hpc_dev`         |
 | -------------- | ------------------------------------------------------------------------------------------ | ----------------------------------- | ----------------- |
-| `EXTRACT_LANE` | one BZea5 tar member (35 GB): 1.5-2 min, 6 MB                                              | 1 cpu, 1 GB, 30 min                 | 1 cpu, 1 GB, 1 h  |
+| `EXTRACT_LANE` | one BZea5 tar member (35 GB): 1.5-2 min, 6 MB                                              | 1 cpu, 1 GB, 30 min x attempt       | 1 cpu, 1 GB, 1 h  |
 | `FQTK`         | 1C lanes (713 M pairs): 43-48 min; BZea5 lanes (224-230 M): 19 min; 1.6 GB; ~3.5 of 5 cpus | 5 cpus, 3 GB, 2 h (GPFS contention) | 5 cpus, 2 GB, 1 h |
 | `CAT_FASTQ`    | <= 1 min 46 s per 1C sample (28 GB); BZea5 samples seconds, 21 MB                          | 1 cpu, 1 GB, 1 h, arrays of 20      | 1 cpu, 1 GB, 1 h  |
 
@@ -20,15 +22,20 @@ Measured on full libraries in `hpc_prod`: 1C (bc1, 3 lanes) and BZea5 (batch 1, 
   (job 1065139): ~4.5 s per M pairs, flat 1.6 GB.
 - `CAT_FASTQ` arrays: Nextflow rejects an array larger than `queueSize` (40; 50 failed job 1067152); an array as large as
   the queue waits for it to drain, so 20. A wave's last partial array waits for its last fqtk lane.
+- `EXTRACT_LANE` time doubles on the retry: a batch-1 wave runs its 16 tar extractions at once (up to 77 GB each),
+  ~405 MB/s from `/rsstu` to fit 30 min, about what wave 01's fqtk read alone (adversarial review, 2026-10-03).
 - Unmatched reads: 1C 2.1 %, BZea5 6.0 %.
 - Copy of published FASTQs to `/rsstu`: 307 GB in 15.5 min (~330 MB/s).
 
 ## Read QC
 
-| process   | measured                                                                                                     | `hpc_prod`        | `hpc_dev`         |
-| --------- | ------------------------------------------------------------------------------------------------------------ | ----------------- | ----------------- |
-| `SEQUALI` | 236 M-pair 1C sample (S_1C_6, job 1068396): 12 min, 1.3 of 2 cpus, 0.6 GB; 35-42 k pairs: 0.4-0.5 GB, < 10 s | 2 cpus, 2 GB, 1 h | 2 cpus, 2 GB, 1 h |
-| `MULTIQC` | 4 samples: 0.15 cpu, 0.7 GB, 1.5 min; grows with samples, unmeasured on a whole library                      | 1 cpu, 4 GB, 1 h  | 1 cpu, 2 GB, 1 h  |
+| process   | measured                                                                                                     | `hpc_prod`                           | `hpc_dev`         |
+| --------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------ | ----------------- |
+| `SEQUALI` | 236 M-pair 1C sample (S_1C_6, job 1068396): 12 min, 1.3 of 2 cpus, 0.6 GB; 35-42 k pairs: 0.4-0.5 GB, < 10 s | 2 cpus, 2 GB, 1 h                    | 2 cpus, 2 GB, 1 h |
+| `MULTIQC` | 4 samples: 0.15 cpu, 0.7 GB, 1.5 min; grows with samples, unmeasured on a whole library                      | 1 cpu, 4 GB x attempt, 1 h x attempt | 1 cpu, 2 GB, 1 h  |
+
+`MULTIQC` memory and time double on the retry: waves 07/08 summarise ~750 Sequali reports, never measured above 4
+samples; measure wave 01's (48) and 07's before setting a fixed value.
 
 ## Alignment
 
