@@ -12,7 +12,7 @@ Measured on full libraries in `hpc_prod`: 1C (bc1, 3 lanes) and BZea5 (batch 1, 
 
 | process        | measured                                                                                   | `hpc_prod`                          | `hpc_dev`         |
 | -------------- | ------------------------------------------------------------------------------------------ | ----------------------------------- | ----------------- |
-| `EXTRACT_LANE` | one BZea5 tar member (35 GB): 1.5-2 min, 6 MB                                              | 1 cpu, 1 GB, 30 min                 | 1 cpu, 1 GB, 1 h  |
+| `EXTRACT_LANE` | one BZea5 tar member (35 GB): 1.5-2 min, 6 MB                                              | 1 cpu, 1 GB, 2 h                    | 1 cpu, 1 GB, 1 h  |
 | `FQTK`         | 1C lanes (713 M pairs): 43-48 min; BZea5 lanes (224-230 M): 19 min; 1.6 GB; ~3.5 of 5 cpus | 5 cpus, 3 GB, 2 h (GPFS contention) | 5 cpus, 2 GB, 1 h |
 | `CAT_FASTQ`    | <= 1 min 46 s per 1C sample (28 GB); BZea5 samples seconds, 21 MB                          | 1 cpu, 1 GB, 1 h, arrays of 20      | 1 cpu, 1 GB, 1 h  |
 
@@ -20,6 +20,8 @@ Measured on full libraries in `hpc_prod`: 1C (bc1, 3 lanes) and BZea5 (batch 1, 
   (job 1065139): ~4.5 s per M pairs, flat 1.6 GB.
 - `CAT_FASTQ` arrays: Nextflow rejects an array larger than `queueSize` (40; 50 failed job 1067152); an array as large as
   the queue waits for it to drain, so 20. A wave's last partial array waits for its last fqtk lane.
+- `EXTRACT_LANE` 2 h in production: a batch-1 wave runs its 16 tar extractions at once (up to 77 GB each), ~405 MB/s
+  from `/rsstu` to fit 30 min, about what wave 01's fqtk read alone (adversarial review, 2026-10-03).
 - Unmatched reads: 1C 2.1 %, BZea5 6.0 %.
 - Copy of published FASTQs to `/rsstu`: 307 GB in 15.5 min (~330 MB/s).
 
@@ -28,7 +30,9 @@ Measured on full libraries in `hpc_prod`: 1C (bc1, 3 lanes) and BZea5 (batch 1, 
 | process   | measured                                                                                                     | `hpc_prod`        | `hpc_dev`         |
 | --------- | ------------------------------------------------------------------------------------------------------------ | ----------------- | ----------------- |
 | `SEQUALI` | 236 M-pair 1C sample (S_1C_6, job 1068396): 12 min, 1.3 of 2 cpus, 0.6 GB; 35-42 k pairs: 0.4-0.5 GB, < 10 s | 2 cpus, 2 GB, 1 h | 2 cpus, 2 GB, 1 h |
-| `MULTIQC` | 4 samples: 0.15 cpu, 0.7 GB, 1.5 min; grows with samples, unmeasured on a whole library                      | 1 cpu, 4 GB, 1 h  | 1 cpu, 2 GB, 1 h  |
+| `MULTIQC` | 4 samples: 0.15 cpu, 0.7 GB, 1.5 min; grows with samples, unmeasured on a whole library                      | 1 cpu, 12 GB, 2 h | 1 cpu, 2 GB, 1 h  |
+
+`MULTIQC` 12 GB, 2 h in production: waves 07/08 summarise ~750 Sequali reports, never measured above 4 samples.
 
 ## Alignment
 
