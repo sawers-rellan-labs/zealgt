@@ -180,6 +180,9 @@ fqtk runs once per lane, and `CAT_FASTQ` joins each sample's lanes (user). Reaso
 - Limits that may be short at an unmeasured scale (`EXTRACT_LANE` time, `MULTIQC` memory and time in waves 07/08) are
   the measured value times `task.attempt`, so the retry doubles them; not padded requests (12 GB for MultiQC would be
   < 10 % efficient). The first chain (jobs 1071011-1071018) was stopped 16 min into wave 01 to run every wave with it.
+- A Sequali failure never stops a production wave (`errorStrategy 'ignore'`): Sequali 1.0.2 crashed on PN7_SID583 and
+  PN11_SID979 only inside Nextflow's task wrapper, with intact FASTQs; read QC is a report, the FASTQs are the product.
+  Samples without a report are listed in the run plan. The root cause is a separate task.
 - Each wave's FASTQ samplesheet in one folder, `samplesheets/<wave sheet name>.csv` (the output index cannot take its
   folder from `source`).
 - The `/share` quota is the group's, so the run goes in waves of whole libraries, one sequencing batch per wave, each
