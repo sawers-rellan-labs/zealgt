@@ -29,6 +29,8 @@ Nextflow 26.04.6 (laptop, or hazel GPFS with tasks on Slurm compute nodes).
 - Read the failing task's `.command.err` (also `.command.out`, `.command.sh`) in its task directory under `work/`; the
   head log names that directory.
 - Fix on the laptop, then rerun with `-resume` from the same launch directory: finished steps come from the cache.
+- One task alone, without the pipeline: `bash .command.run` in its task directory reruns it in place (tested on the
+  laptop, local executor).
 - Logs to report after every submission: the head log `/share/maize/frodrig4/nf_work/zealgt_head_<job id>.log`, the
   launch directory's `.nextflow.log`, and on failure the task's `.command.err`.
 
@@ -38,6 +40,11 @@ Nextflow 26.04.6 (laptop, or hazel GPFS with tasks on Slurm compute nodes).
   workflow name (docs). Tested: changing `ext.args` reruns the step.
 - Does not rerun: a change to cpus or memory, even when the script uses `${task.cpus}` (tested). So a resumed run after
   a resource change returns the result made with the old resources.
+- Does not rerun: an edit to a script in `bin/` or in a module's `resources/usr/bin/` (tested 2026-10-04): the step
+  returns the result made with the old script. A script passed as a `path` input is hashed by content, so an edit
+  reruns the step (tested 2026-10-04).
+- `bin/` scripts must be executable (docs), and the `/rsstu` checkout strips exec bits: a tool called from `bin/` fails
+  on hazel. Call tools through their interpreter (`python3 ${tool}`) or put them in the container.
 - Nothing changed: every step comes from the cache (tested, also on hazel across compute nodes in the standard cache
   mode, inputs on `/share` and `/rsstu`; `cache = 'lenient'` not needed).
 - `-resume` serves both failure recovery and development iteration (docs).
