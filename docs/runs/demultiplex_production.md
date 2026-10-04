@@ -17,14 +17,17 @@ into waves that each hold a bounded amount of `work/`.
   batches (`source`).
 - Outputs, `--outdir /rsstu/users/r/rrellan/BZea/ZEAL/demultiplex` (user):
   - `<source>/<sample_id>_R{1,2}.fastq.gz`, flat per sequencing batch (`bc1`, `bc2s3_batch1`, `bc2s3_batch2`; user).
-  - `<source>/demultiplex_<NN>.csv`: the wave's FASTQ samplesheet (`sample_id,fastq_1,fastq_2,library,lanes,kit`).
+  - `samplesheets/demultiplex_<NN>.csv`: the wave's FASTQ samplesheet (`sample_id,fastq_1,fastq_2,source,library,lanes,kit`;
+    the output index cannot take its folder from a record, so one folder for all waves; user).
   - `reports/demux/<library>.<lane>.demux_metrics.txt` (fqtk), `reports/sequali/<sample_id>.{html,json}`.
   - `multiqc/reads/demultiplex_<NN>/multiqc_report.html`, one read-QC report per wave; `pipeline_info/` (timestamped).
 - The multiplexed originals stay where they are.
 
 ## Waves (cap: 2 TB of `work/` per wave, user)
 
-From `agent/demux_split/plan_waves.py 2.0` on real per-library sizes (lane files on hazel; batch 1 from the tar
+The size estimates are also in `docs/RESOURCES.md`, the central record; check it before the run.
+
+From `meta/write_wave_sheets.py 2.0` on real per-library sizes (lane files on hazel; batch 1 from the tar
 listing). Peak factors per GB of raw: bc1 1.7 (measured on 1C), batch 2 0.85 (one lane, no join), batch 1 2.7 (tar
 members extracted, then lanes and joins).
 
@@ -45,6 +48,8 @@ members extracted, then lanes and joins).
 - `/rsstu` gets 5.9 TB of FASTQs (18 TB free; CRAMs need ~2.4 TB later).
 
 ## Measured (full libraries 1C and BZea5, `hpc_prod`, jobs 1067152 / 1067407)
+
+Copied from `docs/RESOURCES.md`, the central record of measurements and estimates; check it before the run.
 
 | step             | measured                                                                                  | in production         |
 | ---------------- | ----------------------------------------------------------------------------------------- | --------------------- |
@@ -82,23 +87,24 @@ Per wave about 1.5-3 h; 8 waves about 12-24 h plus queue waits.
 
 1. `afterok` never releases the later waves: they stay pending (`DependencyNeverSatisfied`); `scancel` them.
 2. Read the failed task's `.command.err` (`docs/running.md`); fix on the laptop; merge; move the production tag.
-3. Resubmit from the failed wave: `scripts/submit_demultiplex_waves.sh <NN>` with `-resume <session id>` for that wave.
+3. Resubmit from the failed wave: `RESUME=<session id> bash scripts/submit_demultiplex_waves.sh <NN>` (resumes that wave only).
 4. **The failed attempt's task folders stay in `work/` after the recovery succeeds** (`cleanup` deletes only what the
    successful run made; shown on Nextflow 26.04.6 by the adversarial review). They go on the user's removal list
    (`nextflow clean -f <failed run name>`, run by the user) before the next wave can add another 2 TB.
 
-## Code still to change before the run (next session)
+## Code changed for the run
 
-1. `--outdir` layout: FASTQs to `<source>/<sample_id>_R{1,2}.fastq.gz` (add `source` to `assets/schema_input.json` meta
-   and to the FASTQ record); the samplesheet index to `<source>/<input basename>.csv`; the read-QC MultiQC to
+1. `--outdir` layout: FASTQs to `<source>/<sample_id>_R{1,2}.fastq.gz` (`source` in `assets/schema_input.json` meta and
+   in the FASTQ record); the samplesheet index to `samplesheets/<input basename>.csv`; the read-QC MultiQC to
    `multiqc/reads/<input basename>/`, so waves never overwrite each other's sheet or report.
-2. `conf/hpc_prod.config`: `CAT_FASTQ` array 20; `FQTK` time 2 h kept (48 min measured; GPFS contention), the comments
-   with the measured numbers; `EXTRACT_LANE` 30 min.
+2. `conf/hpc_prod.config`: `CAT_FASTQ` array 20; `FQTK` time 2 h kept (48 min measured; GPFS contention); `EXTRACT_LANE`
+   30 min; the measured numbers in `docs/RESOURCES.md`, config comments without numbers.
 3. `scripts/submit_head_job.sbatch`: `REPO=${ZEALGT_REPO:-/rsstu/users/r/rrellan/BZea/ZEAL/zealgt}`.
-4. `scripts/submit_demultiplex_waves.sh` (the chain) and `meta/waves/demultiplex_<NN>.csv` (from
-   `agent/demux_split/plan_waves.py`, moved to `meta/` as `write_wave_sheets.py`).
-5. Check on the laptop why no lane join started before every fqtk lane had finished (1067407: BZea5's joins waited 50
-   min for 1C's lanes): job-array batching or the channel wiring. Arrays of 20 may be enough; test with arrays off.
+4. `scripts/submit_demultiplex_waves.sh` (the chain) and `meta/waves/demultiplex_<NN>.csv` from
+   `meta/write_wave_sheets.py 2.0` (the wave sheets together are `meta/samples.csv`, byte for byte).
+5. The lane-join delay of 1067407 (BZea5's joins waited 50 min for 1C's lanes) is the job arrays, not the wiring: in a
+   laptop stub with one library's fqtk held 30 s, the other library's joins ran at once. Nextflow submits a partial array
+   only when the process gets no more tasks, so each wave's last < 20 joins wait for its last fqtk lane.
 
 ## Before the run
 
@@ -117,7 +123,7 @@ Per wave about 1.5-3 h; 8 waves about 12-24 h plus queue waits.
 - Per lane, assigned + unmatched pairs in the fqtk metrics equal the lane's pairs; the unmatched rates per lane in one
   table in the report.
 - `decisions.md` has the outdir, the folders by `source`, the 2 TB waves and the chain; the measured resources are in
-  `conf/hpc_prod.config`.
+  `docs/RESOURCES.md` and their values in `conf/hpc_prod.config`.
 
 ## Not here
 
