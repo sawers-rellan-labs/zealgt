@@ -1,0 +1,3 @@
+sample_id,source,role,library,library_index,raw_location,raw_r1,raw_r2,barcode_r1,barcode_r2,kit,plate,well,donor,taxon,nil_id,pedigree,is_check,rg_lb,rg_pl,rg_pu,exclude
+S_1A_1,bc1,bc1_sample,1A,,/rsstu/users/r/rrellan/BZea/BC1_dna_raw/01.RawData/BC1_1Ar,,,GCCATA,GCCATA,twist_flexprep,,1,Zx.0410_P2,mexicana,,Zx.0410_P2_P2,FALSE,1A,ILLUMINA,,FALSE
+S_1A_2,bc1,bc1_sample,1A,,/rsstu/users/r/rrellan/BZea/BC1_dna_raw/01.RawData/BC1_1Ar,,,TCTGGT,TCTGGT,twist_flexprep,,2,Zx.0040_P1,mexicana,,Zx.0040_P1_P1,FALSE,1A,ILLUMINA,,TRUE
