@@ -39,6 +39,10 @@ Measured on full libraries in `hpc_prod`: 1C (bc1, 3 lanes) and BZea5 (batch 1, 
 Under Nextflow's task wrapper on the same node, `-t 2` failed 9 of 9 and `-t 1` passed 3 of 3 (jobs 1078114, 1078222,
 1078347); outside the wrapper `-t 2` passed 29 of 29. Waves 01-06 ran with `-t 2`; their Sequali reports are QC only.
 
+Wave 08 then failed on PN11_SID979 with a segmentation fault (exit 139) at `-t 1`: FASTQs intact (gzip ok, 466,108
+records each, names and quality lengths clean); outside the wrapper `-t 1` and `-t 2` passed 4 of 4, the wrapper replay
+failed (jobs 1080540, 1080545). One thread is not the fix; `SEQUALI` is `errorStrategy 'ignore'` in production.
+
 `MULTIQC` memory and time double on the retry: waves 07/08 summarise ~750 Sequali reports, never measured above 4
 samples; measure wave 01's (48) and 07's before setting a fixed value.
 

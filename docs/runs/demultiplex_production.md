@@ -91,6 +91,9 @@ Per wave about 1.5-3 h; 8 waves about 12-24 h plus queue waits.
 - 2026-10-04, jobs 1071107-1071114 (tag `.3`): waves 01-06 succeeded; wave 07 failed at 04:59 on Sequali (PN7_SID583,
   `UnicodeDecodeError`), and again after `-resume` (job 1077669). Sequali's two-thread mode, under Nextflow's wrapper,
   corrupts read names on this sample (`docs/RESOURCES.md`); `SEQUALI` set to 1 cpu, waves 07-08 resubmitted.
+- 2026-10-04, jobs 1078372-1078373 (tag `.4`): wave 07 succeeded (MultiQC out of memory at 4 GB, passed on the 8 GB
+  retry); wave 08 failed at 07:55 on Sequali (PN11_SID979, segmentation fault, also at 1 thread). User: Sequali failures
+  never stop a wave (`errorStrategy 'ignore'`); wave 08 resumed.
 
 ## When a wave fails
 
