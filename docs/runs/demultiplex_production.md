@@ -109,9 +109,10 @@ Per wave about 1.5-3 h; 8 waves about 12-24 h plus queue waits.
 ## Before the run
 
 1. The code changes above, laptop tests (<= 5 min), CodeRabbit on the new code, PR merged.
-2. **`hpc_prod` stub of all 8 waves**, chained by the same script, `--outdir .../ZEAL/demultiplex_stub` (never the real
-   outdir: stub files would land among the real FASTQs). The `hpc_dev` stubs never used `hpc_prod` settings; that is how
-   the array bug reached a full-size run.
+2. **`hpc_prod` stub of 3 one-sample waves** (`docs/runs/demultiplex_stub/`: bc1 with an excluded row, batch 2, batch 1;
+   user: the full sheets made ~5,000 stub tasks), chained by the same script with `WAVES=docs/runs/demultiplex_stub`,
+   `OUTDIR=.../ZEAL/demultiplex_stub` (never the real outdir: stub files would land among the real FASTQs). The `hpc_dev`
+   stubs never used `hpc_prod` settings; that is how the array bug reached a full-size run.
 3. The measurement's scratch removed by the user: `/rsstu/.../ZEAL/demultiplex_measure` (307 GB),
    `nf_work/zealgt_prod/work` (0.8 TB), `nf_work/prod_measure/`.
 4. **The user's OK on the submission.** After that the waves run unattended.

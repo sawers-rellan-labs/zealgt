@@ -4,11 +4,13 @@
 # Usage, on hazel from the checkout to run (its path goes to the head jobs as ZEALGT_REPO):
 #   bash scripts/submit_demultiplex_waves.sh <first wave NN> [nextflow args for every wave, e.g. -stub]
 #   OUTDIR=<dir> (default /rsstu/users/r/rrellan/BZea/ZEAL/demultiplex); RESUME=<session id> resumes the first wave only
+#   WAVES=<dir> of wave sheets (default meta/waves; the stub: docs/runs/demultiplex_stub)
 set -eo pipefail
 FIRST="${1:?first wave number, e.g. 01}"; shift
 REPO=$(cd "$(dirname "$0")/.." && pwd)
 OUTDIR=${OUTDIR:-/rsstu/users/r/rrellan/BZea/ZEAL/demultiplex}
-sheets=$(ls "$REPO"/meta/waves/demultiplex_*.csv | awk -v first="$REPO/meta/waves/demultiplex_$FIRST.csv" '$0 >= first')
+WAVES=$(cd "${WAVES:-$REPO/meta/waves}" && pwd)
+sheets=$(ls "$WAVES"/demultiplex_*.csv | awk -v first="$WAVES/demultiplex_$FIRST.csv" '$0 >= first')
 [ -n "$sheets" ] || { echo "no wave sheet from demultiplex_$FIRST.csv on" >&2; exit 2; }
 prev=""
 for sheet in $sheets; do

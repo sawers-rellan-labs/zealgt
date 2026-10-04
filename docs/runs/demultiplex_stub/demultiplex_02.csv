@@ -1,0 +1,2 @@
+sample_id,source,role,library,library_index,raw_location,raw_r1,raw_r2,barcode_r1,barcode_r2,kit,plate,well,donor,taxon,nil_id,pedigree,is_check,rg_lb,rg_pl,rg_pu,exclude
+P4001,bc2s3_batch2,line,V21A,,/rsstu/users/r/rrellan/BZea/BC2S3_batch_2_dna_raw/01.RawData/V21A,,,GCCATA,GCCATA,twist_flexprep,BZeaV2_1,A1,Zv.0030_P1,parviglumis,Zv00301121,Zv.0030_P1_P1_P2.1.1.1,FALSE,V21A,ILLUMINA,,FALSE
