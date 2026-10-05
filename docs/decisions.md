@@ -217,3 +217,8 @@ fqtk runs once per lane, and `CAT_FASTQ` joins each sample's lanes (user). Reaso
 - GENOTYPE follows its specs; zealbc1 outputs are for comparison, close but not identical (user). Milestone 7's tier A
   keeps zealbc1's `inconsistent` flag: the first spec draft dropped it without a reason (user).
 - "Close enough" at the mosaic (ancestry) level: Dice–Sørensen > 90 % (user); no metric computed yet.
+
+## 2026-10-05 CRISP pool size: -p 12 for every pool
+
+- `-p 12` (6 plants x 2 haplotypes) is what matters for the BC1 pools. The witness pool gets the same 12: at its low
+  coverage the number of lines would not change the calls, so no per-pool sizes in the `--bams` file (user).
