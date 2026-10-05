@@ -167,11 +167,15 @@ ggplot(xt, aes(tier_y, tier_x, fill = log10(N))) +
 ```
 
 ```{r fig-llr, fig.height = 4.2}
-cors <- bt[, .(r = cor(llr_x, llr_y)), by = run]
+cors <- bt[, .(r = cor(llr_x, llr_y), slope = coef(lm(llr_x ~ 0 + llr_y, .SD[llr_x > 0 & llr_y > 0]))), by = run]
 ggplot(bt, aes(llr_y, llr_x)) +
   geom_bin2d(bins = 70) +
   geom_abline(linetype = 2, colour = "grey40") +
-  geom_text(data = cors, aes(x = 5, y = 230, label = sprintf("r = %.2f", r)), hjust = 0, inherit.aes = FALSE) +
+  geom_abline(data = cors, aes(slope = slope, intercept = 0), colour = "red", linewidth = 0.8) +
+  geom_text(
+    data = cors, aes(x = 5, y = 230, label = sprintf("r = %.2f\nslope = %.2f", r, slope)),
+    hjust = 0, vjust = 1, inherit.aes = FALSE
+  ) +
   facet_wrap(~run) +
   scale_fill_viridis_c(trans = "log10") +
   coord_cartesian(xlim = c(-10, 250), ylim = c(-10, 250)) +
