@@ -23,7 +23,7 @@ workflow CRAM_VARIANT_DISCOVERY_CRISP {
     // BC1 pools and lines by donor, batch-1 B73 checks; other roles take no part
     def ch_role = ch_cram.branch { meta, _cram, _crai ->
         bc1: meta.role == 'bc1_sample'
-        line: meta.role == 'line'
+        nil: meta.role == 'nil'
         check: meta.role == 'check' && meta.pedigree == 'B73-bulk'
     }
 
@@ -35,12 +35,12 @@ workflow CRAM_VARIANT_DISCOVERY_CRISP {
         dropped: true
     }
     // the dropped checks with their counts
-    def ch_b73_checks = CHECK_ALT_RATE.out.tsv.join(ch_check.dropped)
+    def ch_dropped_b73_checks = CHECK_ALT_RATE.out.tsv.join(ch_check.dropped)
         .map { _meta, tsv, _cram, _crai, _rate -> tsv }
-        .collectFile(name: 'b73_checks.tsv', seed: "sample_id\treads\talt_reads\talt_rate\n", sort: true)
+        .collectFile(name: 'dropped_b73_checks.tsv', seed: "sample_id\treads\talt_reads\talt_rate\n", sort: true)
 
     // one pool per donor's lines (the witness), one of the kept B73 checks, one per B73 control
-    def ch_pool = ch_role.line
+    def ch_pool = ch_role.nil
         .map { meta, cram, crai -> [meta.donor, cram, crai] }
         .groupTuple()
         .map { donor, crams, crais -> [[id: "${donor.replace('.', '')}_witness", donor: donor], crams, crais] }
@@ -86,7 +86,7 @@ workflow CRAM_VARIANT_DISCOVERY_CRISP {
     POOLED_LIKELIHOOD_TIERS(ch_score, score_tool)
 
     emit:
-    vcf        = WITNESS_VETO.out.vcf.join(WITNESS_VETO.out.index) // channel: [ meta, vcf.gz, tbi ], one per donor
-    sites      = POOLED_LIKELIHOOD_TIERS.out.sites                 // channel: [ meta, sites.tsv.gz ], one per donor
-    b73_checks = ch_b73_checks                                     // channel: b73_checks.tsv, the dropped B73 checks
+    vcf                = WITNESS_VETO.out.vcf.join(WITNESS_VETO.out.index) // channel: [ meta, vcf.gz, tbi ], one per donor
+    sites              = POOLED_LIKELIHOOD_TIERS.out.sites                 // channel: [ meta, sites.tsv.gz ], one per donor
+    dropped_b73_checks = ch_dropped_b73_checks                             // channel: dropped_b73_checks.tsv
 }

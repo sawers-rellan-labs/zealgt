@@ -1,12 +1,12 @@
 sample_id,role,donor,pedigree,exclude,cram,crai,wgs_metrics
 S_P1,bc1_sample,Zx.9001_P1,Zx.9001_P1_P1,FALSE,tests/fixtures/genotype/cram/S_P1.cram,tests/fixtures/genotype/cram/S_P1.cram.crai,tests/fixtures/genotype/cram/ok.CollectWgsMetrics.coverage_metrics
 S_P2,bc1_sample,Zx.9001_P1,Zx.9001_P1_P2,FALSE,tests/fixtures/genotype/cram/S_P2.cram,tests/fixtures/genotype/cram/S_P2.cram.crai,tests/fixtures/genotype/cram/ok.CollectWgsMetrics.coverage_metrics
-L_1,line,Zx.9001_P1,Zx.9001_P1_P1_P1.1.1.1,FALSE,tests/fixtures/genotype/cram/L_1.cram,tests/fixtures/genotype/cram/L_1.cram.crai,tests/fixtures/genotype/cram/ok.CollectWgsMetrics.coverage_metrics
-L_low,line,Zx.9001_P1,Zx.9001_P1_P1_P1.2.1.1,FALSE,tests/fixtures/genotype/cram/L_1.cram,tests/fixtures/genotype/cram/L_1.cram.crai,tests/fixtures/genotype/cram/low.CollectWgsMetrics.coverage_metrics
-L_excl,line,Zx.9001_P1,Zx.9001_P1_P1_P1.3.1.1,TRUE,tests/fixtures/genotype/cram/L_1.cram,tests/fixtures/genotype/cram/L_1.cram.crai,tests/fixtures/genotype/cram/ok.CollectWgsMetrics.coverage_metrics
+L_1,nil,Zx.9001_P1,Zx.9001_P1_P1_P1.1.1.1,FALSE,tests/fixtures/genotype/cram/L_1.cram,tests/fixtures/genotype/cram/L_1.cram.crai,tests/fixtures/genotype/cram/ok.CollectWgsMetrics.coverage_metrics
+L_low,nil,Zx.9001_P1,Zx.9001_P1_P1_P1.2.1.1,FALSE,tests/fixtures/genotype/cram/L_1.cram,tests/fixtures/genotype/cram/L_1.cram.crai,tests/fixtures/genotype/cram/low.CollectWgsMetrics.coverage_metrics
+L_excl,nil,Zx.9001_P1,Zx.9001_P1_P1_P1.3.1.1,TRUE,tests/fixtures/genotype/cram/L_1.cram,tests/fixtures/genotype/cram/L_1.cram.crai,tests/fixtures/genotype/cram/ok.CollectWgsMetrics.coverage_metrics
 T_P1,bc1_sample,Zx.9002_P1,Zx.9002_P1_P1,FALSE,tests/fixtures/genotype/cram/S_P1.cram,tests/fixtures/genotype/cram/S_P1.cram.crai,tests/fixtures/genotype/cram/ok.CollectWgsMetrics.coverage_metrics
 T_P2,bc1_sample,Zx.9002_P1,Zx.9002_P1_P2,FALSE,tests/fixtures/genotype/cram/S_P2.cram,tests/fixtures/genotype/cram/S_P2.cram.crai,tests/fixtures/genotype/cram/ok.CollectWgsMetrics.coverage_metrics
-M_1,line,Zx.9002_P1,Zx.9002_P1_P1_P1.1.1.1,FALSE,tests/fixtures/genotype/cram/L_1.cram,tests/fixtures/genotype/cram/L_1.cram.crai,tests/fixtures/genotype/cram/ok.CollectWgsMetrics.coverage_metrics
+M_1,nil,Zx.9002_P1,Zx.9002_P1_P1_P1.1.1.1,FALSE,tests/fixtures/genotype/cram/L_1.cram,tests/fixtures/genotype/cram/L_1.cram.crai,tests/fixtures/genotype/cram/ok.CollectWgsMetrics.coverage_metrics
 C_1,check,,B73-bulk,FALSE,tests/fixtures/genotype/cram/C_1.cram,tests/fixtures/genotype/cram/C_1.cram.crai,tests/fixtures/genotype/cram/ok.CollectWgsMetrics.coverage_metrics
 C_2,check,,B73-bulk,FALSE,tests/fixtures/genotype/cram/C_2.cram,tests/fixtures/genotype/cram/C_2.cram.crai,tests/fixtures/genotype/cram/ok.CollectWgsMetrics.coverage_metrics
 C_3,check,,Purple Check-bulk,FALSE,tests/fixtures/genotype/cram/C_1.cram,tests/fixtures/genotype/cram/C_1.cram.crai,tests/fixtures/genotype/cram/ok.CollectWgsMetrics.coverage_metrics
