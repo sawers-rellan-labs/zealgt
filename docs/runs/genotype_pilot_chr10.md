@@ -11,7 +11,8 @@ whole chromosome zealbc1 ran (handover 2026-10-05).
 - Input: `docs/runs/genotype_pilot_chr10/samplesheet.csv`, 106 rows, the pilot alignment's CRAMs
   (`ZEAL/alignment/cram/`, `docs/runs/alignment_pilot.md`), roles from `meta/samples.csv`, no row excluded:
   - Zx.0540_P3: 5 BC1 pools, 40 lines; Zx.0570_P2: 5 BC1 pools, 44 lines;
-  - the 12 batch-1 B73 checks.
+  - the 12 batch-1 B73 checks; batch 1 only for this run, the full run uses the B73 checks of every batch (user,
+    2026-10-05).
   - Written by `agent/genotype_pilot/write_sheets.py`.
 - `--b73_controls docs/runs/genotype_pilot_chr10/b73_controls.csv`: `B73_ERR3288215`.
 - `--lowcopy_bed ZEAL/reference/lowcopy_chr10.bed` (8,084 ranges, sha256 `25b5a8e9…` in the `.sha256` next to it;
