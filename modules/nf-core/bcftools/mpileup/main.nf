@@ -8,7 +8,7 @@ process BCFTOOLS_MPILEUP {
         : 'community.wave.seqera.io/library/bcftools_htslib:1.23.1--9f08ec665533d64a'}"
 
     input:
-    tuple val(meta), path(bam), path(intervals_mpileup, stageAs: 'mpileup_intervals/*'), path(intervals_call, stageAs: 'call_intervals/*')
+    tuple val(meta), path(bam), path(bam_index), path(intervals_mpileup, stageAs: 'mpileup_intervals/*'), path(intervals_call, stageAs: 'call_intervals/*')
     tuple val(meta2), path(fasta), path(fai)
     val save_mpileup
 

@@ -7,11 +7,13 @@ and none ALT). Tier A: LLR >= --llr-a, ALT reads in >= --a-min-pools-alt pools, 
 hidepth nor af_gt_half; C: LLR >= --llr-c; ref: LLR <= --llr-ref with >= --ref-min-depth reads; else ".".
 Reads the witness-vetoed CRISP VCF (BC1 pools and the witness; per-pool counts in ADf, ADr, ADb as 'ref,alt') and the
 B73 control VCFs from bcftools mpileup (AD), and writes one row per biallelic SNP record. Pool groups: the donor's BC1
-pools, the witness, the B73 controls together. Model, per BC1 pool i with n_i reads, a_i ALT:
+pools, the witness, the B73 controls together. With --bc1-vcf instead (the union, Text S5): one row per --sites record,
+the BC1 pools counted by bcftools mpileup (AD, one VCF per pool), no witness. --tier-a-vcf also writes the tier-A sites
+as a sites-only VCF. Model, per BC1 pool i with n_i reads, a_i ALT:
   L1_i = sum_j C(P,j) 2^-P Bin(a_i; n_i, p_j), p_j = j/2P (1-eps) + (1 - j/2P) eps;  L0_i = Bin(a_i; n_i, eps)
   LLR = sum_i log L1_i - log L0_i
 eps per site: the reads of the groups with LLR < --zero-class-llr at --eps0, when they hold >= --zero-class-min-reads,
-eps = max((a0 + 0.5) / (n0 + 1), --eps-floor); else --eps0. Standard library only.
+eps = max((a0 + 0.5) / (n0 + 1), --eps-floor); else --eps0. VCF input and output with pysam.
 """
 import argparse
 import gzip
@@ -21,14 +23,19 @@ import statistics
 import sys
 import time
 
+import pysam
+
 LOG = logging.getLogger("score_pooled_likelihood")
 COLUMNS = ["chrom", "pos", "ref", "alt", "n", "a", "n_pools_alt", "eps", "LLR", "tier", "flags", "pool_counts"]
 
 
 def parse_args(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--vcf", required=True, help="witness-vetoed CRISP VCF (.vcf or .vcf.gz)")
-    ap.add_argument("--witness", required=True, help="the witness pool's sample name in the VCF")
+    ap.add_argument("--vcf", help="witness-vetoed CRISP VCF (.vcf or .vcf.gz)")
+    ap.add_argument("--witness", help="the witness pool's sample name in the VCF")
+    ap.add_argument("--bc1-vcf", nargs="+", help="instead of --vcf: the BC1 pools' VCFs from bcftools mpileup (AD)")
+    ap.add_argument("--sites", help="with --bc1-vcf: the sites to score (VCF; biallelic SNPs)")
+    ap.add_argument("--tier-a-vcf", help="also write the tier-A sites here (sites-only VCF)")
     ap.add_argument("--controls", nargs="*", default=[], help="B73 control VCFs from bcftools mpileup (AD)")
     ap.add_argument("--out", required=True, help="output site table (.tsv.gz)")
     req = ap.add_argument_group("model settings (values in conf/modules.config)")
@@ -41,15 +48,11 @@ def parse_args(argv=None):
     ]:
         req.add_argument(f"--{name}", type=kind, required=True)
     a = ap.parse_args(argv)
+    if bool(a.vcf or a.witness) == bool(a.bc1_vcf or a.sites) or not (a.vcf and a.witness or a.bc1_vcf and a.sites):
+        ap.error("need either --vcf and --witness, or --bc1-vcf and --sites")
     if a.plants < 1 or not 0 < a.eps0 < 0.5 or not 0 < a.eps_floor < 0.5:
         ap.error("need plants >= 1 and 0 < eps0, eps-floor < 0.5")
     return a
-
-
-def open_text(path):
-    with open(path, "rb") as fh:
-        gz = fh.read(2) == b"\x1f\x8b"
-    return gzip.open(path, "rt") if gz else open(path)
 
 
 def is_snp(ref, alt):
@@ -81,59 +84,69 @@ def binom_sf_half(n, a):
                for k in range(a, n + 1))
 
 
+def snp_alleles(rec):
+    """(ref, alt) of a biallelic SNP record, else None."""
+    if rec.alts is None or len(rec.alts) != 1 or not is_snp(rec.ref, rec.alts[0]):
+        return None
+    return rec.ref, rec.alts[0]
+
+
 def read_crisp(path):
     """CRISP VCF -> (pool names, [(chrom, pos, ref, alt, [(n, a) per pool])]) for biallelic SNPs; n = ref + alt reads."""
-    pools, recs, skipped = None, [], 0
-    with open_text(path) as fh:
-        for line in fh:
-            if line.startswith("##"):
-                continue
-            x = line.rstrip("\n").split("\t")
-            if line.startswith("#"):
-                pools = x[9:]
-                continue
-            if not is_snp(x[3], x[4]):
+    recs, skipped = [], 0
+    with pysam.VariantFile(path) as vcf:
+        pools = list(vcf.header.samples)
+        for rec in vcf:
+            snp = snp_alleles(rec)
+            if snp is None:
                 skipped += 1
                 continue
-            fmt = x[8].split(":")
-            idx = [fmt.index(k) for k in ("ADf", "ADr", "ADb") if k in fmt]
             cnt = []
-            for cell in x[9:]:
-                v = cell.split(":")
+            for call in rec.samples.values():
                 r = k = 0
-                for i in idx:
-                    q = v[i].split(",") if i < len(v) else []
+                for key in ("ADf", "ADr", "ADb"):
+                    q = call.get(key) or ()
                     if len(q) >= 2:
-                        r += int(q[0]) if q[0].isdigit() else 0
-                        k += int(q[1]) if q[1].isdigit() else 0
+                        r += q[0] or 0
+                        k += q[1] or 0
                 cnt.append((r + k, k))
-            recs.append((x[0], int(x[1]), x[3], x[4], cnt))
-    if pools is None:
-        sys.exit(f"{path}: no #CHROM line")
+            recs.append((rec.chrom, rec.pos, *snp, cnt))
     LOG.info("%s: %d biallelic SNP records, %d other records skipped", path, len(recs), skipped)
     return pools, recs
+
+
+def read_sites(path):
+    """Sites VCF -> [(chrom, pos, ref, alt)] for biallelic SNPs."""
+    with pysam.VariantFile(path) as vcf:
+        sites = [(rec.chrom, rec.pos, *snp) for rec in vcf if (snp := snp_alleles(rec))]
+    LOG.info("%s: %d biallelic SNP sites", path, len(sites))
+    return sites
+
+
+def read_bc1(paths, sites):
+    """mpileup VCFs, one per BC1 pool -> (pool names, [(chrom, pos, ref, alt, [(n, a) per pool])]) at every site."""
+    pools, counts = [], []
+    for path in paths:
+        with pysam.VariantFile(path) as vcf:
+            pools.append(",".join(vcf.header.samples))
+        counts.append(read_control(path))
+    return pools, [(c, p, r, k, [control_counts(t, c, p, r, k) for t in counts]) for c, p, r, k in sites]
 
 
 def read_control(path):
     """mpileup VCF -> {(chrom, pos): (ref, [alleles], [AD summed over samples])}."""
     rows = {}
-    with open_text(path) as fh:
-        for line in fh:
-            if line.startswith("#"):
+    with pysam.VariantFile(path) as vcf:
+        for rec in vcf:
+            if "AD" not in rec.format:
                 continue
-            x = line.rstrip("\n").split("\t")
-            fmt = x[8].split(":")
-            if "AD" not in fmt:
-                continue
-            i = fmt.index("AD")
-            alleles = [x[3]] + [s for s in x[4].split(",") if s != "."]
+            alleles = [rec.ref] + [x for x in rec.alts or () if x != "."]
             ad = [0] * len(alleles)
-            for cell in x[9:]:
-                v = cell.split(":")
-                for k, c in enumerate(v[i].split(",") if i < len(v) else []):
-                    if k < len(ad) and c.isdigit():
-                        ad[k] += int(c)
-            rows[(x[0], int(x[1]))] = (x[3], alleles, ad)
+            for call in rec.samples.values():
+                for i, c in enumerate(call["AD"] or ()):
+                    if i < len(ad) and c is not None:
+                        ad[i] += c
+            rows[(rec.chrom, rec.pos)] = (rec.ref, alleles, ad)
     return rows
 
 
@@ -161,16 +174,16 @@ def tier_of(llr, n, n_pools_alt, flags, a):
 
 
 def score(pools, recs, witness, controls, a):
-    """Yield one output row per record."""
-    if witness not in pools:
+    """Yield one output row per record; witness None: no witness group (--bc1-vcf)."""
+    if witness is not None and witness not in pools:
         sys.exit(f"witness {witness} not among the VCF samples {pools}")
-    w = pools.index(witness)
+    w = pools.index(witness) if witness is not None else None
     bc1 = [i for i in range(len(pools)) if i != w]
     logw = log_weights(a.plants)
     rows = []
     for chrom, pos, ref, alt, cnt in recs:
         b73 = [control_counts(c, chrom, pos, ref, alt) for c in controls]
-        groups = [[cnt[i] for i in bc1], [cnt[w]], b73]
+        groups = [[cnt[i] for i in bc1]] + ([[cnt[w]]] if w is not None else []) + [b73]
         rows.append((chrom, pos, ref, alt, cnt, groups, sum(n for g in groups for n, _ in g)))
     med = statistics.median(r[6] for r in rows) if rows else 0
     t0 = last = time.monotonic()
@@ -201,18 +214,35 @@ def score(pools, recs, witness, controls, a):
             LOG.info("%d/%d sites scored, %.1f min", done, len(rows), (now - t0) / 60)
 
 
+def write_sites(path, template, recs, sites):
+    """Sites-only VCF; contigs from the template's header, else from the records (CRISP writes none, and bcftools merge
+    of unindexed VCFs needs them)."""
+    header = pysam.VariantHeader()
+    with pysam.VariantFile(template) as vcf:
+        contigs = [(c.name, c.length) for c in vcf.header.contigs.values()]
+    for name, length in contigs or [(c, None) for c in dict.fromkeys(r[0] for r in recs)]:
+        header.contigs.add(name, length=length)
+    with pysam.VariantFile(path, "w", header=header) as out:
+        for chrom, pos, ref, alt in sites:
+            out.write(out.new_record(contig=chrom, start=pos - 1, alleles=(ref, alt)))
+
+
 def main(argv=None):
     logging.basicConfig(stream=sys.stderr, level=logging.INFO, format="%(asctime)s %(message)s",
                         datefmt="%Y-%m-%d %H:%M:%S")
     a = parse_args(argv)
-    pools, recs = read_crisp(a.vcf)
+    pools, recs = read_crisp(a.vcf) if a.vcf else read_bc1(a.bc1_vcf, read_sites(a.sites))
     controls = [read_control(p) for p in a.controls]
-    tiers = {}
+    tiers, tier_a = {}, []
     with gzip.open(a.out, "wt") as out:
         out.write("\t".join(COLUMNS) + "\n")
         for row in score(pools, recs, a.witness, controls, a):
             out.write("\t".join(str(v) for v in row) + "\n")
             tiers[row[9]] = tiers.get(row[9], 0) + 1
+            if row[9] == "A":
+                tier_a.append(row[:4])
+    if a.tier_a_vcf:
+        write_sites(a.tier_a_vcf, a.vcf or a.sites, recs, tier_a)
     LOG.info("%s: %d sites; tiers %s", a.out, len(recs), " ".join(f"{t} {c}" for t, c in sorted(tiers.items())))
 
 

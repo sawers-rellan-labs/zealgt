@@ -1,0 +1,35 @@
+Changes in component 'nf-core/bcftools/mpileup'
+'modules/nf-core/bcftools/mpileup/environment.yml' is unchanged
+Changes in 'bcftools/mpileup/meta.yml':
+--- modules/nf-core/bcftools/mpileup/meta.yml
++++ modules/nf-core/bcftools/mpileup/meta.yml
+@@ -24,6 +24,11 @@
+         type: file
+         description: Input BAM file
+         pattern: "*.{bam}"
++        ontologies: []
++    - index:
++        type: file
++        description: Index of the input file, for --regions
++        pattern: "*.{bai,csi,crai}"
+         ontologies: []
+     - intervals_mpileup:
+         type: file
+
+Changes in 'bcftools/mpileup/main.nf':
+--- modules/nf-core/bcftools/mpileup/main.nf
++++ modules/nf-core/bcftools/mpileup/main.nf
+@@ -8,7 +8,7 @@
+         : 'community.wave.seqera.io/library/bcftools_htslib:1.23.1--9f08ec665533d64a'}"
+ 
+     input:
+-    tuple val(meta), path(bam), path(intervals_mpileup, stageAs: 'mpileup_intervals/*'), path(intervals_call, stageAs: 'call_intervals/*')
++    tuple val(meta), path(bam), path(index), path(intervals_mpileup, stageAs: 'mpileup_intervals/*'), path(intervals_call, stageAs: 'call_intervals/*')
+     tuple val(meta2), path(fasta), path(fai)
+     val save_mpileup
+ 
+
+'modules/nf-core/bcftools/mpileup/tests/main.nf.test.snap' is unchanged
+'modules/nf-core/bcftools/mpileup/tests/nextflow.config' is unchanged
+'modules/nf-core/bcftools/mpileup/tests/main.nf.test' is unchanged
+************************************************************

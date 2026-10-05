@@ -1,4 +1,5 @@
 include { CRAM_VARIANT_DISCOVERY_CRISP } from '../subworkflows/local/cram_variant_discovery_crisp/main'
+include { SITES_UNION_GAPFILL          } from '../subworkflows/local/sites_union_gapfill/main'
 include { samplesheetToList            } from 'plugin/nf-schema'
 
 workflow GENOTYPE {
@@ -19,18 +20,30 @@ workflow GENOTYPE {
         .filter { _meta, _cram, _crai, metrics -> (metrics.MEAN_COVERAGE as double) >= min_mean_coverage }
         .map { meta, cram, crai, _metrics -> [meta, cram, crai] }
 
+    def ch_fasta = channel.value([[id: file(fasta).name], file(fasta, checkIfExists: true), file("${fasta}.fai", checkIfExists: true)])
     CRAM_VARIANT_DISCOVERY_CRISP(
         ch_cram,
         channel.fromList(samplesheetToList(b73_controls, "${projectDir}/assets/schema_b73_controls.json")),
-        channel.value([[id: file(fasta).name], file(fasta, checkIfExists: true), file("${fasta}.fai", checkIfExists: true)]),
+        ch_fasta,
         file(lowcopy_bed, checkIfExists: true),
         file(check_sites, checkIfExists: true),
         max_check_alt_rate,
         file("${projectDir}/bin/score_pooled_likelihood.py", checkIfExists: true),
     )
 
+    SITES_UNION_GAPFILL(
+        CRAM_VARIANT_DISCOVERY_CRISP.out.tier_a,
+        ch_cram,
+        CRAM_VARIANT_DISCOVERY_CRISP.out.controls,
+        ch_fasta,
+        file("${projectDir}/bin/score_pooled_likelihood.py", checkIfExists: true),
+        file("${projectDir}/bin/fill_donor_alleles.py", checkIfExists: true),
+    )
+
     emit:
     discovery_vcf      = CRAM_VARIANT_DISCOVERY_CRISP.out.vcf                // channel: [ meta, vcf.gz, tbi ], one per donor
     discovery_sites    = CRAM_VARIANT_DISCOVERY_CRISP.out.sites              // channel: [ meta, sites.tsv.gz ], one per donor
     dropped_b73_checks = CRAM_VARIANT_DISCOVERY_CRISP.out.dropped_b73_checks // channel: dropped_b73_checks.tsv
+    union              = SITES_UNION_GAPFILL.out.union                       // channel: [ meta, vcf.gz, tbi ]
+    donor_alleles      = SITES_UNION_GAPFILL.out.donor_alleles               // channel: [ meta, vcf.gz, tbi ]
 }

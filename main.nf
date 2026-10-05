@@ -74,6 +74,8 @@ workflow SAWERSRELLANLABS_ZEALGT {
     def ch_discovery_vcf = channel.empty()
     def ch_discovery_sites = channel.empty()
     def ch_dropped_b73_checks = channel.empty()
+    def ch_union = channel.empty()
+    def ch_donor_alleles = channel.empty()
     if (params.step == 'demultiplex') {
         DEMULTIPLEX(samplesheet, params.head, file(params.multiqc_config ?: "${projectDir}/assets/multiqc_config.yml", checkIfExists: true))
         ch_fastq = DEMULTIPLEX.out.fastq
@@ -90,6 +92,8 @@ workflow SAWERSRELLANLABS_ZEALGT {
         ch_discovery_vcf = GENOTYPE.out.discovery_vcf
         ch_discovery_sites = GENOTYPE.out.discovery_sites
         ch_dropped_b73_checks = GENOTYPE.out.dropped_b73_checks
+        ch_union = GENOTYPE.out.union
+        ch_donor_alleles = GENOTYPE.out.donor_alleles
     } else {
         ALIGNMENT (
             samplesheet,
@@ -115,6 +119,8 @@ workflow SAWERSRELLANLABS_ZEALGT {
     discovery_vcf      = ch_discovery_vcf      // channel: [ meta, vcf.gz, tbi ], one per donor
     discovery_sites    = ch_discovery_sites    // channel: [ meta, sites.tsv.gz ], one per donor
     dropped_b73_checks = ch_dropped_b73_checks // channel: dropped_b73_checks.tsv
+    union              = ch_union              // channel: [ meta, vcf.gz, tbi ]
+    donor_alleles      = ch_donor_alleles      // channel: [ meta, vcf.gz, tbi ]
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -162,6 +168,8 @@ workflow {
     discovery_vcf = SAWERSRELLANLABS_ZEALGT.out.discovery_vcf
     discovery_sites = SAWERSRELLANLABS_ZEALGT.out.discovery_sites
     dropped_b73_checks = SAWERSRELLANLABS_ZEALGT.out.dropped_b73_checks
+    union = SAWERSRELLANLABS_ZEALGT.out.union
+    donor_alleles = SAWERSRELLANLABS_ZEALGT.out.donor_alleles
 }
 
 output {
@@ -198,6 +206,13 @@ output {
     }
     dropped_b73_checks {
         path 'genotype/discovery'
+    }
+    // the union sites and every donor's allele there
+    union {
+        path 'genotype/union'
+    }
+    donor_alleles {
+        path 'genotype/union'
     }
 }
 
