@@ -50,3 +50,9 @@ repos:
         name: Prevent committing output from pipeline test runs to the pipeline code itself
         entry: ./.hooks/block_pipeline_outdir.sh
         language: script
+      - id: render-metro
+        name: Re-render the SVG of a changed metro map
+        entry: bash .hooks/render_metro.sh
+        language: python
+        additional_dependencies: ["nf-metro==2.1.0"]
+        files: '^docs/images/.*\.mmd$'

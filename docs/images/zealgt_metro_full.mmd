@@ -16,6 +16,34 @@
 %%metro grid: align | 0,1
 %%metro grid: qc | 1,1
 %%metro grid: geno | 0,2
+%%metro process_scope: SAWERSRELLANLABS_ZEALGT
+%%metro process: extract_lane_d | EXTRACT_LANE
+%%metro process: fqtk | FQTK
+%%metro process: cat_fastq | CAT_FASTQ
+%%metro process: sequali | FASTQ_SEQUALI:SEQUALI
+%%metro process: multiqc_reads | FASTQ_SEQUALI:MULTIQC
+%%metro process: split | SEQKIT_SPLIT2
+%%metro process: minibwa | MINIBWA_MAP
+%%metro process: fgumi | FGUMI_CLIP
+%%metro process: fixmate | SAMTOOLS_FIXMATE
+%%metro process: sort | SAMTOOLS_SORT
+%%metro process: merge | FASTQ_ALIGN_MINIBWA:SAMTOOLS_MERGE
+%%metro process: markdup | SAMTOOLS_MARKDUP
+%%metro process: index | FASTQ_ALIGN_MINIBWA:SAMTOOLS_INDEX
+%%metro process: samtools_stats | SAMTOOLS_STATS
+%%metro process: picard_wgs | PICARD_COLLECTWGSMETRICS
+%%metro process: mosdepth | MOSDEPTH
+%%metro process: multiqc | ALIGNMENT:MULTIQC
+%%metro process: check_counts | CHECK_COUNTS
+%%metro process: check_rate | CHECK_ALT_RATE
+%%metro process: merge_pools | CRAM_VARIANT_DISCOVERY_CRISP:SAMTOOLS_MERGE
+%%metro process: addrg | SAMTOOLS_ADDREPLACERG
+%%metro process: index_pools | CRAM_VARIANT_DISCOVERY_CRISP:SAMTOOLS_INDEX
+%%metro process: crisp | CRISP
+%%metro process: bed_clip | BED_CLIP
+%%metro process: veto | WITNESS_VETO
+%%metro process: mpileup_ctrl | BCFTOOLS_MPILEUP
+%%metro process: tiers | POOLED_LIKELIHOOD_TIERS
 
 graph LR
     subgraph demux [Demultiplex]

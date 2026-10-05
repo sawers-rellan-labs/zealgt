@@ -23,6 +23,6 @@ stage (a row in `../structure.md`); a run of built stages on real data has a run
 ## After: the report (the user reviews it)
 
 - The diff.
-- The DAG of what ran (`-preview -with-dag` and the run's `pipeline_dag`).
+- The DAG of what ran (a stub run's `-stub -with-dag`, `docs/running.md` "The DAG", and the run's `pipeline_dag`).
 - Test results and resource numbers.
 - The list of choices made during the work.

@@ -23,3 +23,4 @@ Learn more about contributing: [CONTRIBUTING.md](https://github.com/sawers-rella
 - [ ] Output Documentation in `docs/output.md` is updated.
 - [ ] `CHANGELOG.md` is updated.
 - [ ] `README.md` is updated (including new tool citations and authors/contributors).
+- [ ] Workflow steps changed -> `docs/images/*.mmd` updated (README map: main steps only; full map: every step).
