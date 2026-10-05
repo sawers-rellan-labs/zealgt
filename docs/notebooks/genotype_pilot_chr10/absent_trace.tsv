@@ -1,0 +1,6 @@
+direction	where	sites
+zealbc1 tier A absent from zealgt	not called by CRISP	11892
+zealbc1 tier A absent from zealgt	removed by the witness veto	201
+zealgt tier A absent from zealbc1	not called by CRISP	2837
+zealgt tier A absent from zealbc1	removed by the witness veto	414
+zealgt tier A absent from zealbc1	kept by the veto, not scored	74

@@ -1,0 +1,300 @@
+---
+title: "GENOTYPE variant discovery against zealbc1"
+subtitle: "Zx.0540_P3, whole chr10: why the tier-A sites overlap at a Jaccard of 0.60, and what explains it (2026-10-05)"
+author: "Fausto Rodríguez-Zapata"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    embed-resources: true
+    fig-width: 8
+    fig-height: 4.5
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+**What this is.** The accuracy check of GENOTYPE's variant discovery (run plan `docs/runs/genotype_pilot_chr10.md`):
+the pilot donor Zx.0540_P3 on whole chr10, compared with zealbc1's step-4 table for the same donor, the same 5 BC1
+pools and the same witness lines. The pass mark was a tier-A Jaccard of 0.99 (user, 2026-10-05). It came out at 0.60;
+this notebook follows the tests that took that number apart. Data: `genotype_pilot_chr10/`, written by
+`agent/genotype_pilot/write_notebook_data.py` from the runs' outputs (hazel jobs in the run plan).
+
+::: {.callout-note}
+## Outcome
+
+- **GENOTYPE's discovery steps reproduce zealbc1's.** On zealbc1's inputs our CRISP container and zealbc1's binary call
+  the same 7,158 positions; on the positions both tables hold, the LLRs correlate at 0.95-0.97.
+- **The gap is in the reads, and mostly in duplicate marking.** zealbc1's CRAMs were never duplicate-marked, so PCR
+  copies of one fragment counted as independent ALT reads. Clearing our duplicate flags adds about 10,000 tier-A sites
+  and raises the Jaccard with zealbc1 from 0.60 to 0.72. zealgt keeps duplicate marking (user: a must for independent
+  evidence).
+- **Not the cause:** CRISP's base-quality threshold (`--mbq 20` vs 10: Jaccard 0.989 between our two runs), read ends,
+  randomers, clipping or unpaired reads (read-level flags alike on both sides).
+- **The remaining 0.28** comes from read processing before alignment (demultiplexing, trimming, MAPQ filter) and
+  partly from the witness; not pursued: it would compare two processing chains, not accuracy.
+:::
+
+```{r setup}
+library(data.table)
+library(ggplot2)
+library(patchwork)
+
+d <- "genotype_pilot_chr10"
+sites <- fread(file.path(d, "sites.tsv.gz"))
+sites[, key := paste(pos, ref, alt)]
+theme_set(theme_minimal(base_size = 11) + theme(panel.grid.minor = element_blank()))
+pal <- c(shared = "#4C78A8", `zealgt only` = "#F58518", `zealbc1 only` = "#54A24B")
+run_label <- c(
+  zealbc1 = "zealbc1", zealgt_mbq20 = "zealgt (pipeline, --mbq 20)",
+  zealgt_mbq10 = "zealgt --mbq 10", zealgt_nodup = "zealgt, duplicate flag cleared"
+)
+
+tier_a <- function(run_name) sites[run == run_name & tier == "A" & in_both_beds == 1, pos]
+overlap <- function(x, y) {
+  a <- tier_a(x)
+  b <- tier_a(y)
+  data.table(
+    shared = length(intersect(a, b)), x_only = length(setdiff(a, b)), y_only = length(setdiff(b, a)),
+    jaccard = length(intersect(a, b)) / length(union(a, b))
+  )
+}
+```
+
+## 1. The headline: tier-A overlap under each condition
+
+Tier-A positions inside both low-copy BEDs. The first three bars compare a zealgt run with zealbc1; the last two compare
+zealgt runs with each other.
+
+```{r fig-overlap, fig.height = 4}
+pairs <- list(
+  c("zealgt_mbq20", "zealbc1", "pipeline vs zealbc1"),
+  c("zealgt_mbq10", "zealbc1", "--mbq 10 vs zealbc1"),
+  c("zealgt_nodup", "zealbc1", "duplicates counted vs zealbc1"),
+  c("zealgt_mbq10", "zealgt_mbq20", "--mbq 10 vs --mbq 20 (zealgt)"),
+  c("zealgt_nodup", "zealgt_mbq20", "duplicates counted vs marked (zealgt)")
+)
+ov <- rbindlist(lapply(pairs, function(p) overlap(p[1], p[2])[, comparison := p[3]]))
+ov[, comparison := factor(comparison, rev(comparison))]
+long <- melt(ov, id.vars = c("comparison", "jaccard"), measure.vars = c("shared", "x_only", "y_only"))
+long[, part := fcase(variable == "shared", "shared", variable == "x_only", "zealgt only", default = "zealbc1 only")]
+ggplot(long, aes(value / 1000, comparison, fill = part)) +
+  geom_col(width = 0.7) +
+  geom_text(
+    data = ov, aes(x = (shared + x_only + y_only) / 1000, y = comparison, label = sprintf("J = %.3f", jaccard)),
+    inherit.aes = FALSE, hjust = -0.1, size = 3.5
+  ) +
+  scale_fill_manual(values = pal, labels = c(
+    shared = "in both", `zealgt only` = "first run only", `zealbc1 only` = "second run only"
+  )) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.18))) +
+  labs(x = "tier-A positions (thousands)", y = NULL, fill = NULL) +
+  theme(legend.position = "bottom")
+```
+
+The base-quality threshold barely matters (0.989 between our two runs); counting duplicates changes the set much more
+(0.67) and is the only change that moves the comparison with zealbc1.
+
+## 2. Where the sites are lost
+
+Records at each discovery stage (whole chr10), and where the tier-A sites of one side drop out of the other pipeline.
+
+```{r fig-stages, fig.height = 4}
+stg <- fread(file.path(d, "stages.tsv"))
+stg[, stage := factor(stage, unique(stage))]
+p1 <- ggplot(stg, aes(stage, records / 1000, fill = pipeline)) +
+  geom_col(position = position_dodge(0.75), width = 0.7) +
+  scale_fill_manual(values = c(zealbc1 = "#54A24B", zealgt = "#F58518")) +
+  labs(x = NULL, y = "records (thousands)", fill = NULL) +
+  theme(axis.text.x = element_text(angle = 20, hjust = 1), legend.position = "top")
+tr <- fread(file.path(d, "absent_trace.tsv"))
+p2 <- ggplot(tr, aes(sites / 1000, direction, fill = where)) +
+  geom_col(width = 0.6) +
+  scale_fill_manual(values = c("#B279A2", "#9D755D", "#BAB0AC")) +
+  labs(x = "tier-A sites (thousands)", y = NULL, fill = NULL) +
+  theme(legend.position = "top", legend.direction = "vertical")
+p1 + p2 + plot_layout(widths = c(1, 1.2))
+```
+
+Our CRISP calls a third fewer records in the BED (60,312 vs 90,393). Of zealbc1's 12,093 tier-A sites missing from our
+table, 11,892 were never called by our CRISP; the witness veto removed only 201. The loss happens at CRISP, before any
+filter or score of ours.
+
+## 3. On the positions both tables hold, the scores agree
+
+```{r fig-tiers, fig.height = 4.2}
+both_tables <- function(x) {
+  m <- merge(sites[run == x, .(key, tier_x = tier, llr_x = LLR)],
+    sites[run == "zealbc1", .(key, tier_y = tier, llr_y = LLR)],
+    by = "key"
+  )
+  m[, run := run_label[x]]
+}
+bt <- rbind(both_tables("zealgt_mbq20"), both_tables("zealgt_nodup"))
+lv <- c("A", "B", "C", "ref", "none")
+xt <- bt[, .N, by = .(run, tier_x, tier_y)]
+xt[, `:=`(tier_x = factor(tier_x, rev(lv)), tier_y = factor(tier_y, lv))]
+ggplot(xt, aes(tier_y, tier_x, fill = log10(N))) +
+  geom_tile(colour = "white") +
+  geom_text(aes(label = format(N, big.mark = ",")), size = 3) +
+  facet_wrap(~run) +
+  scale_fill_gradient(low = "#EEF3F9", high = "#4C78A8", guide = "none") +
+  labs(x = "zealbc1 tier", y = "zealgt tier")
+```
+
+```{r fig-llr, fig.height = 4.2}
+cors <- bt[, .(r = cor(llr_x, llr_y)), by = run]
+ggplot(bt, aes(llr_y, llr_x)) +
+  geom_bin2d(bins = 70) +
+  geom_abline(linetype = 2, colour = "grey40") +
+  geom_text(data = cors, aes(x = 5, y = 230, label = sprintf("r = %.3f", r)), hjust = 0, inherit.aes = FALSE) +
+  facet_wrap(~run) +
+  scale_fill_viridis_c(trans = "log10") +
+  coord_cartesian(xlim = c(-10, 250), ylim = c(-10, 250)) +
+  labs(x = "zealbc1 LLR", y = "zealgt LLR", fill = "positions")
+```
+
+Where both pipelines report a site, they mostly put it in the same tier and give it a similar LLR. The disagreement is
+about which sites exist, not how they are scored.
+
+## 4. One input at a time: CRISP on chr10:1-10 Mb
+
+CRISP with zealbc1's arguments and BED on a 10 Mb window, changing one input per job. Job 1 (our container on zealbc1's
+inputs) is the reference.
+
+```{r fig-grid, fig.height = 3.8}
+grid <- fread(file.path(d, "grid.tsv"))
+grid[, label := sprintf("%s: %s CRISP\nBC1 %s, witness %s", job, crisp, bc1, witness)]
+grid[, label := factor(label, rev(label))]
+ggplot(grid, aes(positions, label)) +
+  geom_col(fill = "#4C78A8", width = 0.6) +
+  geom_text(aes(label = sprintf("%s  (J = %.2f)", format(positions, big.mark = ","), jaccard_with_job1)),
+    hjust = -0.05, size = 3.5
+  ) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.3))) +
+  labs(x = "CRISP call positions in the BED, chr10:1-10 Mb", y = NULL)
+```
+
+- **The build:** zealbc1's binary and our container call identical positions (jobs 1, 2).
+- **The witness:** ours removes about 170 calls and changes 14 % of the set (job 4).
+- **The BC1 CRAMs:** ours cut the calls by a third (job 3); with the duplicate flag cleared they come back to 7,400
+  (job 5), though only 71 % are the same positions.
+
+## 5. Are the missing sites weak?
+
+```{r fig-strength, fig.height = 4.5}
+a_old <- sites[run == "zealbc1" & tier == "A"]
+a_old[, group := fifelse(key %in% sites[run == "zealgt_mbq20", key], "shared", "zealbc1 only")]
+a_old[group == "shared", group := fifelse(
+  key %in% sites[run == "zealgt_mbq20" & tier == "A", key], "shared", "in both tables, not A in zealgt"
+)]
+a_old <- a_old[group != "in both tables, not A in zealgt"]
+p1 <- ggplot(a_old, aes(group, LLR, fill = group)) +
+  geom_boxplot(outlier.size = 0.3, width = 0.6) +
+  scale_y_log10() +
+  scale_fill_manual(values = pal, guide = "none") +
+  labs(x = NULL, y = "zealbc1 LLR (log scale)", title = "tier A, whole chr10", subtitle = "zealbc1's counts")
+p2 <- ggplot(a_old, aes(group, a, fill = group)) +
+  geom_boxplot(outlier.size = 0.3, width = 0.6) +
+  scale_fill_manual(values = pal, guide = "none") +
+  labs(x = NULL, y = "ALT reads", title = " ", subtitle = "zealbc1's counts")
+gs <- fread(file.path(d, "grid_strength.tsv"))
+gs[, group := fifelse(called_on_zealgt_crams == 1, "shared", "zealbc1 only")]
+p3 <- ggplot(gs, aes(group, QUAL, fill = group)) +
+  geom_boxplot(outlier.size = 0.3, width = 0.6) +
+  scale_y_log10() +
+  scale_fill_manual(values = pal, guide = "none") +
+  labs(x = NULL, y = "CRISP QUAL (log scale)", title = "raw CRISP calls, 10 Mb", subtitle = "zealbc1's inputs")
+p1 + p2 + p3
+```
+
+By zealbc1's own numbers the tier-A sites we miss look as strong as the ones we share; only among raw CRISP calls are
+the missed ones somewhat weaker. But zealbc1's counts include PCR duplicates, so they cannot show a weakness that
+duplicates cause.
+
+## 6. The duplicates mask the evidence
+
+Reads over 693 zealbc1-only and 358 shared tier-A sites of chr10:1-10 Mb, from both pipelines' BC1 CRAMs.
+
+```{r fig-reads, fig.height = 4.2}
+rf <- fread(file.path(d, "read_features.tsv"))
+rf[, feature := factor(feature,
+  levels = c("soft_clipped", "near_5p", "near_3p", "mapq_lt20", "bq_lt10", "dup_flag", "coord_dup"),
+  labels = c(
+    "soft-clipped base", "within 12 nt of 5' end", "within 12 nt of 3' end", "MAPQ < 20",
+    "base quality < 10", "duplicate flag", "same start, strand, mate as another read"
+  )
+)]
+rf[, sites := fifelse(sites == "shared", "shared sites", "zealbc1-only sites")]
+p1 <- ggplot(rf, aes(fraction, feature, colour = crams, shape = sites)) +
+  geom_point(size = 2.6, position = position_dodge(0.5)) +
+  scale_colour_manual(values = c(zealbc1 = "#54A24B", zealgt = "#F58518")) +
+  scale_x_continuous(labels = scales::percent) +
+  labs(x = "share of the ALT reads", y = NULL, colour = "CRAMs", shape = NULL)
+rs <- fread(file.path(d, "read_sites.tsv"))[crams == "zealgt"]
+rs <- melt(rs, id.vars = c("sites", "pos"), measure.vars = c("alt_reads", "alt_reads_passing"))
+rs[, variable := fifelse(variable == "alt_reads", "all", "excluding duplicates,\nclipped bases, MAPQ < 20")]
+rs[, sites := fifelse(sites == "shared", "shared", "zealbc1 only")]
+p2 <- ggplot(rs, aes(variable, value, fill = sites)) +
+  geom_boxplot(outlier.size = 0.3, width = 0.6, position = position_dodge(0.7)) +
+  scale_fill_manual(values = c(shared = "#4C78A8", `zealbc1 only` = "#54A24B")) +
+  coord_cartesian(ylim = c(0, 40)) +
+  labs(x = "zealgt ALT reads", y = "ALT reads per site", fill = NULL)
+p1 / p2 + plot_layout(heights = c(1.1, 1))
+```
+
+ALT reads near read ends and soft-clipped bases are equally common on both sides, so randomers and clipping leave no
+mark. The difference is duplicates: zealbc1's CRAMs carry no duplicate flags, and at the sites only zealbc1 calls 30 %
+of the ALT reads share their start, strand and mate with another read (21 % at shared sites). In our CRAMs those copies
+are flagged and CRISP skips them.
+
+```{r tab-pairing}
+pf <- dcast(fread(file.path(d, "read_pairing.tsv")), flag ~ crams, value.var = "fraction")
+knitr::kable(pf[, .(flag, zealbc1 = sprintf("%.1f %%", 100 * zealbc1), zealgt = sprintf("%.1f %%", 100 * zealgt))],
+  caption = "Reads over the check sites: pairing and filter flags. Splitting the FASTQs left no unpaired reads."
+)
+```
+
+## 7. Duplicates counted: the whole chromosome
+
+The pipeline rerun on whole chr10 with the duplicate flag cleared on the 5 BC1 CRAMs (everything else cached).
+
+```{r fig-nodup, fig.height = 3.6}
+tc <- sites[run %in% c("zealgt_mbq20", "zealgt_nodup", "zealbc1") & in_both_beds == 1, .N, by = .(run, tier)]
+tc[, `:=`(
+  run = factor(run_label[run], run_label[c("zealgt_mbq20", "zealgt_nodup", "zealbc1")]),
+  tier = factor(tier, lv)
+)]
+ggplot(tc, aes(tier, N / 1000, fill = run)) +
+  geom_col(position = position_dodge(0.8), width = 0.75) +
+  scale_fill_manual(values = c("#F58518", "#E45756", "#54A24B")) +
+  labs(x = "tier", y = "sites (thousands)", fill = NULL) +
+  theme(legend.position = "top")
+```
+
+Counting duplicates turns our tier A from 32,749 into 42,934 sites, close to zealbc1's 40,941: about a quarter of the
+duplicate-counted tier A rests on PCR copies. The Jaccard with zealbc1 rises to 0.72; the rest of the difference lies
+in read processing before alignment.
+
+```{r fig-position, fig.height = 3.2}
+a20 <- tier_a("zealgt_mbq20")
+pos_a <- sites[run == "zealbc1" & tier == "A" & in_both_beds == 1]
+pos_a[, group := fifelse(pos %in% a20, "shared", "zealbc1 only")]
+ggplot(pos_a, aes(pos / 1e6, fill = group)) +
+  geom_histogram(binwidth = 2, position = "identity", alpha = 0.7) +
+  scale_fill_manual(values = pal) +
+  labs(x = "chr10 position (Mb)", y = "tier-A sites per 2 Mb", fill = NULL)
+```
+
+The missing sites follow the shared ones along the chromosome: no region accounts for them.
+
+## What was not pursued
+
+The remaining gap with duplicates counted (Jaccard 0.72) comes from processing before alignment: zealbc1
+demultiplexed with cutadapt, exact barcode match and the barcode trimmed only, no adapter trimming or clipping, and kept
+only MAPQ >= 20 reads; zealgt demultiplexes with fqtk (one mismatch, barcode and skip bases dropped), trims adapters,
+clips read-through with `fgumi clip` and marks duplicates. Testing them one by one needs whole-genome realignments
+of the 5 BC1 pools, and the answer would compare two processing chains, not accuracy; the simulation QC is the
+accuracy check (user, 2026-10-05).
