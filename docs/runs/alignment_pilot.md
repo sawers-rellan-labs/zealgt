@@ -22,7 +22,9 @@ aligned once, whole genome, with the split alignment of Milestone 2a.
 - Code: the merged commit of Milestone 2a (user: merge once the 10-sample run passes), frozen as a worktree at tag
   `align-pilot-<date>` (`ZEALGT_REPO`), as in `demultiplex_production.md`.
 - Every task on `compute_partners` / short (Milestone 2a); only the 1-CPU head job on `compute` / normal
-  (`--time=1-00:00:00`).
+  (`--time=1-00:00:00`, `--mem=32G`: the 10-sample run's head job peaked at its 8 GB, `docs/RESOURCES.md`).
+- Wall time, from the 10-sample run (2 h 39 min, deepest BC1 4.97x): about 3-4 h if all chunks start at once;
+  the 10 BC1 pools give about 30 chunks of 16 cpus each.
 - First attempt without `-resume`; recovery with `-resume <session id>`.
 
 ## Size (estimates; `docs/RESOURCES.md` after the 10-sample run)
@@ -31,7 +33,6 @@ aligned once, whole genome, with the split alignment of Milestone 2a.
   reads each, 96 small samples, ERR3288215 at 28 GB), freed by `cleanup` after success. Group quota 20 TB, 0.66 TB used
   on 2026-10-05.
 - `/rsstu`: about 0.1 TB of CRAMs (12 TB free).
-- Wall time: set by the BC1 pools' chunk chains; from the 10-sample run.
 
 ## Before the run
 
