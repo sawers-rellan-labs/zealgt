@@ -82,6 +82,13 @@
             "type": "object",
             "fa_icon": "fas fa-seedling",
             "description": "Inputs and cuts of --step genotype.",
+            "if": {
+                "properties": { "step": { "const": "genotype" } },
+                "required": ["step"]
+            },
+            "then": {
+                "required": ["lowcopy_bed", "region", "check_sites", "b73_controls"]
+            },
             "properties": {
                 "lowcopy_bed": {
                     "type": "string",
