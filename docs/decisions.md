@@ -214,6 +214,6 @@ fqtk runs once per lane, and `CAT_FASTQ` joins each sample's lanes (user). Reaso
 
 ## 2026-10-04 zealbc1 is a comparison, not a target
 
-- GENOTYPE follows its specs; zealbc1 outputs are for comparison, close but not identical (user). Milestone 7.s tier A
-  keeps zealbc1.s `inconsistent` flag: the first spec draft dropped it without a reason (user).
+- GENOTYPE follows its specs; zealbc1 outputs are for comparison, close but not identical (user). Milestone 7's tier A
+  keeps zealbc1's `inconsistent` flag: the first spec draft dropped it without a reason (user).
 - "Close enough" at the mosaic (ancestry) level: Dice–Sørensen > 90 % (user); no metric computed yet.
