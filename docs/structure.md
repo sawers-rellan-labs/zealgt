@@ -47,14 +47,12 @@ Read top down; each level only names the one below it.
 Input: one CRAM per sample (ALIGNMENT). Output: one VCF per chromosome with every line's genotype, and the ancestry
 raster beside it. Each row is a milestone; stage names are provisional (old module names).
 
-| stage                          | modules                                                                                                      | status  |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------ | ------- |
-| inline                         | `REGION_BED`: low-copy regions, once                                                                         | planned |
-| inline                         | coverage filter: samples under 0.05x (`PICARD_COLLECTWGSMETRICS`, ALIGNMENT) dropped by `join` + `filter`    | planned |
-| `CRAM_VARIANT_DISCOVERY_CRISP` | `WITNESS_POOL` -> `CRISP` -> `BED_CLIP` (CRISP range-end fix) -> `WITNESS_VETO` -> `POOLED_LIKELIHOOD_TIERS` | planned |
-| `SITES_UNION_GAPFILL`          | `MARKER_UNION` (tier-A sites of all donors) -> `GAP_FILLING_BC1` -> `GAP_FILLING_LINES`: donor allele on it  | planned |
-| `CRAM_ANCESTRY_RTIGER`         | `LINE_ALLELE_COUNTS` -> `LINE_MARKER_QC` (< 2 x rigidity covered markers per chromosome dropped) -> `RTIGER` | planned |
-| `GENOTYPE_PROJECTION`          | `RASTERIZE` (segments -> ancestry dosage at the union) -> projection (ancestry x donor allele) -> VCF        | planned |
+| stage                          | modules                                                                                                                                                                                                                                                                                                                 | status              |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| `CRAM_VARIANT_DISCOVERY_CRISP` | coverage filter (< 0.05x) -> B73 check filter (`CHECK_COUNTS`, `CHECK_ALT_RATE`) -> witness and B73 check pools (`SAMTOOLS_MERGE`, `SAMTOOLS_ADDREPLACERG`) -> `CRISP` (low-copy BED, an input) -> `BED_CLIP` (CRISP range-end fix) -> `WITNESS_VETO` -> `BCFTOOLS_MPILEUP` (B73 controls) -> `POOLED_LIKELIHOOD_TIERS` | built (milestone 7) |
+| `SITES_UNION_GAPFILL`          | `MARKER_UNION` (tier-A sites of all donors) -> `GAP_FILLING_BC1` -> `GAP_FILLING_LINES`: donor allele on it                                                                                                                                                                                                             | planned             |
+| `CRAM_ANCESTRY_RTIGER`         | `LINE_ALLELE_COUNTS` -> `LINE_MARKER_QC` (< 2 x rigidity covered markers per chromosome dropped) -> `RTIGER`                                                                                                                                                                                                            | planned             |
+| `GENOTYPE_PROJECTION`          | `RASTERIZE` (segments -> ancestry dosage at the union) -> projection (ancestry x donor allele) -> VCF                                                                                                                                                                                                                   | planned             |
 
 - Union and ancestry need only discovery and run side by side; the projection joins them.
 - Our own tools (Python, R) live in `bin/` and run in a local module each, as nf-core/rnaseq does; the module takes the
