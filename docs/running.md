@@ -24,6 +24,21 @@ Nextflow 26.04.6 (laptop, or hazel GPFS with tasks on Slurm compute nodes).
 - One fixed launch directory per profile: the task cache lives in `<launch directory>/.nextflow/cache`, and resuming
   needs that cache and `work/` intact (docs). A new directory per attempt starts every run cold.
 
+## Container bindings (hazel)
+
+Two layers of Apptainer containers, each seeing only the host paths bound into it (`-B`):
+
+- Head job: `scripts/submit_head_job.sbatch` runs the Nextflow image with `BINDS`: the host Slurm client (`sbatch`,
+  `squeue`, `scancel`, its libraries and config cache), munge and SSSD (user lookups), Apptainer itself (to start and
+  pull task images) and the data roots `/share/maize/frodrig4` and `/rsstu/users/r/rrellan`.
+- Tasks: each task's `.command.run` calls `apptainer exec --no-home --pid` with (seen on hazel, job 1097636):
+  1. the launch directory (`work/`), from `apptainer.autoMounts = true` (`conf/hpc_shared.config`);
+  2. the folders of the task's input files, also from `autoMounts`;
+  3. `/share/maize/frodrig4,/rsstu/users/r/rrellan/BZea`, from `apptainer.runOptions` (`conf/hpc_shared.config`).
+- When 2 and 3 name the same folder, Apptainer prints `WARNING: While bind mounting '<dir>:<dir>': destination is
+already in the mount point list` in the task's `.command.err`, skips the duplicate, and the task runs normally
+  (job 1097636).
+
 ## When a run fails
 
 - Read the failing task's `.command.err` (also `.command.out`, `.command.sh`) in its task directory under `work/`; the
