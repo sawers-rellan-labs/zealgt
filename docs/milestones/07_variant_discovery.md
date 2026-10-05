@@ -18,7 +18,7 @@ low quality variants. I have pools, which are misspecified for DeepVariant and G
   first (the coverage-filter row, inline in the workflow).
 - `--fasta` with its `.fai`.
 - `--lowcopy_bed` (new parameter): the low-copy BED, built once outside the pipeline (decision 2026-10-04).
-- `--chromosome` (new parameter, development scope): one chromosome, `chr10`.
+- `--region` (new parameter, development scope): one chromosome or a window of it, `chr10` or `chr10:1-20000000`.
 - `--check_sites` (new parameter): teosinte-vs-B73 panel sites for the B73 check filter, SNP50K `HQ_BZEA.vcf.gz` for now.
 - `--max_check_alt_rate` (new parameter, default `0.01`): the B73 check filter's cut.
 - B73 controls for the site error rate, as in zealbc1 (`docs/notebooks/02_donor_discovery_tiers_witness.qmd`):
@@ -46,11 +46,11 @@ needs); samples are routed by `role` with a channel `branch` (BC1 pools and line
    (`-I -a AD -q 20 -Q 20`); a local module `CHECK_ALT_RATE` (`bcftools query` of the AD sums) gives its share of ALT
    reads; a channel `filter` keeps the checks at or below `--max_check_alt_rate`. The dropped checks are listed with
    their rate in `genotype/discovery/b73_checks.tsv`.
-1. `SAMTOOLS_MERGE` (nf-core): the donor's line CRAMs at `--chromosome` into one witness BAM; the same module merges
+1. `SAMTOOLS_MERGE` (nf-core): the donor's line CRAMs in `--region` into one witness BAM; the same module merges
    the B73 checks into the B73 check pool.
 2. `SAMTOOLS_ADDREPLACERG` (nf-core): one read group per merged pool (CRISP splits a file by read group).
 3. `CRISP` (local module, container `ghcr.io/sawers-rellan-labs/zealgt-crisp:1a9027e`): the BC1 CRAMs plus the
-   witness, `--bed <lowcopy> --regions <chr> --sm 0 -p 12 --mmq 20 --mbq 20 --filterreads 0 --minc 2` (zealbc1, plus `--mbq 20`).
+   witness, `--bed <lowcopy, clipped to --region> --regions <chr> --sm 0 -p 12 --mmq 20 --mbq 20 --filterreads 0 --minc 2` (zealbc1, plus `--mbq 20`).
 4. `BCFTOOLS_VIEW` as `BED_CLIP` (nf-core): `-T <lowcopy BED>`, which drops the base CRISP calls one past every range
    end (CRISP bug, vibansal/crisp#34).
 5. `BCFTOOLS_VIEW` as `WITNESS_VETO` (nf-core): keeps a record if the witness has >= 1 ALT read, as a bcftools
@@ -104,10 +104,13 @@ needs); samples are routed by `role` with a channel `branch` (BC1 pools and line
 - The simulation QC (user: a separate task) that estimates and justifies the pipeline on simulated founders
   (math supplement, "Benchmark": the QC set of Gigi and TIL18), with the comparison panels it needs.
 
-## Before it can run on real data
+## Data for this milestone
 
-The pilot's 94 samples (Zx.0540_P3: 5 BC1 + 40 lines; Zx.0570_P2: 5 BC1 + 44 lines), the 12 batch-1 B73 checks and
-ERR3288215 (fetched from ENA) need `--step alignment` first: a run plan in `docs/runs/`.
+Debugging data only (handover 2026-10-04: one donor, a handful of samples, one window, `--head`, `hpc_dev`):
+Zx.0540_P3's 2 BC1 pools and 4 lines; three batch-1 B73 checks (PN5_SID468, PN3_SID236 and one clean check, so the
+filter is tested); ERR3288215, fetched from ENA. All go through `--step alignment` with `--head` first. The full data
+(the pilot's 94 samples, all 12 B73 checks, ERR3288215 aligned in full, about 3 h 21 min) belongs to the pilot run
+plan in `docs/runs/`, with the whole-chromosome run and the precedent check against zealbc1.
 
 ## Tests
 
@@ -115,14 +118,13 @@ ERR3288215 (fetched from ENA) need `--step alignment` first: a run plan in `docs
    answers from zealbc1's step-4 table for Zx.0540_P3 (post-fix rerun, job 949447) on a few hundred sites. The veto
    expression on a small CRISP VCF with known witness counts.
 2. **Wiring** (laptop, stubs, seconds): one discovery task per donor, one B73 check pool, one mpileup task per B73 control, the DAG.
-3. **Slice** (laptop, real data, <= 15 min): Zx.0540_P3, 2 BC1 + 4 lines, chr10:1-5 Mb, Docker.
-4. **Cluster** (hazel): `-stub-run`, then Zx.0540_P3 on all of chr10 (zealbc1: CRISP 8 min 14 s, 245 MB) for the
-   resource profile.
+3. **Slice** (laptop, real data, <= 15 min): the milestone's samples, chr10:1-5 Mb, Docker.
+4. **Cluster** (hazel, `hpc_dev`, < 30 min): `-stub-run`, then the milestone's samples on chr10:1-20 Mb for the
+   resource profile. A bug check, not an accuracy check: no comparison with zealbc1 on a window.
 
 ## Done when
 
 - Tool, stub and slice tests pass; `nf-core pipelines lint` has no failures.
-- The hazel run wrote the VCF and the site table for Zx.0540_P3 on chr10; resources are in config.
-- On the new CRAMs, the B73 check filter drops PN5_SID468 and PN3_SID236 and keeps the other 10 batch-1 B73 checks.
-- The report gives the tier-A count and its overlap with zealbc1's tier-A sites for the same donor and chromosome.
+- The hazel run on chr10:1-20 Mb wrote the VCF, the site table and `b73_checks.tsv`; resources are in config.
+- The B73 check filter drops PN5_SID468 and PN3_SID236 and keeps the clean check.
 - `docs/structure.md` marks the row "built (milestone 7)"; `decisions.md` holds only the choices you confirm.
