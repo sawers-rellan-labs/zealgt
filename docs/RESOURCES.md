@@ -84,8 +84,34 @@ sample (whole-sample map ~3.4 h; 9.8 GB = index 4.9 GB + batches). Picard measur
 | `MOSDEPTH`                 | threads help only CRAM decoding at full size     | 4 cpus, 4 GB, 2 h               |
 
 `hpc_dev` runs heads of up to ~6 M pairs per sample: minutes per task, 1 h each; `SEQKIT_SPLIT2` and `SAMTOOLS_MERGE`
-4 cpus, 2 GB (placeholders). All `hpc_prod` alignment and CRAM QC tasks now run on the default `compute_partners` /
-short QOS (2 h limit; Milestone 2a).
+4 cpus, 2 GB. All `hpc_prod` alignment and CRAM QC tasks now run on the default `compute_partners` / short QOS (2 h
+limit; Milestone 2a); Picard retries once on `compute` / normal with 4 h if it outlives that.
+
+## Split alignment, measured (2026-10-05, Milestone 2a, job 1100086)
+
+10 full samples, `hpc_dev` with the `hpc_prod` alignment lines (`agent/m2a_full/`): BC1 S_2A_3 (4.97x, 2 chunks) and
+S_2F_1 (3.48x, 2), ERR3288215 (13.3x, 3), 7 batch-1 lines and checks (0.22-0.53x, 1 each). 2 h 39 min wall, no
+failure or retry; every task started at once on `compute_partners` (ERR3288215's Picard on `compute` / normal by
+request, 1 h 01 min).
+
+| process                    | tasks | max realtime                                     | max peak RSS | requested           |
+| -------------------------- | ----- | ------------------------------------------------ | ------------ | ------------------- |
+| `SEQKIT_SPLIT2`            | 10    | 9 min 19 s                                       | 202 MB       | 4 cpus, 2 GB, 2 h   |
+| `MINIBWA_MAP`              | 14    | 33 min 35 s per 50 M-pair chunk (24-34 min full) | 10.4 GB      | 16 cpus, 16 GB, 2 h |
+| `FGUMI_CLIP`               | 14    | 5 min 34 s                                       | 2.8 GB       | 2 cpus, 4 GB, 2 h   |
+| `SAMTOOLS_FIXMATE`         | 14    | 8 min 01 s                                       | 25 MB        | 4 cpus, 1 GB, 2 h   |
+| `SAMTOOLS_SORT`            | 14    | 7 min 15 s                                       | 5.0 GB       | 6 cpus, 6 GB, 1 h   |
+| `SAMTOOLS_MERGE`           | 10    | 20 min 13 s (ERR3288215)                         | 18 MB        | 4 cpus, 2 GB, 2 h   |
+| `SAMTOOLS_MARKDUP`         | 10    | 8 min 33 s                                       | 1.2 GB       | 4 cpus, 8 GB, 1 h   |
+| `SAMTOOLS_INDEX`           | 10    | 10 s                                             | 15 MB        | 1 cpu, 1 GB, 1 h    |
+| `SAMTOOLS_STATS`           | 10    | 13 min 31 s                                      | 416 MB       | 2 cpus, 2 GB, 2 h   |
+| `PICARD_COLLECTWGSMETRICS` | 10    | 1 h 01 min (ERR3288215, 13.3x); BC1 <= 37 min    | 4.1 GB       | 1 cpu, 5 GB, 2 h    |
+| `MOSDEPTH`                 | 10    | 1 min 36 s                                       | 3.1 GB       | 4 cpus, 4 GB, 2 h   |
+| `MULTIQC`                  | 1     | 1 min 27 s                                       | 733 MB       | 1 cpu, 7 GB, 1 h    |
+
+- The head job (1 cpu, 8 GB, `scripts/submit_head_job.sbatch`) peaked at its 8 GB (sacct MaxRSS 8.0 GB): larger runs
+  give it more with `sbatch --mem=...`.
+- `SAMTOOLS_SORT` peaked at 5.0 of 6 GB per chunk.
 
 ## Production demultiplexing, measured (2026-10-03/04, `hpc_prod`)
 
