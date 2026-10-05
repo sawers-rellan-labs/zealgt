@@ -3,13 +3,13 @@ nextflow_workflow {
     name "Test Subworkflow FASTQ_ALIGN_MINIBWA"
     script "../main.nf"
     workflow "FASTQ_ALIGN_MINIBWA"
-    config "../../../../conf/modules.config"
+    config "./nextflow.config"
     tag "subworkflows"
     tag "subworkflows_local"
     tag "fastq_align_minibwa"
 
     // aligns to tiny.fa, every tool in its container: the demultiplexed fixture library LIBX (3 samples, 2 lanes joined, inserts
-    // >= 250 bp) and SI_1 (1 lane, 20 pairs whose reads run 20 bases past their mate)
+    // >= 250 bp, 300 pairs: 3 chunks of 100) and SI_1 (1 lane, 20 pairs whose reads run 20 bases past their mate: 1 chunk)
     profile "test,docker"
 
     setup {
@@ -44,6 +44,8 @@ nextflow_workflow {
             def fasta = "${projectDir}/tests/fixtures/ref/tiny.fa"
             // per sample: its @RG lines and its records as SAM fields
             def rgs  = workflow.out.cram.collectEntries { meta, f, _i -> [meta.id, cram(f, fasta).getHeader().findAll { h -> h.startsWith('@RG') }.sort()] }
+            // per sample: the chunk names in its merge command line
+            def merged = workflow.out.cram.collectEntries { meta, f, _i -> [meta.id, (cram(f, fasta).getHeader().find { h -> h.contains('CL:samtools merge') } =~ /part_\d+/).collect()] }
             def recs = workflow.out.cram.collectEntries { meta, f, _i -> [meta.id, cram(f, fasta).getSamLines().collect { l -> l.trim().tokenize('\t') }] }
             def ref_len = { String cigar -> (cigar =~ /(\d+)[MDN=X]/).collect { m -> m[1] as int }.sum(0) }
             def mc = { r -> r.find { t -> t.startsWith('MC:Z:') }?.substring(5) }
@@ -63,8 +65,13 @@ nextflow_workflow {
                 duplicates: rs.count { r -> flag(r, 0x400) }
             ]] }
             def lx = ['LX_1', 'LX_2', 'LX_3']
+            // tasks per process: one split per sample, the chain per chunk (3 x 3 + 1), one merge and markdup per sample
+            def tasks = workflow.trace.tasks().countBy { t -> t.name.tokenize(':')[-1].tokenize(' ')[0] }
             assertAll(
                 { assert workflow.success },
+                { assert merged == lx.collectEntries { x -> [x, ['part_001', 'part_002', 'part_003']] } + [SI_1: ['part_001']] },
+                { assert tasks.subMap('SEQKIT_SPLIT2', 'MINIBWA_MAP', 'FGUMI_CLIP', 'SAMTOOLS_FIXMATE', 'SAMTOOLS_SORT', 'SAMTOOLS_MERGE', 'SAMTOOLS_MARKDUP', 'SAMTOOLS_INDEX') ==
+                    [SEQKIT_SPLIT2: 4, MINIBWA_MAP: 10, FGUMI_CLIP: 10, SAMTOOLS_FIXMATE: 10, SAMTOOLS_SORT: 10, SAMTOOLS_MERGE: 4, SAMTOOLS_MARKDUP: 4, SAMTOOLS_INDEX: 4] },
                 // one read group per sample, ID and SM = sample_id, PU lists its lanes
                 { assert rgs == lx.collectEntries { x -> [x, ["@RG\tID:${x}\tSM:${x}\tLB:LIBX\tPL:ILLUMINA\tPU:LIBX_TESTFC01_L1,LIBX_TESTFC01_L2".toString()]] } +
                     [SI_1: ["@RG\tID:SI_1\tSM:SI_1\tLB:LIBS\tPL:ILLUMINA\tPU:LIBS_TESTFC02_L1"]] },
