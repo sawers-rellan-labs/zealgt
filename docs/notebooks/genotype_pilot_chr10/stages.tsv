@@ -1,0 +1,9 @@
+pipeline	stage	records
+zealbc1	CRISP, in BED	90393
+zealbc1	after the witness veto	65385
+zealgt	CRISP, in BED	60312
+zealgt	after the witness veto	43925
+zealbc1	site table	56665
+zealgt	site table	43925
+zealbc1	tier A	40941
+zealgt	tier A	32749

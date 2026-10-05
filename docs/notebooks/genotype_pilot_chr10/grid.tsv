@@ -1,0 +1,6 @@
+job	crisp	bc1	witness	positions	shared_with_job1	jaccard_with_job1
+1	zealgt container	zealbc1	zealbc1	7158	7158	1.0
+2	zealbc1 binary	zealbc1	zealbc1	7158	7158	1.0
+4	zealgt container	zealbc1	zealgt	6987	6537	0.8592
+3	zealgt container	zealgt	zealbc1	4767	4160	0.5357
+5	zealgt container	zealgt, duplicate flag cleared	zealbc1	7400	6044	0.7099

@@ -1,0 +1,13 @@
+crams	flag	fraction	reads
+zealbc1	proper pair	0.9703	31356
+zealbc1	mate unmapped	0.004	31356
+zealbc1	mate on another chromosome	0.0194	31356
+zealbc1	duplicate flag	0.0	31356
+zealbc1	MAPQ < 20	0.0	31356
+zealbc1	soft-clipped	0.3344	31356
+zealgt	proper pair	0.9646	32417
+zealgt	mate unmapped	0.0051	32417
+zealgt	mate on another chromosome	0.0237	32417
+zealgt	duplicate flag	0.1258	32417
+zealgt	MAPQ < 20	0.021	32417
+zealgt	soft-clipped	0.2696	32417

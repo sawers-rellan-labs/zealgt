@@ -1,0 +1,303 @@
+---
+title: "zealgt vs zealbc1: why the variants differ"
+subtitle: "Donor Zx.0540_P3, chromosome 10 (2026-10-05)"
+author: "Fausto Rodríguez-Zapata"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    embed-resources: true
+    fig-width: 8
+    fig-height: 4.5
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+zealgt found the high-confidence variants of donor Zx.0540_P3 on chromosome 10, from the same 5 BC1 samples and the
+same lines that zealbc1 used. We expected the two sets to overlap almost fully (99 %). They overlapped 60 %. Overlap
+here means shared variants divided by all variants found by either.
+
+::: {.callout-note}
+## In short
+
+- **Our variant calling matches zealbc1's.** Given the same reads, both call exactly the same variants, and variants
+  found by both get similar scores.
+- **The difference is in the reads: PCR duplicates.** zealbc1 counted copies of the same DNA fragment as independent
+  evidence; zealgt counts each fragment once. With duplicates counted, zealgt finds 30 % more high-confidence variants
+  and the overlap rises to 72 %.
+- **zealgt keeps removing duplicates.** The remaining difference comes from how the reads were cleaned before
+  alignment. Not pursued: it would compare two cleaning recipes, not accuracy.
+:::
+
+**Confidence levels.** Each variant gets a score: how much better "real variant" explains its reads than "sequencing
+error", as odds on a log scale (zealbc1 and zealgt use the same rules).
+
+| Label here | Pipeline tier | Rule |
+|---|---|---|
+| high | A | odds ≥ 1,000 : 1 (score ≥ 6.9), variant reads in ≥ 2 BC1 samples, no warning |
+| medium | B | odds ≥ 100 : 1 (score ≥ 4.6), no depth warning |
+| low | C | odds ≥ 9 : 1 (score ≥ 2.2) |
+| B73 allele | ref | odds ≥ 55 : 1 for error (score ≤ −4), ≥ 12 reads |
+| rejected | none | anything else |
+
+Warnings: *too deep* (over twice the usual read depth, a likely repeat), *over half variant reads* (more than a BC1
+sample can carry), *contradictory* (one BC1 sample with ≥ 3 variant reads while another has ≥ 10 reads and none).
+
+```{r setup}
+library(data.table)
+library(ggplot2)
+library(patchwork)
+
+d <- "genotype_pilot_chr10"
+sites <- fread(file.path(d, "sites.tsv.gz"))
+sites[, key := paste(pos, ref, alt)]
+theme_set(theme_minimal(base_size = 11) + theme(panel.grid.minor = element_blank()))
+pal <- c(shared = "#4C78A8", `zealgt only` = "#F58518", `zealbc1 only` = "#54A24B")
+run_label <- c(
+  zealbc1 = "zealbc1", zealgt_mbq20 = "zealgt, duplicates removed",
+  zealgt_mbq10 = "zealgt, lower base-quality cutoff", zealgt_nodup = "zealgt, duplicates counted"
+)
+tier_label <- c(A = "high", B = "medium", C = "low", ref = "B73 allele", none = "rejected")
+
+high <- function(run_name) sites[run == run_name & tier == "A" & in_both_beds == 1, pos]
+overlap <- function(x, y) {
+  a <- high(x)
+  b <- high(y)
+  data.table(
+    shared = length(intersect(a, b)), x_only = length(setdiff(a, b)), y_only = length(setdiff(b, a)),
+    jaccard = length(intersect(a, b)) / length(union(a, b))
+  )
+}
+```
+
+## 1. How much the variant sets overlap
+
+High-confidence variants under each test. The top three bars compare zealgt with zealbc1; the bottom two compare zealgt
+with itself.
+
+```{r fig-overlap, fig.height = 4}
+pairs <- list(
+  c("zealgt_mbq20", "zealbc1", "zealgt vs zealbc1"),
+  c("zealgt_mbq10", "zealbc1", "lower base-quality cutoff vs zealbc1"),
+  c("zealgt_nodup", "zealbc1", "duplicates counted vs zealbc1"),
+  c("zealgt_mbq10", "zealgt_mbq20", "zealgt: lower vs usual base-quality cutoff"),
+  c("zealgt_nodup", "zealgt_mbq20", "zealgt: duplicates counted vs removed")
+)
+ov <- rbindlist(lapply(pairs, function(p) overlap(p[1], p[2])[, comparison := p[3]]))
+ov[, comparison := factor(comparison, rev(comparison))]
+long <- melt(ov, id.vars = c("comparison", "jaccard"), measure.vars = c("shared", "x_only", "y_only"))
+long[, part := fcase(variable == "shared", "shared", variable == "x_only", "zealgt only", default = "zealbc1 only")]
+ggplot(long, aes(value / 1000, comparison, fill = part)) +
+  geom_col(width = 0.7) +
+  geom_text(
+    data = ov, aes(x = (shared + x_only + y_only) / 1000, y = comparison, label = sprintf("%.0f %%", 100 * jaccard)),
+    inherit.aes = FALSE, hjust = -0.15, size = 3.5
+  ) +
+  scale_fill_manual(values = pal, labels = c(
+    shared = "in both", `zealgt only` = "first only", `zealbc1 only` = "second only"
+  )) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.15))) +
+  labs(x = "high-confidence variants (thousands)", y = NULL, fill = NULL) +
+  theme(legend.position = "bottom")
+```
+
+Lowering the base-quality cutoff to zealbc1's barely changes anything (99 % overlap with our usual run). Counting
+duplicates changes a lot, and it is the only change that brings us closer to zealbc1.
+
+## 2. Where the variants are lost
+
+The variant caller (CRISP) runs first; then variants without support in the pooled lines are dropped; then each
+variant is scored.
+
+```{r fig-stages, fig.height = 4}
+stg <- fread(file.path(d, "stages.tsv"))
+stage_levels <- c("CRISP, in BED", "after the witness veto", "site table", "tier A")
+stage_labels <- c("called", "supported\nby the lines", "scored\n(all levels)", "high")
+stg[, stage := factor(stage, levels = stage_levels, labels = stage_labels)]
+p1 <- ggplot(stg, aes(stage, records / 1000, fill = pipeline)) +
+  geom_col(position = position_dodge(0.75), width = 0.7) +
+  scale_fill_manual(values = c(zealbc1 = "#54A24B", zealgt = "#F58518")) +
+  labs(x = NULL, y = "variants (thousands)", fill = NULL) +
+  theme(legend.position = "top")
+tr <- fread(file.path(d, "absent_trace.tsv"))
+tr[, direction := fifelse(
+  grepl("^zealbc1", direction), "zealbc1's variants\nmissing in zealgt", "zealgt's variants\nmissing in zealbc1"
+)]
+where_levels <- c("not called by CRISP", "removed by the witness veto", "kept by the veto, not scored")
+where_labels <- c("never called", "no support in the lines", "not a simple SNP in zealbc1")
+tr[, where := factor(where, levels = where_levels, labels = where_labels)]
+p2 <- ggplot(tr, aes(sites / 1000, direction, fill = where)) +
+  geom_col(width = 0.6) +
+  scale_fill_manual(values = c("#9D755D", "#BAB0AC", "#B279A2")) +
+  labs(x = "high-confidence variants (thousands)", y = NULL, fill = NULL) +
+  theme(legend.position = "top", legend.direction = "vertical")
+p1 + p2 + plot_layout(widths = c(1, 1.2))
+```
+
+The loss is at the very first step: our caller finds a third fewer variants. The later filters are not the cause.
+Only simple SNPs (one base, two alleles) are scored; zealgt drops the others together with the line filter,
+zealbc1 just before scoring.
+
+## 3. Variants found by both get the same verdict
+
+```{r fig-tiers, fig.height = 4.2}
+both_tables <- function(x) {
+  m <- merge(sites[run == x, .(key, tier_x = tier, llr_x = LLR)],
+    sites[run == "zealbc1", .(key, tier_y = tier, llr_y = LLR)],
+    by = "key"
+  )
+  m[, run := run_label[x]]
+}
+bt <- rbind(both_tables("zealgt_mbq20"), both_tables("zealgt_nodup"))
+bt[, run := factor(run, run_label[c("zealgt_mbq20", "zealgt_nodup")])]
+xt <- bt[, .N, by = .(run, tier_x, tier_y)]
+xt[, `:=`(
+  tier_x = factor(tier_label[tier_x], rev(tier_label)),
+  tier_y = factor(tier_label[tier_y], tier_label)
+)]
+ggplot(xt, aes(tier_y, tier_x, fill = log10(N))) +
+  geom_tile(colour = "white") +
+  geom_text(aes(label = format(N, big.mark = ",")), size = 3) +
+  facet_wrap(~run) +
+  scale_fill_gradient(low = "#EEF3F9", high = "#4C78A8", guide = "none") +
+  labs(x = "confidence in zealbc1", y = "confidence in zealgt") +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1))
+```
+
+```{r fig-llr, fig.height = 4.2}
+cors <- bt[, .(r = cor(llr_x, llr_y), slope = coef(lm(llr_x ~ 0 + llr_y, .SD[llr_x > 0 & llr_y > 0]))), by = run]
+ggplot(bt, aes(llr_y, llr_x)) +
+  geom_bin2d(bins = 70) +
+  geom_abline(linetype = 2, colour = "grey40") +
+  geom_abline(data = cors, aes(slope = slope, intercept = 0), colour = "red", linewidth = 0.8) +
+  geom_text(
+    data = cors, aes(x = 5, y = 230, label = sprintf("r = %.2f\nslope = %.2f", r, slope)),
+    hjust = 0, vjust = 1, inherit.aes = FALSE
+  ) +
+  facet_wrap(~run) +
+  scale_fill_viridis_c(trans = "log10") +
+  coord_cartesian(xlim = c(-10, 250), ylim = c(-10, 250)) +
+  labs(x = "zealbc1 score", y = "zealgt score", fill = "variants")
+```
+
+Most variants sit on the diagonal: the two pipelines disagree about which variants exist, not about how good they are.
+The scores also show the duplicate inflation. With duplicates removed, zealgt's scores run about 7 % below zealbc1's
+(slope 0.93, median ratio 0.98); with duplicates counted, they run about 9 % above (slope 1.09, median ratio 1.07),
+the excess coming from zealgt's slightly deeper reads. The score grows with the number of reads, so counting copies as
+evidence raises every score. The slope is pulled mostly by the strongest variants; the median ratio weighs all alike.
+
+## 4. Swapping one input at a time
+
+The caller on the first 10 Mb of chromosome 10, with zealbc1's settings, changing one input per run. Percentages are the
+overlap with run 1.
+
+```{r fig-grid, fig.height = 3.6}
+grid <- fread(file.path(d, "grid.tsv"))
+grid[, label := c(
+  "1: our caller, zealbc1's reads",
+  "2: zealbc1's caller, zealbc1's reads",
+  "3: our caller, our lines",
+  "4: our caller, our BC1 reads",
+  "5: our caller, our BC1 reads, duplicates counted"
+)[match(job, c(1, 2, 4, 3, 5))]]
+grid[, label := factor(label, rev(label))]
+ggplot(grid, aes(positions, label)) +
+  geom_col(fill = "#4C78A8", width = 0.6) +
+  geom_text(aes(label = sprintf("%s  (%.0f %%)", format(positions, big.mark = ","), 100 * jaccard_with_job1)),
+    hjust = -0.05, size = 3.5
+  ) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.25))) +
+  labs(x = "variants called", y = NULL)
+```
+
+- Our caller and zealbc1's give identical results (runs 1, 2).
+- Our pooled lines change the result a little (run 3).
+- Our BC1 reads cut the variants by a third (run 4); counting duplicates brings the number back (run 5).
+
+## 5. The duplicates
+
+Reads covering 693 variants that only zealbc1 found, and 358 that both found, first 10 Mb.
+
+```{r fig-reads, fig.height = 4.2}
+rf <- fread(file.path(d, "read_features.tsv"))[feature %in% c("near_5p", "near_3p", "soft_clipped", "coord_dup")]
+feature_labels <- c(
+  soft_clipped = "variant in a clipped part", near_5p = "variant near the read start",
+  near_3p = "variant near the read end", coord_dup = "duplicate read"
+)
+rf[, feature := factor(feature_labels[feature], feature_labels)]
+rf[, sites := fifelse(sites == "shared", "found by both", "found by zealbc1 only")]
+p1 <- ggplot(rf, aes(fraction, feature, colour = crams, shape = sites)) +
+  geom_point(size = 2.6, position = position_dodge(0.5)) +
+  scale_colour_manual(values = c(zealbc1 = "#54A24B", zealgt = "#F58518")) +
+  scale_x_continuous(labels = scales::percent) +
+  labs(x = "share of the reads carrying the variant", y = NULL, colour = "reads of", shape = NULL)
+rs <- fread(file.path(d, "read_sites.tsv"))[crams == "zealgt"]
+rs <- melt(rs, id.vars = c("sites", "pos"), measure.vars = c("alt_reads", "alt_reads_passing"))
+rs[, variable := fifelse(variable == "alt_reads", "all reads", "duplicates removed")]
+rs[, sites := fifelse(sites == "shared", "found by both", "found by zealbc1 only")]
+p2 <- ggplot(rs, aes(variable, value, fill = sites)) +
+  geom_boxplot(outlier.size = 0.3, width = 0.6, position = position_dodge(0.7)) +
+  scale_fill_manual(values = c(`found by both` = "#4C78A8", `found by zealbc1 only` = "#54A24B")) +
+  coord_cartesian(ylim = c(0, 40)) +
+  labs(x = NULL, y = "reads carrying the variant", fill = NULL)
+p1 / p2 + plot_layout(heights = c(1, 1))
+```
+
+Read ends and clipping look the same in both pipelines, so they are not the cause. Duplicates are: variants that only
+zealbc1 found lean more on duplicate reads (30 % vs 21 %), and once duplicates are removed they have less support.
+
+## 6. Counting duplicates on the whole chromosome
+
+```{r fig-nodup, fig.height = 3.6}
+tc <- sites[run %in% c("zealgt_mbq20", "zealgt_nodup", "zealbc1") & in_both_beds == 1, .N, by = .(run, tier)]
+tc[, `:=`(
+  run = factor(run_label[run], run_label[c("zealgt_mbq20", "zealgt_nodup", "zealbc1")]),
+  tier = factor(tier_label[tier], tier_label)
+)]
+ggplot(tc, aes(tier, N / 1000, fill = run)) +
+  geom_col(position = position_dodge(0.8), width = 0.75) +
+  scale_fill_manual(values = c("#F58518", "#E45756", "#54A24B")) +
+  labs(x = "confidence", y = "variants (thousands)", fill = NULL) +
+  theme(legend.position = "top")
+```
+
+Counting duplicates raises our high-confidence variants from 32,749 to 42,934, close to zealbc1's 40,941. So about a
+quarter of zealbc1's high-confidence variants rest on duplicate reads.
+
+```{r fig-position, fig.height = 3.2}
+ours <- high("zealgt_mbq20")
+pos_a <- sites[run == "zealbc1" & tier == "A" & in_both_beds == 1]
+pos_a[, group := fifelse(pos %in% ours, "found by both", "found by zealbc1 only")]
+ggplot(pos_a, aes(pos / 1e6, fill = group)) +
+  geom_histogram(binwidth = 2, position = "identity", alpha = 0.7) +
+  scale_fill_manual(values = c(`found by both` = "#4C78A8", `found by zealbc1 only` = "#54A24B")) +
+  labs(x = "chromosome 10 (Mb)", y = "high-confidence variants", fill = NULL)
+```
+
+The missing variants are spread along the whole chromosome, not clustered in one region.
+
+## Not pursued
+
+With duplicates counted, 28 % of the variants still differ. That comes from how each pipeline cleaned the reads before
+alignment (barcode matching, adapter trimming, mapping-quality filter). Testing each step means realigning all 5 BC1
+samples per step, and would only compare two cleaning recipes. Accuracy will be measured on simulated data instead.
+
+## Conclusion
+
+zealgt goes forward as it is (user, 2026-10-05):
+
+- **Duplicates are marked.** The score treats each read as independent evidence; a PCR copy repeats one fragment and
+  adds nothing new. About a quarter of zealbc1's high-confidence variants rest on such copies (sections 5 and 6).
+- **Reads are processed as Twist documents for the kits.** It gives slightly more reads (0-10 % more depth at the
+  variants both pipelines find) and no sign of artifacts (section 5: read ends and clipped parts look the same in both
+  pipelines). It is also the method that follows the manufacturer's instructions. The extra reads come from the barcode
+  matching, measured on 5 million read pairs per kit (`docs/later/fqtk_vs_cutadapt.md`, 2026-10-03):
+  - fqtk assigns 2.72 % more pairs for FlexPrep and 1.91 % for 96-Plex;
+  - no pair goes to a different sample;
+  - the estimated cost is at most a few wrongly assigned pairs per million.
+
+The remaining 28 % difference with zealbc1 stays open; zealbc1 is not the truth, and accuracy will be measured on
+simulated data.
