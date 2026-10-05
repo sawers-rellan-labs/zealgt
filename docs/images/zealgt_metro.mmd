@@ -60,7 +60,6 @@ graph LR
         check_filter[B73 check filter]
         merge_pools[samtools merge]
         crisp[CRISP]
-        bed_clip[bed clip]
         veto[witness veto]
         mpileup_ctrl[mpileup]
         tiers[LLR tiers]
@@ -69,8 +68,7 @@ graph LR
         cov_filter -->|genotype| check_filter
         check_filter -->|genotype| merge_pools
         merge_pools -->|genotype| crisp
-        crisp -->|genotype| bed_clip
-        bed_clip -->|genotype| veto
+        crisp -->|genotype| veto
         veto -->|genotype| mpileup_ctrl
         mpileup_ctrl -->|genotype| tiers
         tiers -->|genotype| sites_out
