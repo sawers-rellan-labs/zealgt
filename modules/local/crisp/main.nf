@@ -2,7 +2,7 @@ process CRISP {
     tag "${meta.id}"
     label 'process_medium'
 
-    // CRISP is not on conda: vibansal/crisp at commit 1a9027e, built from zealgt-old's modules/local/crisp/Dockerfile
+    // CRISP is not on conda: vibansal/crisp at commit 1a9027e, built from containers/crisp/Dockerfile
     container 'ghcr.io/sawers-rellan-labs/zealgt-crisp:1a9027e'
 
     input:
