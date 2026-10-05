@@ -21,6 +21,10 @@
 \newcommand{\cov}{\lambda}                  % per-sample coverage (as in the nilHMM supplement)
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\todo}[1]{\textbf{[TO CHECK: #1]}}
+% NEW: a proposal is a block not yet adopted, more provisional than the rest of the draft
+\newenvironment{proposal}[1]
+  {\par\medskip\noindent\textbf{[PROPOSAL, not adopted (#1)]}\begin{quote}\small}
+  {\end{quote}\noindent\textbf{[end of proposal]}\par\medskip}
 
 \title{Supplemental Texts (DRAFT)\\[2pt]
 \large Pooled-sample genotyping of the ZEAL BC$_2$S$_3$ population (zealgt)}
@@ -215,6 +219,25 @@ G_s=\begin{cases}x & D_{ds}=\ALT\\ 0 & D_{ds}=\REF\\ \text{unknown} & D_{ds}\ \t
 A common marker set across donors therefore needs $D_{ds}$ at every site of the union $U=\bigcup_d A_d$ of the donors' tier-A sets,
 including sites discovered only in other donors. Positions with different ALT alleles in different donors are dropped.
 
+\paragraph{Terminology: informative sites and false alleles.} Whether a site is informative is a property of the donor: site $s$ is
+\emph{informative} for donor $d$ if $D_{ds}=\ALT$, and \emph{non-informative} if $D_{ds}=\REF$ (the cross is not polymorphic there).
+A \emph{false allele} or a \emph{missed allele} is an error of the call. Crossing the truth with the call:
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+ & $D_{ds}=\REF$ (non-informative) & $D_{ds}=\ALT$ (informative)\\
+\midrule
+called ALT & false allele & true allele\\
+called REF & correct REF & missed allele (false REF)\\
+\bottomrule
+\end{tabular}
+\end{center}
+Every non-informative site is in the left column, whatever its call; a false allele is a non-informative site called ALT. In the
+simulated QC set (founder inbred, no standing variation) the two coincide, which is why zealbc1 used ``non-informative'' for the false
+alleles of pooled discovery; in real donors they are distinct. One source of false alleles is donor-only sequence: reads from a donor
+copy absent from B73 align to a B73 paralog at $s$, where the donor is REF. Such reads can align with high mapping quality, so a MAPQ
+filter does not remove them, and they appear only in carriers of the donor segment that holds the copy.
+
 \subsection{Gap filling}
 The donor's BC$_1$ samples are counted at every site of $U$ (one pileup per sample, all union sites at once), its own sites ($s\in A_d$)
 included, and scored by Eq.~\eqref{eq:llr} without the veto. REF is assigned from the donor's own reads only (tier \code{ref}). ALT uses a
@@ -265,6 +288,68 @@ below) Eq.~\eqref{eq:step2} made \textbf{no false ALT call at any of the 29{,}09
 (false-ALT rate $<10^{-4}$, 95\% upper bound), and recovered $29$--$46\%$ of the 11{,}918 truly-ALT gap sites from the lines and prior
 alone and $93$--$94\%$ with the BC$_1$ evidence. On the two mexicana pilot donors (chr10) it filled 2{,}994 and 2{,}581 of the 11{,}819
 and 9{,}079 gaps left by step 1, leaving $10.7\%$ and $7.9\%$ of the union missing.
+
+\subsection{Gap filling, step 2 as joint genotyping}
+\label{sec:joint}
+\begin{proposal}{2026-10-05}
+Eq.~\eqref{eq:step2} conditions on one ancestry call per line. The donor allele $D_{ds}$ is a parameter shared by all of donor $d$'s
+samples at site $s$; each line's ancestry at $s$ is a latent variable. Summing the lines' likelihoods over their ancestry, instead of
+plugging in a call, makes step 2 the analogue of joint genotyping in GATK \citep{vanderauwera2013}: a population prior (the other
+donors, Eq.~\eqref{eq:eb}), per-sample likelihoods with their latent states marginalised, and one posterior per site. It stays a single
+pass: ancestry is inferred once, from the donor's own tier-A sites, and nothing is fed back.
+
+\paragraph{Latent state of a line.} Line $i$ is a six-plant bulk (Text~\ref{sec:bulk}). At site $s$ its BC$_2$S$_2$ parent is
+$z\in\{\mathrm{B73/B73},\ \HET,\ \Hd/\Hd\}$, and the bulk's donor fraction is
+\begin{equation}
+g=0\ \ (z=\mathrm{B73/B73}),\qquad g=\tfrac{K}{12},\ K\sim\Bin(12,\tfrac12)\ \ (z=\HET),\qquad g=1\ \ (z=\Hd/\Hd),
+\label{eq:jointg}
+\end{equation}
+by Eq.~\eqref{eq:bulk}. This replaces the dosage $x_i/2$ of Eq.~\eqref{eq:lines}, which is the single-plant value and the mean of
+$K/12$.
+
+\paragraph{Emission.} With the mappabilities $k_s$, $c_s$ and coverage $\lambda_i$ of Eq.~\eqref{eq:lines},
+\begin{align}
+n_i\mid g &\sim \Pois\!\big(k_s\lambda_i\,[(1-g)+g\,c_s]\big),\qquad
+\rho(g)=\frac{g\,c_s}{(1-g)+g\,c_s},\nonumber\\
+a_i\mid n_i,g,\ D_{ds}=\ALT &\sim \Bin\!\big(n_i,\ \rho(g)(1-\epsilon)+(1-\rho(g))\epsilon\big),\qquad
+a_i\mid n_i,g,\ D_{ds}=\REF \sim \Bin(n_i,\ \epsilon).
+\label{eq:jointemit}
+\end{align}
+
+\paragraph{Ancestry posterior.} Let $w_i(z)=P\big(z_i(s)=z\mid \mathbf{y}_{i,-s}\big)$ be line $i$'s posterior at $s$ given its reads at
+every site except $s$. A gap site is not among the donor's tier-A sites, so the ancestry HMM never saw it and $w_i$ is its
+forward--backward posterior at an unobserved position: with $l<s<r$ the flanking markers, $\alpha$, $\beta$ the forward and backward
+variables, and $T(\delta)$ the transition matrix over distance $\delta$,
+\begin{equation}
+w_i(z)\ \propto\ \Big[\sum_{z'}\alpha_{il}(z')\,T_{z'z}(s-l)\Big]\Big[\sum_{z''}T_{zz''}(r-s)\,\beta_{ir}(z'')\Big].
+\label{eq:jointw}
+\end{equation}
+
+\paragraph{Joint posterior.} Given $D_{ds}$ the lines are independent, and independent of the BC$_1$ pools, so
+\begin{align}
+L_i(D) &= \sum_{z} w_i(z)\sum_{K} P(K\mid z)\;P\big(n_i,a_i\mid g(z,K),\,D\big),\\
+P(D_{ds}=\ALT\mid \text{all reads}) &= \sigma\!\Big(\log\frac{\pi_{ds}}{1-\pi_{ds}}+\LLR_{ds}+\sum_i\log\frac{L_i(\ALT)}{L_i(\REF)}\Big),
+\label{eq:joint}
+\end{align}
+with $\pi_{ds}$ from Eq.~\eqref{eq:eb}, $\LLR_{ds}$ from the BC$_1$ pools (Eq.~\eqref{eq:llr}, which already sums over each pool's
+carrier count $j$), $P(K\mid\HET)=\Bin(K;12,\tfrac12)$ and $K$ fixed for the homozygous states. $c_s$ is summed out under the per-taxon
+prior of step 2. A line with $w_i(\mathrm{B73/B73})=1$ gives $L_i(\ALT)=L_i(\REF)$ and drops out. ALT is called at posterior $\ge0.999$,
+as in Eq.~\eqref{eq:step2}, which Eq.~\eqref{eq:joint} reduces to when every $w_i$ is a point mass and $K/12$ is replaced by $\tfrac12$.
+
+\paragraph{Why it is not circular.} The reads at $s$ enter Eq.~\eqref{eq:joint} once: $w_i$ uses only the line's other sites. For an own
+site ($s\in A_d$, already in the HMM) the same holds with the site's own emission removed,
+$w_i(z)\propto\alpha_{is}(z)\,\beta_{is}(z)/e_{is}(z)$; whether own sites are re-scored with the lines is a separate choice.
+
+\paragraph{Not proposed.} A fully simultaneous model, with $D_{d\cdot}$ at every site, each BC$_1$ pool's carrier count $j(s)$ and each
+line's parent state $z(s)$ as hidden Markov chains along the chromosome, couples all chains through $D$ and needs EM or Gibbs sampling,
+with an own HMM in place of RTIGER. Eq.~\eqref{eq:joint} keeps RTIGER and one pass.
+
+\paragraph{Open points.}\begin{itemize}\item \todo{does RTIGER export per-site posterior probabilities and its fitted transition parameters? If not,
+Eq.~\eqref{eq:jointw} needs a forward--backward pass on RTIGER's fitted model}\item \todo{RTIGER's states are single-plant dosages; mapping
+them to the parent states $z$ of a bulk}\item \todo{lines of one donor share BC$_1$ and BC$_2$ ancestry, so they are not independent given
+$D_{ds}$ (as for the veto, Eq.~\eqref{eq:veto}); the product over lines overstates the evidence}\item \todo{benchmark against
+Eq.~\eqref{eq:step2} on the simulated QC set: false-ALT rate at truly-REF gaps and recovery of truly-ALT gaps}\end{itemize}
+\end{proposal}
 
 \subsection{Benchmark}
 On the simulated QC set (founders Gigi and TIL18, five BC$_1$ pools of $\sim14\times$, tier A subsampled to the pilot's sizes; chr10) the
