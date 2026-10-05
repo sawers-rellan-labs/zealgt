@@ -34,7 +34,7 @@ Per donor and chromosome, in `genotype/discovery/`:
 
 - `<donor>.<chr>.vcf.gz` + `.tbi`: CRISP's records inside the low-copy BED that the witness keeps.
 - `<donor>.<chr>.sites.tsv.gz`: one row per site with pooled depth and ALT reads per pool, LLR, the flags
-  (`af_gt_half`, `hidepth`) and the tier (`A`, `B`, `C`, `ref`, none). Tier-A sites feed the next rows (union,
+  (`af_gt_half`, `hidepth`, `inconsistent`) and the tier (`A`, `B`, `C`, `ref`, none). Tier-A sites feed the next rows (union,
   ancestry).
 
 ## Processes
@@ -59,7 +59,8 @@ needs); samples are routed by `role` with a channel `branch` (BC1 pools and line
    (decision 2026-10-02).
 7. `POOLED_LIKELIHOOD_TIERS` (local module, own tool `bin/score_pooled_likelihood.py`): the pooled likelihood ratio
    per donor (math supplement Eq. `eq:llr`: 6 plants per BC1 pool, `j` marginalised), site error rate from non-carrier
-   pools and the B73 controls, flags, tiers. Tier A: LLR >= 6.9, ALT reads in >= 2 BC1 pools, no flag.
+   pools and the B73 controls, flags, tiers. Tier A: LLR >= 6.9, ALT reads in >= 2 BC1 pools, no `hidepth`, `af_gt_half` or `inconsistent` flag
+   (`inconsistent`, as zealbc1: one BC1 pool with >= 3 ALT reads while another has >= 10 reads and none ALT).
 
 ## Files
 
