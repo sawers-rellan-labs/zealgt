@@ -58,7 +58,7 @@
             "type": "object",
             "fa_icon": "fas fa-dna",
             "description": "Reference FASTA and its prebuilt minibwa index.",
-            "required": ["fasta", "minibwa_index"],
+            "required": ["fasta"],
             "properties": {
                 "fasta": {
                     "type": "string",
@@ -75,6 +75,17 @@
                     "description": "Glob of the prebuilt minibwa 0.7 index files, e.g. <fasta>.{l2b,mbw}.",
                     "fa_icon": "fas fa-bezier-curve"
                 }
+            },
+            "if": {
+                "properties": {
+                    "step": {
+                        "const": "alignment"
+                    }
+                },
+                "required": ["step"]
+            },
+            "then": {
+                "required": ["minibwa_index"]
             }
         },
         "genotype_options": {
@@ -83,7 +94,11 @@
             "fa_icon": "fas fa-seedling",
             "description": "Inputs and cuts of --step genotype.",
             "if": {
-                "properties": { "step": { "const": "genotype" } },
+                "properties": {
+                    "step": {
+                        "const": "genotype"
+                    }
+                },
                 "required": ["step"]
             },
             "then": {
