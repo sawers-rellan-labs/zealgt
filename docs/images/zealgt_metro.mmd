@@ -37,7 +37,6 @@ graph LR
         minibwa[minibwa]
         fgumi[fgumi clip]
         fixmate[fixmate]
-        sort[sort]
         merge[merge]
         markdup[markdup]
         index[index]
@@ -46,8 +45,7 @@ graph LR
         split -->|alignment| minibwa
         minibwa -->|alignment| fgumi
         fgumi -->|alignment| fixmate
-        fixmate -->|alignment| sort
-        sort -->|alignment| merge
+        fixmate -->|alignment| merge
         merge -->|alignment| markdup
         markdup -->|alignment| index
         index -->|alignment| cram_out
