@@ -1,0 +1,35 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/sawers-rellan-labs/zealgt/main/assets/schema_b73_controls.json",
+    "title": "sawers-rellan-labs/zealgt pipeline - params.b73_controls schema",
+    "description": "One row per B73 reference control (not a sample of ours, e.g. NCBI ERR3288215): its CRAM from an ALIGNMENT run",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "sample_id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_]+$",
+                "errorMessage": "sample_id must be letters, digits and underscores",
+                "meta": ["id"]
+            },
+            "cram": {
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^\\S+\\.cram$",
+                "errorMessage": "cram must be an existing .cram file"
+            },
+            "crai": {
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^\\S+\\.crai$",
+                "errorMessage": "crai must be an existing .crai file"
+            }
+        },
+        "required": ["sample_id", "cram", "crai"]
+    },
+    "minItems": 1,
+    "uniqueEntries": ["sample_id"]
+}

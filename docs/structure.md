@@ -5,7 +5,7 @@ are recorded here. Terms as in `TERMINOLOGY.md`, decisions in `decisions.md`.
 
 ![zealgt full metro map](images/zealgt_metro_full.svg)
 
-Production steps of the built workflows (source `images/zealgt_metro_full.mmd`, drawn with nf-metro 2.1.0); the README
+Steps of the built workflows, GENOTYPE in development (source `images/zealgt_metro_full.mmd`, drawn with nf-metro 2.1.0); the README
 shows the same map without CRAM QC (`images/zealgt_metro.mmd`).
 
 ## Levels
@@ -42,19 +42,24 @@ Read top down; each level only names the one below it.
 | `CRAM_QC_SAMTOOLS_PICARD` | `SAMTOOLS_STATS`, `PICARD_COLLECTWGSMETRICS`, `MOSDEPTH`                                                                                                                   | built (milestone 3)      |
 | inline                    | `MULTIQC` on the CRAM QC files                                                                                                                                             | built (milestone 4)      |
 
-## GENOTYPE: CRAMs to genotypes (development scope: one chromosome end to end)
+## GENOTYPE: CRAMs to projected genotypes (development scope: one chromosome end to end)
 
-Provisional, from the old repository's stages; which of them are kept is decided per milestone.
+Input: one CRAM per sample (ALIGNMENT). Output: one VCF per chromosome with every line's genotype, and the ancestry
+raster beside it. Each row is a milestone; stage names are provisional (old module names).
 
-| stage                          | modules (old names)                                                                                     |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------- |
-| `PREPARE_REGIONS`              | `REGION_BED`, `MASK_READ_STARTS`; once, passed to every stage below                                     |
-| `CRAM_SAMPLEQC`                | `MIN_COVERAGE`, `COVERAGE_QC`, `RELATEDNESS_QC`, `DONOR_CONTENT_QC`, `SAMPLE_QC_TABLE`                  |
-| `CRAM_VARIANT_DISCOVERY_CRISP` | `WITNESS_POOL` -> `CRISP` -> `BED_CLIP` -> `WITNESS_VETO`, site counts -> `POOLED_LIKELIHOOD_TIERS`     |
-| `CRAM_ANCESTRY_RTIGER`         | `RTIGER_MARKERS` -> `LINE_ALLELE_COUNTS` -> `LINE_MARKER_QC` -> `RTIGER`                                |
-| `CRAM_ALLELE_CALLING_POOLED`   | union counts -> `JOINT_POOLED_LIKELIHOOD` -> `GAP_FILLING_BC1` / `GAP_FILLING_LINES` -> `DONOR_FOUNDER` |
-| `GENOTYPE_REPORTING`           | `SAMPLE_LABELS`, `GENOTYPE_SUMMARY`, `CHROMOSOME_PAINTING`, `READ_POSITION_QC`                          |
-| inline                         | `MARKER_UNION`, `RASTERIZE`                                                                             |
+| stage                          | modules                                                                                                                                                                                                                                                                                                                 | status              |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| `CRAM_VARIANT_DISCOVERY_CRISP` | coverage filter (< 0.05x) -> B73 check filter (`CHECK_COUNTS`, `CHECK_ALT_RATE`) -> witness and B73 check pools (`SAMTOOLS_MERGE`, `SAMTOOLS_ADDREPLACERG`) -> `CRISP` (low-copy BED, an input) -> `BED_CLIP` (CRISP range-end fix) -> `WITNESS_VETO` -> `BCFTOOLS_MPILEUP` (B73 controls) -> `POOLED_LIKELIHOOD_TIERS` | built (milestone 7) |
+| `SITES_UNION_GAPFILL`          | `MARKER_UNION` (tier-A sites of all donors) -> `GAP_FILLING_BC1` -> `GAP_FILLING_LINES`: donor allele on it                                                                                                                                                                                                             | planned             |
+| `CRAM_ANCESTRY_RTIGER`         | `LINE_ALLELE_COUNTS` -> `LINE_MARKER_QC` (< 2 x rigidity covered markers per chromosome dropped) -> `RTIGER`                                                                                                                                                                                                            | planned             |
+| `GENOTYPE_PROJECTION`          | `RASTERIZE` (segments -> ancestry dosage at the union) -> projection (ancestry x donor allele) -> VCF                                                                                                                                                                                                                   | planned             |
+
+- Union and ancestry need only discovery and run side by side; the projection joins them.
+- Our own tools (Python, R) live in `bin/` and run in a local module each, as nf-core/rnaseq does; the module takes the
+  script as a `path` input and calls it through its interpreter (`docs/running.md`: `-resume` and `bin/`).
+- No read-start mask (`decisions.md`, 2026-10-04).
+- The pilot (Zx.0540_P3, Zx.0570_P2, chr10) is a run plan in `runs/` with a precedent check against zealbc1's results.
+- Later, separately: PHG imputation as the comparison method; identity QC (`later/genotype_identity_qc.md`).
 
 ## Not built
 
