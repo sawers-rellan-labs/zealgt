@@ -38,6 +38,9 @@ Two layers of Apptainer containers, each seeing only the host paths bound into i
 - When 2 and 3 name the same folder, Apptainer prints `WARNING: While bind mounting '<dir>:<dir>': destination is
 already in the mount point list` in the task's `.command.err`, skips the duplicate, and the task runs normally
   (job 1097636).
+- The `runOptions` binds stay (user, 2026-10-05): `autoMounts` binds only the folders of staged input files, so a
+  path a task reaches otherwise (from a samplesheet, from `ext.args`, or through a symlink on `/share` into `/rsstu`)
+  would no longer be visible. Removing them needs a stub run and an alignment run on hazel first.
 
 ## When a run fails
 
