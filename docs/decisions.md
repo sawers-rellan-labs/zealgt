@@ -211,3 +211,9 @@ fqtk runs once per lane, and `CAT_FASTQ` joins each sample's lanes (user). Reaso
 - Checked on chr10 (hazel job 1094464): 8,084 ranges, 26.1 Mb vs zealbc1's 8,095 ranges, 26.0 Mb; 8,040 ranges
   identical, Jaccard 0.9985; the non-TE part identical (9,838 ranges, 20.7 Mb). The rest is near genes: `bedtools merge`
   joins overlapping padded genes (2,239 ranges) where PHG keeps them apart (about 2,489). Good enough (user).
+
+## 2026-10-04 zealbc1 is a comparison, not a target
+
+- GENOTYPE follows its specs; zealbc1 outputs are for comparison, close but not identical (user). Milestone 7's tier A
+  leaves out zealbc1's `inconsistent` flag (`docs/later/tier_a_inconsistent_flag.md`).
+- "Close enough" at the mosaic (ancestry) level: Dice–Sørensen > 90 % (user); no metric computed yet.
