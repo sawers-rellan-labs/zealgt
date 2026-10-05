@@ -216,17 +216,20 @@ A common marker set across donors therefore needs $D_{ds}$ at every site of the 
 including sites discovered only in other donors. Positions with different ALT alleles in different donors are dropped.
 
 \subsection{Gap filling}
-Own sites ($s\in A_d$) are ALT by discovery and are not re-called. For a gap ($s\in U\setminus A_d$), the donor's BC$_1$ samples are counted
-at $s$ (one pileup per sample, all union sites at once) and scored by Eq.~\eqref{eq:llr} without the veto. REF is assigned from the donor's
-own reads only (tier \code{ref}). ALT uses a prior raised by the other donors: with $k$ = other donors (in a chosen set, e.g.\ the same
-taxon) that carry the allele and $m$ = other donors with a genotype at $s$,
+The donor's BC$_1$ samples are counted at every site of $U$ (one pileup per sample, all union sites at once), its own sites ($s\in A_d$)
+included, and scored by Eq.~\eqref{eq:llr} without the veto. REF is assigned from the donor's own reads only (tier \code{ref}). ALT uses a
+prior raised by the other donors: with $k$ = other donors that carry the allele ($s$ among their own sites) and $m$ = other donors with a
+genotype at $s$ (own site, or a gap scored \code{ref}),
 \begin{equation}
 \pi_{ds}=\frac{w\mu_d+k}{w+m},\qquad
 P(D_{ds}=\ALT\mid\text{reads})=\sigma\!\left(\LLR_{ds}+\log\frac{\pi_{ds}}{1-\pi_{ds}}\right),
 \label{eq:eb}
 \end{equation}
 a leave-one-out beta-binomial prior with mean $\mu_d$ (donor $d$'s sharing rate: tier A$/$(A$+$ref) at its gaps) and weight $w=2$.
-ALT is called at posterior $\ge0.999$; sites flagged \code{hidepth} or \code{af\_gt\_half} are never promoted.
+ALT is called at posterior $\ge0.999$ with reads at $s$; sites flagged \code{hidepth} or \code{af\_gt\_half} are never promoted. Own
+sites are re-scored the same way: an own site whose posterior falls below $0.999$ becomes missing, not REF (its reads give no evidence for
+B73), unless its reads are tier \code{ref}. The prior comes from all other donors; restricting it to the same taxon is an option once
+other taxa are added.
 The likelihood ratio models sequencing error but not artifacts; a site that is tier A in another donor, passed that donor's witness and is
 clean in the B73 pools is independent evidence that the site is real, which is what the prior carries. A mis-mapped paralog shows ALT in all
 donors, so sharing alone does not separate real alleles from artifacts; the B73 zero class and the flags do.
