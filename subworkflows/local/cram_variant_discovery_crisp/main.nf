@@ -28,7 +28,7 @@ workflow CRAM_VARIANT_DISCOVERY_CRISP {
     }
 
     // B73 check filter: each check's share of ALT reads at the check sites
-    CHECK_COUNTS(ch_role.check.map { meta, cram, _crai -> [meta, cram, check_sites, []] }, ch_fasta, false)
+    CHECK_COUNTS(ch_role.check.map { meta, cram, crai -> [meta, cram, crai, check_sites, []] }, ch_fasta, false)
     CHECK_ALT_RATE(CHECK_COUNTS.out.vcf)
     def ch_check = ch_role.check.join(CHECK_ALT_RATE.out.rate).branch { _meta, _cram, _crai, rate ->
         kept: (rate as double) <= max_check_alt_rate
@@ -76,17 +76,19 @@ workflow CRAM_VARIANT_DISCOVERY_CRISP {
     // the B73 controls counted at each donor's kept sites
     BCFTOOLS_MPILEUP(
         ch_pool_rg.control.combine(WITNESS_VETO.out.vcf)
-            .map { meta, cram, _crai, donor_meta, vcf -> [meta + [donor: donor_meta.id], cram, vcf, []] },
+            .map { meta, cram, crai, donor_meta, vcf -> [meta + [donor: donor_meta.id], cram, crai, vcf, []] },
         ch_fasta,
         false
     )
     def ch_score = WITNESS_VETO.out.vcf.map { meta, vcf -> [meta.id, meta, vcf] }
         .join(BCFTOOLS_MPILEUP.out.vcf.map { meta, vcf -> [meta.donor, vcf] }.groupTuple())
-        .map { _donor, meta, vcf, controls -> [meta, vcf, controls] }
+        .map { _donor, meta, vcf, controls -> [meta, vcf, controls, []] }
     POOLED_LIKELIHOOD_TIERS(ch_score, score_tool)
 
     emit:
     vcf                = WITNESS_VETO.out.vcf.join(WITNESS_VETO.out.index) // channel: [ meta, vcf.gz, tbi ], one per donor
     sites              = POOLED_LIKELIHOOD_TIERS.out.sites                 // channel: [ meta, sites.tsv.gz ], one per donor
+    tier_a             = POOLED_LIKELIHOOD_TIERS.out.tier_a                // channel: [ meta, tier_a.vcf ], one per donor
+    controls           = ch_pool_rg.control                                // channel: [ meta, cram, crai ], the B73 controls
     dropped_b73_checks = ch_dropped_b73_checks                             // channel: dropped_b73_checks.tsv
 }

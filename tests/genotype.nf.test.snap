@@ -2,10 +2,19 @@
     "--step genotype - stub": {
         "content": [
             {
+                "BCFTOOLS_MERGE": {
+                    "bcftools": "1.23.1"
+                },
                 "BCFTOOLS_MPILEUP": {
                     "bcftools": "1.23.1"
                 },
+                "BCFTOOLS_NORM": {
+                    "bcftools": "1.23.1"
+                },
                 "BED_CLIP": {
+                    "bcftools": "1.23.1"
+                },
+                "BIALLELIC_UNION": {
                     "bcftools": "1.23.1"
                 },
                 "CHECK_ALT_RATE": {
@@ -14,8 +23,17 @@
                 "CHECK_COUNTS": {
                     "bcftools": "1.23.1"
                 },
+                "COUNT_UNION": {
+                    "bcftools": "1.23.1"
+                },
                 "CRISP": {
                     "crisp": "1a9027e"
+                },
+                "DONOR_ALLELES_INDEX": {
+                    "bcftools": "1.23.1"
+                },
+                "FILL_DONOR_ALLELES": {
+                    "python": "3.12.14"
                 },
                 "POOLED_LIKELIHOOD_TIERS": {
                     "python": "3.12.14"
@@ -28,6 +46,9 @@
                 },
                 "SAMTOOLS_MERGE": {
                     "samtools": 1.24
+                },
+                "UNION_TIERS": {
+                    "python": "3.12.14"
                 },
                 "WITNESS_VETO": {
                     "bcftools": "1.23.1"
@@ -42,10 +63,14 @@
                 "genotype/discovery/Zx.9001_P1.chrA.vcf.gz.tbi",
                 "genotype/discovery/Zx.9002_P1.chrA.sites.tsv.gz",
                 "genotype/discovery/Zx.9002_P1.chrA.vcf.gz",
-                "genotype/discovery/Zx.9002_P1.chrA.vcf.gz.tbi"
+                "genotype/discovery/Zx.9002_P1.chrA.vcf.gz.tbi",
+                "genotype/union/chrA.donor_alleles.vcf.gz",
+                "genotype/union/chrA.donor_alleles.vcf.gz.tbi",
+                "genotype/union/chrA.union.vcf.gz",
+                "genotype/union/chrA.union.vcf.gz.tbi"
             ]
         ],
-        "timestamp": "2026-10-04T23:41:39.532716",
+        "timestamp": "2026-10-05T18:38:24.184075",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
