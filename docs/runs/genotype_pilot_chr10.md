@@ -94,3 +94,28 @@ sbatch scripts/submit_head_job.sbatch hpc_dev --step genotype \
   `bench_zx0540_chr10`.
 
 ## Attempts
+
+- 2026-10-05 15:27, head job 1108956 (commit 43e96f3, session aa121700): **succeeded** in 21 min. Both donors' VCF
+  and site table, and `dropped_b73_checks.tsv`: PN5_SID468 (2.65 % ALT) and PN3_SID236 (1.87 %), as expected. Longest
+  task CRISP, 12 min 10 s, 379 MB (Zx.0570_P2); every other process under 2.5 min and 1 GB.
+- Comparison, Zx.0540_P3 tier A inside both BEDs: zealgt 32,723, zealbc1 40,941, shared 27,630, **Jaccard 0.600**,
+  below 0.99. LLR Pearson r 0.948 on the shared positions; per-pool depth ratio 1.00. Of zealbc1's 12,093 tier-A
+  sites absent from our table, our CRISP never called 11,892; the witness veto removed 201.
+- Tests that followed (`agent/genotype_pilot/`, user's OK for each):
+  - CRISP `--mbq 10` (zealbc1's value), head job 1109246, `-resume` with only CRISP's `ext.args` changed: Jaccard
+    with zealbc1 0.598, with our `--mbq 20` run 0.989. The base-quality threshold is not the cause.
+  - CRISP on chr10:1-10 Mb, zealbc1's arguments and BED, one input changed per job (jobs 1109461, 1109474):
+    zealbc1's binary and our container on zealbc1's inputs 7,167 calls each (zealbc1's own run 7,166); our witness
+    6,994; our BC1 CRAMs 4,769. The build is the same, the witness a small effect, the BC1 CRAMs the large one.
+  - Reads over 693 zealbc1-only and 358 shared sites on that window (job 1109462): ALT reads near the 5' or 3' end
+    about 7 % and soft-clipped 5-6 % on both sides; pairing flags alike (proper pairs 97.0 % vs 96.5 %). zealbc1's
+    CRAMs carry no duplicate flags (ours 16.9 % of the ALT reads at zealbc1-only sites, 11.5 % at shared ones).
+  - Our BC1 CRAMs with the duplicate flag cleared, same window (job 1109487): 7,400 calls (from 4,767).
+  - The same on whole chr10 through the pipeline (jobs 1109514, 1109515, `-resume`): tier A 42,934, **Jaccard with
+    zealbc1 0.716**. Counting PCR duplicates adds about 10,000 tier-A sites to our own data.
+- Result: GENOTYPE's discovery steps reproduce zealbc1's on the same inputs (same CRISP calls, LLR r 0.95-0.97). The
+  gap is in the reads: zealbc1 did not mark duplicates, so about a quarter of its tier A rests on PCR copies counted as
+  independent evidence; zealgt marks them (user: a must for independent evidence). The rest (Jaccard 0.72 with
+  duplicates counted) comes from read processing before alignment (zealbc1: cutadapt barcode-only demultiplexing with
+  `-e 0`, no adapter trimming, no clipping, MAPQ >= 20 in the CRAM); not pursued (user, 2026-10-05): it needs
+  realignments and would only compare two processing chains, not accuracy, which the simulation QC will measure.
