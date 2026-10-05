@@ -108,7 +108,7 @@ needs); samples are routed by `role` with a channel `branch` (BC1 pools and line
 
 Debugging data only (handover 2026-10-04: one donor, a handful of samples, one window, `--head`, `hpc_dev`):
 Zx.0540_P3's 2 BC1 pools and 4 lines; three batch-1 B73 checks (PN5_SID468, PN3_SID236 and one clean check, so the
-filter is tested); ERR3288215, fetched from ENA. All go through `--step alignment` with `--head` first. The full data
+filter is tested); ERR3288215 (FASTQs at `ZEAL/raw/B73_control/ERR3288215/`, from zealbc1). All go through `--step alignment` with `--head` first. The full data
 (the pilot's 94 samples, all 12 B73 checks, ERR3288215 aligned in full, about 3 h 21 min) belongs to the pilot run
 plan in `docs/runs/`, with the whole-chromosome run and the precedent check against zealbc1.
 
