@@ -165,3 +165,20 @@ whole-chromosome resources (the pilot does).
 | `BED_CLIP`, `WITNESS_VETO` | < 1 s        | 3.5 MB       | 1 cpu, 1 GB, 1 h  |
 | `BCFTOOLS_MPILEUP`         | 5 s          | 221 MB       | 1 cpu, 2 GB, 1 h  |
 | `POOLED_LIKELIHOOD_TIERS`  | < 1 s        | 13 MB        | 1 cpu, 4 GB, 1 h  |
+
+## GENOTYPE sites union and gap filling, measured (2026-10-05, Milestone 8, job 1111002)
+
+Both pilot donors on chr10:1-20 Mb: 10 BC1 samples and 2 B73 controls counted at 8,053 union sites, from the pilot
+alignment's CRAMs. 11 min 11 s wall for the whole `--step genotype` (discovery included), `hpc_dev`. Every union
+process stays under 250 MB and 7 s, so `hpc_dev` gives each 1 cpu, 1 GB, 1 h; whole-chromosome values come with the
+chr10 run plan.
+
+| process               | tasks | max realtime | max peak RSS |
+| --------------------- | ----- | ------------ | ------------ |
+| `BCFTOOLS_MERGE`      | 1     | < 1 s        | 3.4 MB       |
+| `BCFTOOLS_NORM`       | 1     | 6.8 s        | 10.8 MB      |
+| `BIALLELIC_UNION`     | 1     | < 1 s        | 3.4 MB       |
+| `COUNT_UNION`         | 12    | 6.0 s        | 233 MB       |
+| `UNION_TIERS`         | 2     | 1.3 s        | 29.8 MB      |
+| `FILL_DONOR_ALLELES`  | 1     | < 1 s        | 11.2 MB      |
+| `DONOR_ALLELES_INDEX` | 1     | < 1 s        | 3.5 MB       |
