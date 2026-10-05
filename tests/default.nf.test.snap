@@ -25,6 +25,9 @@
                 "SAMTOOLS_MARKDUP": {
                     "samtools": 1.24
                 },
+                "SAMTOOLS_MERGE": {
+                    "samtools": 1.24
+                },
                 "SAMTOOLS_SORT": {
                     "samtools": 1.24
                 },
@@ -32,6 +35,9 @@
                     "samtools": 1.24
                 },
                 "SEQKIT_HEAD": {
+                    "seqkit": "2.13.0"
+                },
+                "SEQKIT_SPLIT2": {
                     "seqkit": "2.13.0"
                 },
                 "SEQUALI": {
@@ -98,7 +104,7 @@
                 "samplesheet.csv"
             ]
         ],
-        "timestamp": "2026-10-03T19:03:42.930129",
+        "timestamp": "2026-10-05T01:18:08.568038",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

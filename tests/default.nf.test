@@ -75,12 +75,12 @@ nextflow_pipeline {
         then {
             // every published path
             def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
-            // tasks per process: one per sample (3), the head cut included; no demultiplexing
+            // tasks per process: one per sample (3), the head cut, split and merge included (a stub split is one chunk); no demultiplexing
             def tasks = workflow.trace.tasks().countBy { t -> t.name.tokenize(':')[-1].tokenize(' ')[0] }
             assert workflow.success
             assertAll(
-                { assert ['SEQKIT_HEAD', 'MINIBWA_MAP', 'FGUMI_CLIP', 'SAMTOOLS_FIXMATE', 'SAMTOOLS_SORT', 'SAMTOOLS_MARKDUP', 'SAMTOOLS_INDEX', 'SAMTOOLS_STATS', 'PICARD_COLLECTWGSMETRICS', 'MOSDEPTH'].every { p -> tasks[p] == 3 } },
-                { assert !tasks.keySet().intersect(['EXTRACT_LANE', 'FQTK', 'CAT_FASTQ', 'SAMTOOLS_MERGE']) },
+                { assert ['SEQKIT_HEAD', 'SEQKIT_SPLIT2', 'MINIBWA_MAP', 'FGUMI_CLIP', 'SAMTOOLS_FIXMATE', 'SAMTOOLS_SORT', 'SAMTOOLS_MERGE', 'SAMTOOLS_MARKDUP', 'SAMTOOLS_INDEX', 'SAMTOOLS_STATS', 'PICARD_COLLECTWGSMETRICS', 'MOSDEPTH'].every { p -> tasks[p] == 3 } },
+                { assert !tasks.keySet().intersect(['EXTRACT_LANE', 'FQTK', 'CAT_FASTQ']) },
                 { assert tasks.SEQUALI == 3 },
                 { assert tasks.MULTIQC == 2 },
                 { assert !stable_path.any { p -> p.endsWith('.fastq.gz') || p.startsWith('samplesheets') } },

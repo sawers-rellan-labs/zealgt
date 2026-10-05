@@ -32,18 +32,22 @@ graph LR
 
     subgraph align [Alignment]
         %%metro entry: left | alignment
+        split[seqkit split2]
         minibwa[minibwa]
         fgumi[fgumi clip]
         fixmate[fixmate]
         sort[sort]
+        merge[merge]
         markdup[markdup]
         index[index]
         cram_out[cram]
 
+        split -->|alignment| minibwa
         minibwa -->|alignment| fgumi
         fgumi -->|alignment| fixmate
         fixmate -->|alignment| sort
-        sort -->|alignment| markdup
+        sort -->|alignment| merge
+        merge -->|alignment| markdup
         markdup -->|alignment| index
         index -->|alignment| cram_out
     end
@@ -62,7 +66,7 @@ graph LR
         multiqc -->|alignment| report_out
     end
 
-    fastq_sheet -->|alignment| minibwa
+    fastq_sheet -->|alignment| split
     index -->|alignment| samtools_stats
     index -->|alignment| picard_wgs
     index -->|alignment| mosdepth

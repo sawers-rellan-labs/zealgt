@@ -187,3 +187,23 @@ fqtk runs once per lane, and `CAT_FASTQ` joins each sample's lanes (user). Reaso
   folder from `source`).
 - The `/share` quota is the group's, so the run goes in waves of whole libraries, one sequencing batch per wave, each
   holding at most 2 TB of `work/`; 8 waves, chained, `cleanup` after each. Plan: `docs/runs/demultiplex_production.md`.
+
+## 2026-10-05 Split alignment: insert size estimated from the sample, as sarek
+
+- Why split: one map, clip and fixmate chain per full BC1 library needs 6 h and 16 cpus on `compute` / normal, where
+  the 10 map tasks of job 1098401 waited with start estimates of 13:15-16:40 on submission at 00:27 (cancelled
+  unstarted). Chunks under 2 h run on `compute_partners` / short, where our jobs start within a minute (sacct,
+  frodrig4, 30 days: median 0.1 min over 11,088 jobs). Milestone 2a.
+- Precedent: nf-core/sarek `--split_fastq`, default 50,000,000 reads per chunk (`nextflow_schema.json`), split by fastp
+  `--split_by_lines` (`conf/modules/trimming.config`); chunks are aligned separately and merged per sample before
+  duplicate marking. We split with `seqkit split2` (fastp trims and filters by default).
+- minibwa estimates the insert size per batch of reads from the sample itself; no fixed `-I` (user: "the best
+  estimate comes from the sample"). Fixed values would be one per kit (head-run means 230-484, SD 102-128).
+- So the split changes a few alignments (S_2A_3, 4 M pairs in 1 M-pair chunks against unsplit, jobs 1099457 /
+  1099789): same 4,000,000 reads and read group; 0.39 % of records differ, 0.06 % in position, 0.32 % in MAPQ
+  only (mostly 1-3). Accepted (user).
+- Why the difference is small for GENOTYPE: MAPQ matters downstream only through one cut, MAPQ 20 (CRISP `--mmq 20`,
+  mpileup `-q 20`). A shift of 1-3 changes a read's fate only when it crosses 20, so only for reads already within
+  about 3 of it, a small part of the 0.32 % (not counted). The 0.06 % placed elsewhere are expected to be mostly
+  mates in repeats, where either placement was already ambiguous (not checked); GENOTYPE works in low-copy regions,
+  and the witness veto and the pooled likelihood use many reads per site.
