@@ -50,7 +50,7 @@ needs); samples are routed by `role` with a channel `branch` (BC1 pools and line
    the B73 checks into the B73 check pool.
 2. `SAMTOOLS_ADDREPLACERG` (nf-core): one read group per merged pool (CRISP splits a file by read group).
 3. `CRISP` (local module, container `ghcr.io/sawers-rellan-labs/zealgt-crisp:1a9027e`): the BC1 CRAMs plus the
-   witness, `--bed <lowcopy> --regions <chr> --sm 0 -p 12 --mmq 20 --filterreads 0 --minc 2` (zealbc1).
+   witness, `--bed <lowcopy> --regions <chr> --sm 0 -p 12 --mmq 20 --mbq 20 --filterreads 0 --minc 2` (zealbc1, plus `--mbq 20`).
 4. `BCFTOOLS_VIEW` as `BED_CLIP` (nf-core): `-T <lowcopy BED>`, which drops the base CRISP calls one past every range
    end (CRISP bug, vibansal/crisp#34).
 5. `BCFTOOLS_VIEW` as `WITNESS_VETO` (nf-core): keeps a record if the witness has >= 1 ALT read, as a bcftools
@@ -87,22 +87,22 @@ needs); samples are routed by `role` with a channel `branch` (BC1 pools and line
   tool test shows bcftools cannot sum the witness's ALT counts in CRISP's format fields.
 - **Witness built with nf-core `samtools/merge` + `samtools/addreplacerg`**, limited to one chromosome. Rejected:
   zealgt-old's local piped module; at one chromosome the intermediate is about 100 MB.
-- **No annotation panels in step 4.** They only added columns and cost 2.4 GB of memory (zealgt-old).
+- **No annotation panels in step 4** (user). They only added columns and cost 2.4 GB of memory (zealgt-old); the
+  comparison panels belong to the simulation QC (Not in this milestone).
+- **CRISP `--mbq 20`** (user), the same base-quality floor as `bcftools mpileup -Q 20`. Rejected: CRISP's default
+  `--mbq 10`, which keeps batch 1's Q11 bases.
 - **B73 checks filtered by a fixed share of ALT reads, 1 % (user), a parameter; no hypothesis test.** At the SNP50K
   sites clean batch-1 checks show 0.08-0.49 % ALT reads, PN5_SID468 2.76 % and PN3_SID236 1.92 % (hazel job 1095438),
   the two zealbc1 dropped by hand. Rejected: hand-set `exclude` rows; a leave-one-out binomial test against the other
   checks (same result, harder to explain); a test against ERR3288215's rate (0.066 %), which flags 9 of 12 checks
   because B73 seed stocks differ from the reference (Liang & Schnable 2016, PLoS ONE 11:e0157942).
 
-## Open (yours to decide)
-
-1. **CRISP base quality:** default `--mbq 10` keeps batch 1's Q11 bases; `--mbq 20` (as mpileup `-Q 20`) is proposed,
-   not measured (decision 2026-10-02, Open).
-
 ## Not in this milestone
 
 - The union of donors and gap filling, ancestry, projection: the next rows.
 - Identity QC (`docs/later/genotype_identity_qc.md`).
+- The simulation QC (user: a separate task) that estimates and justifies the pipeline on simulated founders
+  (math supplement, "Benchmark": the QC set of Gigi and TIL18), with the comparison panels it needs.
 
 ## Before it can run on real data
 
