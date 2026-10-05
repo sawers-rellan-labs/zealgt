@@ -1,4 +1,4 @@
-# Milestone 8: alignment split
+# Milestone 2a: alignment split
 
 `FASTQ_ALIGN_MINIBWA` maps each sample's reads in chunks, then merges them back into one CRAM per sample before
 duplicate marking. Outputs do not change: one CRAM per sample, one read group.

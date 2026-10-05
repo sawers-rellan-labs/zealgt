@@ -64,7 +64,7 @@ On the same heads: `SAMTOOLS_STATS` 1.7 cpus, 0.8 GB, seconds; `PICARD_COLLECTWG
 5-7 min (genome walk); `MOSDEPTH` 1 cpu, 3.1 GB, under 1 min.
 
 Estimates for full samples (BC1 166-311 M pairs; S_1A_6 ~259 M, the deepest; PN2_SID151 ~14.3 M; job 1054578). Since
-Milestone 8 `MINIBWA_MAP` to `SAMTOOLS_SORT` run per chunk of 50 M pairs (S_1A_6: 6 chunks), from the per-pair rates:
+Milestone 2a `MINIBWA_MAP` to `SAMTOOLS_SORT` run per chunk of 50 M pairs (S_1A_6: 6 chunks), from the per-pair rates:
 map ~39 min at 12 cpus, clip ~10 min, fixmate ~14 min, sort ~4 min per chunk; the table's other times are per whole
 sample (whole-sample map ~3.4 h; 9.8 GB = index 4.9 GB + batches). Picard measured in
 `docs/later/picard_fast_algorithm.md` (zealgt-old: 2 h 18 min at 310 M pairs).
@@ -85,7 +85,7 @@ sample (whole-sample map ~3.4 h; 9.8 GB = index 4.9 GB + batches). Picard measur
 
 `hpc_dev` runs heads of up to ~6 M pairs per sample: minutes per task, 1 h each; `SEQKIT_SPLIT2` and `SAMTOOLS_MERGE`
 4 cpus, 2 GB (placeholders). All `hpc_prod` alignment and CRAM QC tasks now run on the default `compute_partners` /
-short QOS (2 h limit; Milestone 8).
+short QOS (2 h limit; Milestone 2a).
 
 ## Production demultiplexing, measured (2026-10-03/04, `hpc_prod`)
 

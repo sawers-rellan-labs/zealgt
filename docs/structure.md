@@ -34,13 +34,13 @@ Read top down; each level only names the one below it.
 
 ## ALIGNMENT (`--step alignment`): per-sample FASTQs to one CRAM per sample
 
-| stage                     | modules                                                                                                                                                                    | status                  |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| inline                    | `SEQKIT_HEAD` with `--head N` only (test runs): the first N pairs per sample                                                                                               | built                   |
-| `FASTQ_SEQUALI`           | with `--read_qc` only: `SEQUALI` per sample -> `MULTIQC` (read-QC report)                                                                                                  | built (milestone 6)     |
-| `FASTQ_ALIGN_MINIBWA`     | `SEQKIT_SPLIT2` -> per chunk `MINIBWA_MAP` -> `FGUMI_CLIP` -> `SAMTOOLS_FIXMATE` -> `SAMTOOLS_SORT`; per sample `SAMTOOLS_MERGE` -> `SAMTOOLS_MARKDUP` -> `SAMTOOLS_INDEX` | built (milestones 2, 8) |
-| `CRAM_QC_SAMTOOLS_PICARD` | `SAMTOOLS_STATS`, `PICARD_COLLECTWGSMETRICS`, `MOSDEPTH`                                                                                                                   | built (milestone 3)     |
-| inline                    | `MULTIQC` on the CRAM QC files                                                                                                                                             | built (milestone 4)     |
+| stage                     | modules                                                                                                                                                                    | status                   |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| inline                    | `SEQKIT_HEAD` with `--head N` only (test runs): the first N pairs per sample                                                                                               | built                    |
+| `FASTQ_SEQUALI`           | with `--read_qc` only: `SEQUALI` per sample -> `MULTIQC` (read-QC report)                                                                                                  | built (milestone 6)      |
+| `FASTQ_ALIGN_MINIBWA`     | `SEQKIT_SPLIT2` -> per chunk `MINIBWA_MAP` -> `FGUMI_CLIP` -> `SAMTOOLS_FIXMATE` -> `SAMTOOLS_SORT`; per sample `SAMTOOLS_MERGE` -> `SAMTOOLS_MARKDUP` -> `SAMTOOLS_INDEX` | built (milestones 2, 2a) |
+| `CRAM_QC_SAMTOOLS_PICARD` | `SAMTOOLS_STATS`, `PICARD_COLLECTWGSMETRICS`, `MOSDEPTH`                                                                                                                   | built (milestone 3)      |
+| inline                    | `MULTIQC` on the CRAM QC files                                                                                                                                             | built (milestone 4)      |
 
 ## GENOTYPE: CRAMs to genotypes (development scope: one chromosome end to end)
 
