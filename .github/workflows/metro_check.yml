@@ -1,0 +1,36 @@
+# Fails a PR when the full metro map and the pipeline's processes disagree: one stub run per step lists the processes
+# (full names from the trace), then nf-metro check-mapping matches them against the map's %%metro process: lines.
+name: metro_check
+
+on:
+  pull_request:
+
+jobs:
+  check-mapping:
+    runs-on: ubuntu-latest
+    env:
+      NXF_ANSI_LOG: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Install Nextflow
+        uses: nf-core/setup-nextflow@893c28b667aedeba26e37f296d260ccc5bc4d914 # v3
+        with:
+          version: "26.04.6"
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+
+      - name: Stub run per step
+        run: |
+          G=tests/fixtures/genotype
+          nextflow run . -profile test -stub --step demultiplex --input tests/fixtures/samplesheet.csv --outdir out_demultiplex
+          nextflow run . -profile test -stub --step alignment --read_qc --outdir out_alignment
+          nextflow run . -profile test -stub --step genotype --input $G/samplesheet_cram.csv --b73_controls $G/b73_controls.csv \
+            --lowcopy_bed $G/lowcopy.bed --check_sites $G/check_sites.vcf.gz --region chrA --outdir out_genotype
+
+      - name: Process names from the traces
+        run: tail -q -n +2 out_*/pipeline_info/execution_trace_*.txt | cut -f4 | sed 's/ (.*//' | sort -u | tee processes.txt
+
+      - name: Check the full map
+        run: uvx nf-metro@2.1.0 check-mapping --processes processes.txt docs/images/zealgt_metro_full.mmd
