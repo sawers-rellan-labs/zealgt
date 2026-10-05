@@ -21,7 +21,7 @@ sites brings three benefits:
 2. **Greater sensitivity for weakly supported donor alleles.** A donor allele backed by only a few ALT reads can be
    rescued when the same site is variant elsewhere in the population (other donors, the NIL lines).
 3. **Greater ability to remove false positives.** A donor ALT call made on little evidence, at a site with no sign of
-   variation anywhere in the population, is likely an error and is set back to REF.
+   variation anywhere in the population, is likely an error and is set to missing.
 
 References:
 
