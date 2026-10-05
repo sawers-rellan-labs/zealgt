@@ -63,21 +63,29 @@ Measured in `hpc_dev` on `--head 4000000` (job 1054576, commit ba7db36): BC1 S_1
 On the same heads: `SAMTOOLS_STATS` 1.7 cpus, 0.8 GB, seconds; `PICARD_COLLECTWGSMETRICS` 1 cpu, heap-bound 4.0 GB,
 5-7 min (genome walk); `MOSDEPTH` 1 cpu, 3.1 GB, under 1 min.
 
-Estimates for full samples (BC1 166-311 M pairs; S_1A_6 ~259 M, the deepest; PN2_SID151 ~14.3 M; job 1054578):
+Estimates for full samples (BC1 166-311 M pairs; S_1A_6 ~259 M, the deepest; PN2_SID151 ~14.3 M; job 1054578). Since
+Milestone 8 `MINIBWA_MAP` to `SAMTOOLS_SORT` run per chunk of 50 M pairs (S_1A_6: 6 chunks), from the per-pair rates:
+map ~39 min at 12 cpus, clip ~10 min, fixmate ~14 min, sort ~4 min per chunk; the table's other times are per whole
+sample (whole-sample map ~3.4 h; 9.8 GB = index 4.9 GB + batches). Picard measured in
+`docs/later/picard_fast_algorithm.md` (zealgt-old: 2 h 18 min at 310 M pairs).
 
-| process                    | estimate at S_1A_6                                 | `hpc_prod`                                  |
-| -------------------------- | -------------------------------------------------- | ------------------------------------------- |
-| `MINIBWA_MAP`              | ~3.4 h at 12 cpus; 9.8 GB (index 4.9 GB + batches) | 16 cpus, 16 GB, 6 h, `compute` / normal QOS |
-| `FGUMI_CLIP`               | ~51 min, streams                                   | 2 cpus, 4 GB, 2 h                           |
-| `SAMTOOLS_FIXMATE`         | ~71 min, streams                                   | 4 cpus, 1 GB, 2 h                           |
-| `SAMTOOLS_SORT`            | ~20 min; 768 MB per thread x 6                     | 6 cpus, 6 GB, 1 h                           |
-| `SAMTOOLS_MARKDUP`         | ~13 min; no growth with pairs seen (provisional)   | 4 cpus, 8 GB, 1 h                           |
-| `SAMTOOLS_INDEX`           | seconds                                            | 1 cpu, 1 GB, 1 h                            |
-| `SAMTOOLS_STATS`           | 50 min at 310 M pairs (zealgt-old)                 | 2 cpus, 2 GB, 2 h                           |
-| `PICARD_COLLECTWGSMETRICS` | 2 h 18 min at 310 M pairs (zealgt-old)             | 1 cpu, 5 GB, 4 h, `compute` / normal QOS    |
-| `MOSDEPTH`                 | threads help only CRAM decoding at full size       | 4 cpus, 4 GB, 2 h                           |
+| process                    | estimate at S_1A_6                               | `hpc_prod`                      |
+| -------------------------- | ------------------------------------------------ | ------------------------------- |
+| `SEQKIT_SPLIT2`            | not measured                                     | 4 cpus, 2 GB, 2 h (placeholder) |
+| `MINIBWA_MAP`              | ~39 min per chunk at 12 cpus; 9.8 GB             | 16 cpus, 16 GB, 2 h per chunk   |
+| `FGUMI_CLIP`               | ~51 min, streams                                 | 2 cpus, 4 GB, 2 h               |
+| `SAMTOOLS_FIXMATE`         | ~71 min, streams                                 | 4 cpus, 1 GB, 2 h               |
+| `SAMTOOLS_SORT`            | ~20 min; 768 MB per thread x 6                   | 6 cpus, 6 GB, 1 h               |
+| `SAMTOOLS_MERGE`           | not measured                                     | 4 cpus, 2 GB, 2 h (placeholder) |
+| `SAMTOOLS_MARKDUP`         | ~13 min; no growth with pairs seen (provisional) | 4 cpus, 8 GB, 1 h               |
+| `SAMTOOLS_INDEX`           | seconds                                          | 1 cpu, 1 GB, 1 h                |
+| `SAMTOOLS_STATS`           | 50 min at 310 M pairs (zealgt-old)               | 2 cpus, 2 GB, 2 h               |
+| `PICARD_COLLECTWGSMETRICS` | 42 min, 4.2 GB (measured, deepest BC1)           | 1 cpu, 5 GB, 2 h                |
+| `MOSDEPTH`                 | threads help only CRAM decoding at full size     | 4 cpus, 4 GB, 2 h               |
 
-`hpc_dev` runs heads of up to ~6 M pairs per sample: minutes per task, 1 h each.
+`hpc_dev` runs heads of up to ~6 M pairs per sample: minutes per task, 1 h each; `SEQKIT_SPLIT2` and `SAMTOOLS_MERGE`
+4 cpus, 2 GB (placeholders). All `hpc_prod` alignment and CRAM QC tasks now run on the default `compute_partners` /
+short QOS (2 h limit; Milestone 8).
 
 ## Production demultiplexing, measured (2026-10-03/04, `hpc_prod`)
 
