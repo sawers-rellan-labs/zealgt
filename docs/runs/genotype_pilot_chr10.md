@@ -31,12 +31,12 @@ whole chromosome zealbc1 ran (handover 2026-10-05).
 - Head job: default of `scripts/submit_head_job.sbatch` (short QOS, 2 h, 8 GB); tasks with the `hpc_dev`
   placeholders (CRISP 1 cpu, 16 GB, 2 h).
 - First attempt without `-resume`; recovery with `-resume <session id>`.
-- Command (from `ZEAL/zealgt`):
+- Command (from `ZEAL/zealgt`; the head job runs in the launch directory, so paths are absolute):
 
 ```
 sbatch scripts/submit_head_job.sbatch hpc_dev --step genotype \
-  --input docs/runs/genotype_pilot_chr10/samplesheet.csv \
-  --b73_controls docs/runs/genotype_pilot_chr10/b73_controls.csv \
+  --input /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/docs/runs/genotype_pilot_chr10/samplesheet.csv \
+  --b73_controls /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/docs/runs/genotype_pilot_chr10/b73_controls.csv \
   --lowcopy_bed /rsstu/users/r/rrellan/BZea/ZEAL/reference/lowcopy_chr10.bed \
   --check_sites /rsstu/users/r/rrellan/BZea/bzeaseq/nilhmm/vcf/HQ_BZEA.vcf.gz \
   --region chr10 --outdir /share/maize/frodrig4/nf_work/zealgt_dev/genotype_pilot_chr10/results
