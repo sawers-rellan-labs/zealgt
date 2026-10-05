@@ -9,6 +9,7 @@ import importlib.util
 import math
 from pathlib import Path
 
+import pysam
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -65,20 +66,20 @@ def test_own_site_without_support_is_missing():
 
 @pytest.fixture(scope="module")
 def ours(tmp_path_factory):
-    out = tmp_path_factory.mktemp("fill") / "donor_alleles.vcf"
+    out = tmp_path_factory.mktemp("fill") / "donor_alleles.vcf.gz"
     argv = ["--union", str(FIX / "union.vcf"), "--out", str(out), "--w", "2", "--alt", "0.999"]
     for d in DONORS:
         argv += ["--donor", d, str(FIX / f"{d}.tier_a.vcf"), str(FIX / f"{d}.sites.tsv")]
     fill.main(argv)
     rows = {}
-    with open(out) as fh:
-        for line in fh:
-            if line.startswith("#CHROM"):
-                assert line.rstrip("\n").split("\t")[9:] == DONORS
-            elif not line.startswith("#"):
-                x = line.rstrip("\n").split("\t")
-                assert x[8] == "GT:LLR:PRIOR:PP:SRC"
-                rows[x[1]] = [dict(zip(["GT", "LLR", "PRIOR", "PP", "SRC"], c.split(":"))) for c in x[9:]]
+    gt = {(1,): "1", (0,): "0", (None,): "."}
+    with pysam.VariantFile(str(out)) as vcf:
+        assert list(vcf.header.samples) == DONORS
+        assert vcf.fetch("chr10")  # the .tbi is there
+        for rec in vcf:
+            assert list(rec.format) == ["GT", "LLR", "PRIOR", "PP", "SRC"]
+            rows[str(rec.pos)] = [dict(GT=gt[c["GT"]], LLR=c["LLR"], PRIOR=c["PRIOR"], PP=c["PP"], SRC=c["SRC"])
+                                  for c in rec.samples.values()]
     return rows
 
 

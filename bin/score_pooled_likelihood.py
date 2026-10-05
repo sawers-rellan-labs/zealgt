@@ -13,7 +13,7 @@ as a sites-only VCF. Model, per BC1 pool i with n_i reads, a_i ALT:
   L1_i = sum_j C(P,j) 2^-P Bin(a_i; n_i, p_j), p_j = j/2P (1-eps) + (1 - j/2P) eps;  L0_i = Bin(a_i; n_i, eps)
   LLR = sum_i log L1_i - log L0_i
 eps per site: the reads of the groups with LLR < --zero-class-llr at --eps0, when they hold >= --zero-class-min-reads,
-eps = max((a0 + 0.5) / (n0 + 1), --eps-floor); else --eps0. Standard library only.
+eps = max((a0 + 0.5) / (n0 + 1), --eps-floor); else --eps0. VCF input and output with pysam.
 """
 import argparse
 import gzip
@@ -22,6 +22,8 @@ import math
 import statistics
 import sys
 import time
+
+import pysam
 
 LOG = logging.getLogger("score_pooled_likelihood")
 COLUMNS = ["chrom", "pos", "ref", "alt", "n", "a", "n_pools_alt", "eps", "LLR", "tier", "flags", "pool_counts"]
@@ -53,12 +55,6 @@ def parse_args(argv=None):
     return a
 
 
-def open_text(path):
-    with open(path, "rb") as fh:
-        gz = fh.read(2) == b"\x1f\x8b"
-    return gzip.open(path, "rt") if gz else open(path)
-
-
 def is_snp(ref, alt):
     return len(ref) == 1 and len(alt) == 1 and ref in "ACGTN" and alt in "ACGT" and ref != alt
 
@@ -88,56 +84,41 @@ def binom_sf_half(n, a):
                for k in range(a, n + 1))
 
 
+def snp_alleles(rec):
+    """(ref, alt) of a biallelic SNP record, else None."""
+    if rec.alts is None or len(rec.alts) != 1 or not is_snp(rec.ref, rec.alts[0]):
+        return None
+    return rec.ref, rec.alts[0]
+
+
 def read_crisp(path):
     """CRISP VCF -> (pool names, [(chrom, pos, ref, alt, [(n, a) per pool])]) for biallelic SNPs; n = ref + alt reads."""
-    pools, recs, skipped = None, [], 0
-    with open_text(path) as fh:
-        for line in fh:
-            if line.startswith("##"):
-                continue
-            x = line.rstrip("\n").split("\t")
-            if line.startswith("#"):
-                pools = x[9:]
-                continue
-            if not is_snp(x[3], x[4]):
+    recs, skipped = [], 0
+    with pysam.VariantFile(path) as vcf:
+        pools = list(vcf.header.samples)
+        for rec in vcf:
+            snp = snp_alleles(rec)
+            if snp is None:
                 skipped += 1
                 continue
-            fmt = x[8].split(":")
-            idx = [fmt.index(k) for k in ("ADf", "ADr", "ADb") if k in fmt]
             cnt = []
-            for cell in x[9:]:
-                v = cell.split(":")
+            for call in rec.samples.values():
                 r = k = 0
-                for i in idx:
-                    q = v[i].split(",") if i < len(v) else []
+                for key in ("ADf", "ADr", "ADb"):
+                    q = call.get(key) or ()
                     if len(q) >= 2:
-                        r += int(q[0]) if q[0].isdigit() else 0
-                        k += int(q[1]) if q[1].isdigit() else 0
+                        r += q[0] or 0
+                        k += q[1] or 0
                 cnt.append((r + k, k))
-            recs.append((x[0], int(x[1]), x[3], x[4], cnt))
-    if pools is None:
-        sys.exit(f"{path}: no #CHROM line")
+            recs.append((rec.chrom, rec.pos, *snp, cnt))
     LOG.info("%s: %d biallelic SNP records, %d other records skipped", path, len(recs), skipped)
     return pools, recs
 
 
-def contig_lines(path):
-    """The ##contig header lines of a VCF."""
-    lines = []
-    with open_text(path) as fh:
-        for line in fh:
-            if not line.startswith("##"):
-                return lines
-            if line.startswith("##contig"):
-                lines.append(line)
-    return lines
-
-
 def read_sites(path):
     """Sites VCF -> [(chrom, pos, ref, alt)] for biallelic SNPs."""
-    with open_text(path) as fh:
-        sites = [(x[0], int(x[1]), x[3], x[4]) for x in (line.rstrip("\n").split("\t") for line in fh
-                                                          if not line.startswith("#")) if is_snp(x[3], x[4])]
+    with pysam.VariantFile(path) as vcf:
+        sites = [(rec.chrom, rec.pos, *snp) for rec in vcf if (snp := snp_alleles(rec))]
     LOG.info("%s: %d biallelic SNP sites", path, len(sites))
     return sites
 
@@ -146,9 +127,8 @@ def read_bc1(paths, sites):
     """mpileup VCFs, one per BC1 pool -> (pool names, [(chrom, pos, ref, alt, [(n, a) per pool])]) at every site."""
     pools, counts = [], []
     for path in paths:
-        with open_text(path) as fh:
-            names = next(line for line in fh if line.startswith("#CHROM")).rstrip("\n").split("\t")[9:]
-        pools.append(",".join(names))
+        with pysam.VariantFile(path) as vcf:
+            pools.append(",".join(vcf.header.samples))
         counts.append(read_control(path))
     return pools, [(c, p, r, k, [control_counts(t, c, p, r, k) for t in counts]) for c, p, r, k in sites]
 
@@ -156,23 +136,17 @@ def read_bc1(paths, sites):
 def read_control(path):
     """mpileup VCF -> {(chrom, pos): (ref, [alleles], [AD summed over samples])}."""
     rows = {}
-    with open_text(path) as fh:
-        for line in fh:
-            if line.startswith("#"):
+    with pysam.VariantFile(path) as vcf:
+        for rec in vcf:
+            if "AD" not in rec.format:
                 continue
-            x = line.rstrip("\n").split("\t")
-            fmt = x[8].split(":")
-            if "AD" not in fmt:
-                continue
-            i = fmt.index("AD")
-            alleles = [x[3]] + [s for s in x[4].split(",") if s != "."]
+            alleles = [rec.ref] + [x for x in rec.alts or () if x != "."]
             ad = [0] * len(alleles)
-            for cell in x[9:]:
-                v = cell.split(":")
-                for k, c in enumerate(v[i].split(",") if i < len(v) else []):
-                    if k < len(ad) and c.isdigit():
-                        ad[k] += int(c)
-            rows[(x[0], int(x[1]))] = (x[3], alleles, ad)
+            for call in rec.samples.values():
+                for i, c in enumerate(call["AD"] or ()):
+                    if i < len(ad) and c is not None:
+                        ad[i] += c
+            rows[(rec.chrom, rec.pos)] = (rec.ref, alleles, ad)
     return rows
 
 
@@ -240,6 +214,19 @@ def score(pools, recs, witness, controls, a):
             LOG.info("%d/%d sites scored, %.1f min", done, len(rows), (now - t0) / 60)
 
 
+def write_sites(path, template, recs, sites):
+    """Sites-only VCF; contigs from the template's header, else from the records (CRISP writes none, and bcftools merge
+    of unindexed VCFs needs them)."""
+    header = pysam.VariantHeader()
+    with pysam.VariantFile(template) as vcf:
+        contigs = [(c.name, c.length) for c in vcf.header.contigs.values()]
+    for name, length in contigs or [(c, None) for c in dict.fromkeys(r[0] for r in recs)]:
+        header.contigs.add(name, length=length)
+    with pysam.VariantFile(path, "w", header=header) as out:
+        for chrom, pos, ref, alt in sites:
+            out.write(out.new_record(contig=chrom, start=pos - 1, alleles=(ref, alt)))
+
+
 def main(argv=None):
     logging.basicConfig(stream=sys.stderr, level=logging.INFO, format="%(asctime)s %(message)s",
                         datefmt="%Y-%m-%d %H:%M:%S")
@@ -255,11 +242,7 @@ def main(argv=None):
             if row[9] == "A":
                 tier_a.append(row[:4])
     if a.tier_a_vcf:
-        # bcftools merge of unindexed VCFs needs every contig in the header (CRISP writes none)
-        contigs = contig_lines(a.vcf or a.sites) or [f"##contig=<ID={c}>\n" for c in dict.fromkeys(r[0] for r in recs)]
-        with open(a.tier_a_vcf, "w") as fh:
-            fh.write("##fileformat=VCFv4.2\n" + "".join(contigs) + "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n")
-            fh.writelines(f"{c}\t{p}\t.\t{r}\t{k}\t.\t.\t.\n" for c, p, r, k in tier_a)
+        write_sites(a.tier_a_vcf, a.vcf or a.sites, recs, tier_a)
     LOG.info("%s: %d sites; tiers %s", a.out, len(recs), " ".join(f"{t} {c}" for t, c in sorted(tiers.items())))
 
 

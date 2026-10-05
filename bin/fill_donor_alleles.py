@@ -7,7 +7,7 @@ Per donor d and site s, from the donor's site table at the union (score_pooled_l
   PP = sigmoid(LLR + logit pi)
   GT = 0 at tier 'ref'; 1 at PP >= --alt with reads at s and neither hidepth nor af_gt_half; else missing.
 Own sites (s in d's tier-A set) are re-scored the same way: an own site under --alt becomes missing.
-Writes a VCF with one haploid sample per donor: GT, LLR, PRIOR, PP, SRC (own or gap). Standard library only.
+Writes a bgzipped, tabix-indexed VCF with one haploid sample per donor: GT, LLR, PRIOR, PP, SRC (own or gap), with pysam.
 """
 import argparse
 import gzip
@@ -16,15 +16,17 @@ import math
 import sys
 import time
 
+import pysam
+
 LOG = logging.getLogger("fill_donor_alleles")
 NEVER_ALT = {"hidepth", "af_gt_half"}
 NO_ROW = (".", 0, 0.0, ".")
-HEADER = [
-    '##FORMAT=<ID=GT,Number=1,Type=String,Description="Donor allele: 1 ALT, 0 REF, . missing">',
-    '##FORMAT=<ID=LLR,Number=1,Type=Float,Description="Pooled likelihood ratio of the donor\'s BC1 reads">',
-    '##FORMAT=<ID=PRIOR,Number=1,Type=Float,Description="Prior of ALT from the other donors (Eq. eb)">',
-    '##FORMAT=<ID=PP,Number=1,Type=Float,Description="Posterior of ALT">',
-    '##FORMAT=<ID=SRC,Number=1,Type=String,Description="own: among the donor\'s tier-A sites; gap: discovered in other donors">',
+FORMAT = [
+    ("GT", 1, "String", "Donor allele: 1 ALT, 0 REF, . missing"),
+    ("LLR", 1, "Float", "Pooled likelihood ratio of the donor's BC1 reads"),
+    ("PRIOR", 1, "Float", "Prior of ALT from the other donors (Eq. eb)"),
+    ("PP", 1, "Float", "Posterior of ALT"),
+    ("SRC", 1, "String", "own: among the donor's tier-A sites; gap: discovered in other donors"),
 ]
 
 
@@ -33,13 +35,15 @@ def parse_args(argv=None):
     ap.add_argument("--union", required=True, help="union sites VCF (.vcf or .vcf.gz)")
     ap.add_argument("--donor", nargs=3, action="append", required=True, metavar=("NAME", "TIER_A_VCF", "TABLE"),
                     help="a donor, its tier-A sites VCF and its site table at the union; once per donor")
-    ap.add_argument("--out", required=True, help="output VCF")
+    ap.add_argument("--out", required=True, help="output VCF (.vcf.gz; the .tbi is written next to it)")
     req = ap.add_argument_group("model settings (values in conf/modules.config)")
     req.add_argument("--w", type=float, required=True, help="prior weight of the donor's sharing rate")
     req.add_argument("--alt", type=float, required=True, help="posterior of ALT at which ALT is called")
     a = ap.parse_args(argv)
     if a.w <= 0 or not 0.5 < a.alt < 1:
         ap.error("need w > 0 and 0.5 < alt < 1")
+    if not a.out.endswith(".vcf.gz"):
+        ap.error("--out must end in .vcf.gz")
     if len({d[0] for d in a.donor}) != len(a.donor):
         ap.error("donor names must differ")
     return a
@@ -52,15 +56,10 @@ def open_text(path):
 
 
 def read_vcf_sites(path):
-    """VCF -> (##contig lines, [(chrom, pos, ref, alt)])."""
-    contigs, sites = [], []
-    with open_text(path) as fh:
-        for line in fh:
-            if line.startswith("##contig"):
-                contigs.append(line.rstrip("\n"))
-            elif not line.startswith("#"):
-                x = line.split("\t", 5)
-                sites.append((x[0], int(x[1]), x[3], x[4]))
+    """VCF -> (header contigs as (name, length), [(chrom, pos, ref, alt)])."""
+    with pysam.VariantFile(path) as vcf:
+        sites = [(rec.chrom, rec.pos, rec.ref, rec.alts[0]) for rec in vcf]
+        contigs = [(c.name, c.length) for c in vcf.header.contigs.values()]
     return contigs, sites
 
 
@@ -130,15 +129,24 @@ def main(argv=None):
     donors = [d[0] for d in a.donor]
     own = {d: set(read_vcf_sites(v)[1]) for d, v, _ in a.donor}
     tables = {d: read_table(t) for d, _, t in a.donor}
+    header = pysam.VariantHeader()
+    for name, length in contigs:
+        header.contigs.add(name, length=length)
+    for fid, number, kind, desc in FORMAT:
+        header.formats.add(fid, number, kind, desc)
+    for d in donors:
+        header.add_sample(d)
     counts = {d: {} for d in donors}
-    with open(a.out, "w") as out:
-        out.write("\n".join(["##fileformat=VCFv4.2"] + contigs + HEADER) + "\n")
-        out.write("\t".join(["#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT"] + donors) + "\n")
+    with pysam.VariantFile(a.out, "wz", header=header) as out:
         for (chrom, pos, ref, alt), cells in fill(sites, donors, own, tables, a.w, a.alt):
-            out.write(f"{chrom}\t{pos}\t.\t{ref}\t{alt}\t.\t.\t.\tGT:LLR:PRIOR:PP:SRC\t" + "\t".join(
-                f"{gt}:{llr:.4f}:{pi:.4g}:{pp:.6g}:{src}" for gt, llr, pi, pp, src in cells) + "\n")
-            for d, (gt, _, _, _, src) in zip(donors, cells):
+            rec = out.new_record(contig=chrom, start=pos - 1, alleles=(ref, alt))
+            for d, (gt, llr, pi, pp, src) in zip(donors, cells):
+                call = rec.samples[d]
+                call["GT"] = (None,) if gt == "." else (int(gt),)
+                call["LLR"], call["PRIOR"], call["PP"], call["SRC"] = llr, pi, pp, src
                 counts[d][(src, gt)] = counts[d].get((src, gt), 0) + 1
+            out.write(rec)
+    pysam.tabix_index(a.out, preset="vcf", force=True)
     for d in donors:
         LOG.info("%s: %s", d, " ".join(f"{src} {gt} {c}" for (src, gt), c in sorted(counts[d].items())))
 

@@ -4,7 +4,6 @@ include { BCFTOOLS_VIEW as BIALLELIC_UNION          } from '../../../modules/nf-
 include { BCFTOOLS_MPILEUP as COUNT_UNION           } from '../../../modules/nf-core/bcftools/mpileup/main'
 include { POOLED_LIKELIHOOD_TIERS as UNION_TIERS    } from '../../../modules/local/pooled_likelihood_tiers/main'
 include { FILL_DONOR_ALLELES                        } from '../../../modules/local/fill_donor_alleles/main'
-include { BCFTOOLS_VIEW as DONOR_ALLELES_INDEX      } from '../../../modules/nf-core/bcftools/view/main'
 
 workflow SITES_UNION_GAPFILL {
     take:
@@ -51,12 +50,11 @@ workflow SITES_UNION_GAPFILL {
         .toSortedList { x, y -> x[0] <=> y[0] }
         .map { rows -> rows.transpose() }
     FILL_DONOR_ALLELES(
-        ch_union.combine(ch_donors).map { meta, union, _tbi, donors, tier_a, tables -> [meta, union, donors, tier_a, tables] },
+        ch_union.combine(ch_donors).map { meta, union, tbi, donors, tier_a, tables -> [meta, union, tbi, donors, tier_a, tables] },
         fill_tool
     )
-    DONOR_ALLELES_INDEX(FILL_DONOR_ALLELES.out.vcf.map { meta, vcf -> [meta, vcf, []] }, [], [], [])
 
     emit:
     union         = ch_union                                                                // channel: [ meta, vcf.gz, tbi ]
-    donor_alleles = DONOR_ALLELES_INDEX.out.vcf.join(DONOR_ALLELES_INDEX.out.index, failOnMismatch: true) // channel: [ meta, vcf.gz, tbi ]
+    donor_alleles = FILL_DONOR_ALLELES.out.vcf                                          // channel: [ meta, vcf.gz, tbi ]
 }

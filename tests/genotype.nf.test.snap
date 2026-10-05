@@ -29,13 +29,12 @@
                 "CRISP": {
                     "crisp": "1a9027e"
                 },
-                "DONOR_ALLELES_INDEX": {
-                    "bcftools": "1.23.1"
-                },
                 "FILL_DONOR_ALLELES": {
+                    "pysam": "0.24.1",
                     "python": "3.12.14"
                 },
                 "POOLED_LIKELIHOOD_TIERS": {
+                    "pysam": "0.24.1",
                     "python": "3.12.14"
                 },
                 "SAMTOOLS_ADDREPLACERG": {
@@ -48,6 +47,7 @@
                     "samtools": 1.24
                 },
                 "UNION_TIERS": {
+                    "pysam": "0.24.1",
                     "python": "3.12.14"
                 },
                 "WITNESS_VETO": {
@@ -70,7 +70,7 @@
                 "genotype/union/chrA.union.vcf.gz.tbi"
             ]
         ],
-        "timestamp": "2026-10-05T18:38:24.184075",
+        "timestamp": "2026-10-05T19:20:44.309478",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

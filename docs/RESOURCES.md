@@ -182,3 +182,5 @@ chr10 run plan.
 | `UNION_TIERS`         | 2     | 1.3 s        | 29.8 MB      |
 | `FILL_DONOR_ALLELES`  | 1     | < 1 s        | 11.2 MB      |
 | `DONOR_ALLELES_INDEX` | 1     | < 1 s        | 3.5 MB       |
+
+`DONOR_ALLELES_INDEX` was folded into `FILL_DONOR_ALLELES` afterwards: pysam writes the `.vcf.gz` and its `.tbi`.
