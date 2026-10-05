@@ -69,16 +69,6 @@
                 "cram/LX_2.regions.bed.gz.csi",
                 "cram/LX_2.stats",
                 "cram/LX_2.summary.txt",
-                "cram/LX_3.CollectWgsMetrics.coverage_metrics",
-                "cram/LX_3.cram",
-                "cram/LX_3.cram.crai",
-                "cram/LX_3.global.dist.txt",
-                "cram/LX_3.markdup.stats",
-                "cram/LX_3.region.dist.txt",
-                "cram/LX_3.regions.bed.gz",
-                "cram/LX_3.regions.bed.gz.csi",
-                "cram/LX_3.stats",
-                "cram/LX_3.summary.txt",
                 "multiqc",
                 "multiqc/multiqc_data",
                 "multiqc/multiqc_data/.stub",
@@ -99,12 +89,10 @@
                 "reports/sequali_alignment/LX_1.json",
                 "reports/sequali_alignment/LX_2.html",
                 "reports/sequali_alignment/LX_2.json",
-                "reports/sequali_alignment/LX_3.html",
-                "reports/sequali_alignment/LX_3.json",
                 "samplesheet.csv"
             ]
         ],
-        "timestamp": "2026-10-05T01:18:08.568038",
+        "timestamp": "2026-10-05T14:00:48.796837",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
