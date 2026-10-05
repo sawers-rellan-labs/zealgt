@@ -5,7 +5,7 @@ are recorded here. Terms as in `TERMINOLOGY.md`, decisions in `decisions.md`.
 
 ![zealgt full metro map](images/zealgt_metro_full.svg)
 
-Production steps of the built workflows (source `images/zealgt_metro_full.mmd`, drawn with nf-metro 2.1.0); the README
+Steps of the built workflows, GENOTYPE in development (source `images/zealgt_metro_full.mmd`, drawn with nf-metro 2.1.0); the README
 shows the same map without CRAM QC (`images/zealgt_metro.mmd`).
 
 ## Levels

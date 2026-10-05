@@ -2,7 +2,7 @@
 
 ## Introduction
 
-**sawers-rellan-labs/zealgt** takes the ZEAL maize samples from raw sequencing lanes to aligned CRAMs, one run per step chosen with `--step demultiplex | alignment`:
+**sawers-rellan-labs/zealgt** takes the ZEAL maize samples from raw sequencing lanes to aligned CRAMs and variant sites, one run per step chosen with `--step demultiplex | alignment | genotype`:
 
 ![zealgt metro map](docs/images/zealgt_metro.svg)
 
@@ -10,6 +10,7 @@ Every step, CRAM QC included: [full map](docs/images/zealgt_metro_full.svg) and 
 
 - `--step demultiplex` reads the library lanes listed in `meta/samples.csv`, extracts each lane's reads (`EXTRACT_LANE`, for batch-1 tar members), demultiplexes them per lane by barcode (`FQTK`) and joins each sample's lanes (`CAT_FASTQ`), writing `<source>/<sample>_R{1,2}.fastq.gz` and `samplesheets/<input name>.csv`; `Sequali` checks each sample's reads and `MultiQC` summarises them in a read-QC report.
 - `--step alignment` reads such a samplesheet and aligns each sample with `minibwa`, soft-clips bases that run past the mate (`fgumi clip`), then fixes mates, sorts, marks duplicates and indexes with `samtools`, writing one CRAM per sample; `samtools stats`, Picard `CollectWgsMetrics` and `mosdepth` feed a `MultiQC` report.
+- `--step genotype` (in development) reads a CRAM samplesheet and, per donor, drops samples under 0.05x and B73 checks with too many ALT reads, merges the donor's lines into a witness pool, calls the BC1 pools with `CRISP` in the low-copy regions, keeps the sites where the witness has an ALT read (`bcftools`), counts the B73 controls there (`bcftools mpileup`) and scores each site with a pooled likelihood ratio into tiers.
 
 ## Usage
 

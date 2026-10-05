@@ -7,6 +7,10 @@
 %%metro file: report_out | HTML
 %%metro line: demultiplex | --step demultiplex | #2db572
 %%metro line: alignment | --step alignment | #0570b0
+%%metro line: genotype | --step genotype | #e6550d
+%%metro file: checks_out | TSV
+%%metro file: vcf_out | VCF
+%%metro file: sites_out | TSV
 %%metro legend: bl
 
 graph LR
@@ -32,6 +36,7 @@ graph LR
 
     subgraph align [Alignment]
         %%metro entry: left | alignment
+        %%metro exit: right | genotype
         minibwa[minibwa]
         fgumi[fgumi clip]
         fixmate[fixmate]
@@ -62,8 +67,43 @@ graph LR
         multiqc -->|alignment| report_out
     end
 
+    subgraph geno [Genotype]
+        %%metro entry: left | genotype
+        cov_filter[coverage filter]
+        check_counts[mpileup checks]
+        check_rate[ALT rate]
+        checks_out[ ]
+        merge_pools[samtools merge]
+        addrg[addreplacerg]
+        index_pools[index]
+        crisp[CRISP]
+        bed_clip[bed clip]
+        veto[witness veto]
+        vcf_out[ ]
+        mpileup_ctrl[mpileup]
+        tiers[LLR tiers]
+        sites_out[ ]
+
+        cov_filter -->|genotype| check_counts
+        check_counts -->|genotype| check_rate
+        check_rate -->|genotype| checks_out
+        check_rate -->|genotype| merge_pools
+        cov_filter -->|genotype| merge_pools
+        merge_pools -->|genotype| addrg
+        addrg -->|genotype| index_pools
+        index_pools -->|genotype| crisp
+        index_pools -->|genotype| mpileup_ctrl
+        crisp -->|genotype| bed_clip
+        bed_clip -->|genotype| veto
+        veto -->|genotype| vcf_out
+        veto -->|genotype| mpileup_ctrl
+        mpileup_ctrl -->|genotype| tiers
+        tiers -->|genotype| sites_out
+    end
+
     fastq_sheet -->|alignment| minibwa
     index -->|alignment| samtools_stats
     index -->|alignment| picard_wgs
     index -->|alignment| mosdepth
     markdup -->|alignment| multiqc
+    cram_out -->|genotype| cov_filter
