@@ -187,3 +187,11 @@ fqtk runs once per lane, and `CAT_FASTQ` joins each sample's lanes (user). Reaso
   folder from `source`).
 - The `/share` quota is the group's, so the run goes in waves of whole libraries, one sequencing batch per wave, each
   holding at most 2 TB of `work/`; 8 waves, chained, `cleanup` after each. Plan: `docs/runs/demultiplex_production.md`.
+
+## 2026-10-05 Split alignment: insert size estimated from the sample, as sarek
+
+- minibwa estimates the insert size per batch of reads from the sample itself; no fixed `-I` (user: "the best
+  estimate comes from the sample"). Fixed values would be one per kit (head-run means 230-484, SD 102-128).
+- So the split changes a few alignments (S_2A_3, 4 M pairs in 1 M-pair chunks against unsplit, jobs 1099457 /
+  1099789): same 4,000,000 reads and read group; 0.39 % of records differ, 0.06 % in position, 0.32 % in MAPQ
+  only (mostly 1-3). Accepted (user).
