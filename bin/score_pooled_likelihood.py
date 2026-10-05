@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Pooled likelihood ratio, flags and tiers per site for one donor (math supplement, "Per-donor variant discovery").
 
+Flags: hidepth (all pools' depth > --hidepth-factor x the median), af_gt_half (BC1 ALT share > 1/2, binomial test),
+inconsistent (one BC1 pool with >= --inconsistent-min-alt ALT reads while another has >= --inconsistent-min-depth reads
+and none ALT). Tier A: LLR >= --llr-a, ALT reads in >= --a-min-pools-alt pools, no flag; B: LLR >= --llr-b, neither
+hidepth nor af_gt_half; C: LLR >= --llr-c; ref: LLR <= --llr-ref with >= --ref-min-depth reads; else ".".
 Reads the witness-vetoed CRISP VCF (BC1 pools and the witness; per-pool counts in ADf, ADr, ADb as 'ref,alt') and the
 B73 control VCFs from bcftools mpileup (AD), and writes one row per biallelic SNP record. Pool groups: the donor's BC1
 pools, the witness, the B73 controls together. Model, per BC1 pool i with n_i reads, a_i ALT:
@@ -32,7 +36,8 @@ def parse_args(argv=None):
         ("plants", int), ("eps0", float), ("eps-floor", float), ("zero-class-llr", float),
         ("zero-class-min-reads", int), ("llr-a", float), ("llr-b", float), ("llr-c", float), ("llr-ref", float),
         ("ref-min-depth", int), ("a-min-pools-alt", int), ("hidepth-factor", float),
-        ("af-gt-half-min-depth", int), ("af-gt-half-p", float),
+        ("af-gt-half-min-depth", int), ("af-gt-half-p", float), ("inconsistent-min-alt", int),
+        ("inconsistent-min-depth", int),
     ]:
         req.add_argument(f"--{name}", type=kind, required=True)
     a = ap.parse_args(argv)
@@ -143,9 +148,10 @@ def control_counts(rows, chrom, pos, ref, alt):
 
 
 def tier_of(llr, n, n_pools_alt, flags, a):
+    """Tier A: no flag at all; tier B: none of the depth flags (inconsistent blocks A only)."""
     if llr >= a.llr_a and n_pools_alt >= a.a_min_pools_alt and not flags:
         return "A"
-    if llr >= a.llr_b and not flags:
+    if llr >= a.llr_b and not set(flags) & {"hidepth", "af_gt_half"}:
         return "B"
     if llr >= a.llr_c:
         return "C"
@@ -182,6 +188,9 @@ def score(pools, recs, witness, controls, a):
             flags.append("hidepth")
         if n >= a.af_gt_half_min_depth and 2 * k > n and binom_sf_half(n, k) < a.af_gt_half_p:
             flags.append("af_gt_half")
+        if any(c[1] >= a.inconsistent_min_alt for c in bc1_cnt) and \
+                any(c[0] >= a.inconsistent_min_depth and c[1] == 0 for c in bc1_cnt):
+            flags.append("inconsistent")
         npa = sum(1 for c in bc1_cnt if c[1] > 0)
         counts = ";".join(f"{pools[i]}:{cnt[i][1]}/{cnt[i][0]}" for i in range(len(pools)) if i != w)
         yield [chrom, pos, ref, alt, n, k, npa, f"{eps:.6g}", f"{llr:.4f}", tier_of(llr, n, npa, flags, a),
