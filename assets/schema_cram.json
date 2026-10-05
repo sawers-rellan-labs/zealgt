@@ -1,0 +1,64 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/sawers-rellan-labs/zealgt/main/assets/schema_cram.json",
+    "title": "sawers-rellan-labs/zealgt pipeline - params.input schema for --step genotype",
+    "description": "One row per sample: its CRAM and CollectWgsMetrics file from ALIGNMENT, with its role, donor and pedigree from meta/samples.csv",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "sample_id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_]+$",
+                "errorMessage": "sample_id must be letters, digits and underscores",
+                "meta": ["id"]
+            },
+            "role": {
+                "type": "string",
+                "enum": ["bc1_sample", "line", "check", "landrace_line", "empty"],
+                "errorMessage": "role must be a meta/samples.csv role",
+                "meta": ["role"]
+            },
+            "donor": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_.]*$",
+                "errorMessage": "donor must be letters, digits, dots and underscores, or empty",
+                "meta": ["donor"]
+            },
+            "pedigree": {
+                "type": "string",
+                "errorMessage": "pedigree must be text",
+                "meta": ["pedigree"]
+            },
+            "exclude": {
+                "type": "boolean",
+                "default": false,
+                "errorMessage": "exclude must be TRUE or FALSE",
+                "meta": ["exclude"]
+            },
+            "cram": {
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^\\S+\\.cram$",
+                "errorMessage": "cram must be an existing .cram file"
+            },
+            "crai": {
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^\\S+\\.crai$",
+                "errorMessage": "crai must be an existing .crai file"
+            },
+            "wgs_metrics": {
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^\\S+\\.coverage_metrics$",
+                "errorMessage": "wgs_metrics must be an existing CollectWgsMetrics .coverage_metrics file"
+            }
+        },
+        "required": ["sample_id", "role", "cram", "crai", "wgs_metrics"]
+    },
+    "uniqueEntries": ["sample_id"]
+}

@@ -31,7 +31,7 @@ workflow PIPELINE_INITIALISATION {
     nextflow_cli_args //   array: List of positional nextflow CLI args
     outdir            //  string: The output directory where the results will be saved
     input             //  string: Path to input samplesheet
-    step              //  string: demultiplex | alignment, picks the samplesheet schema
+    step              //  string: demultiplex | alignment | genotype, picks the samplesheet schema
     help              // boolean: Display help message and exit
     help_full         // boolean: Show the full help message
     show_hidden       // boolean: Show hidden parameters in the help message
@@ -86,9 +86,10 @@ workflow PIPELINE_INITIALISATION {
     // Create channel from input file provided through params.input
     //
 
-    // library rows for demultiplex, per-sample FASTQ rows for alignment
+    // library rows for demultiplex, per-sample FASTQ rows for alignment, per-sample CRAM rows for genotype
+    def schema = [demultiplex: 'schema_input.json', alignment: 'schema_fastq.json', genotype: 'schema_cram.json'][step]
     channel
-        .fromList(samplesheetToList(input, "${projectDir}/assets/${step == 'demultiplex' ? 'schema_input.json' : 'schema_fastq.json'}"))
+        .fromList(samplesheetToList(input, "${projectDir}/assets/${schema}"))
         .set { ch_samplesheet }
 
     emit:

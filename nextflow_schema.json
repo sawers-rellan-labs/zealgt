@@ -14,8 +14,8 @@
             "properties": {
                 "step": {
                     "type": "string",
-                    "enum": ["demultiplex", "alignment"],
-                    "description": "Workflow to run: demultiplex (libraries to per-sample FASTQs) or alignment (per-sample FASTQs to CRAMs).",
+                    "enum": ["demultiplex", "alignment", "genotype"],
+                    "description": "Workflow to run: demultiplex (libraries to per-sample FASTQs), alignment (per-sample FASTQs to CRAMs) or genotype (CRAMs to variant sites).",
                     "fa_icon": "fas fa-play"
                 },
                 "input": {
@@ -24,7 +24,7 @@
                     "exists": true,
                     "mimetype": "text/csv",
                     "pattern": "^\\S+\\.csv$",
-                    "description": "Samplesheet: meta/samples.csv rows for demultiplex (assets/schema_input.json), a published samplesheets/<name>.csv for alignment (assets/schema_fastq.json).",
+                    "description": "Samplesheet: meta/samples.csv rows for demultiplex (assets/schema_input.json), a published samplesheets/<name>.csv for alignment (assets/schema_fastq.json), one CRAM row per sample for genotype (assets/schema_cram.json).",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "outdir": {
@@ -74,6 +74,61 @@
                     "pattern": "^\\S+\\.\\{l2b,mbw\\}$",
                     "description": "Glob of the prebuilt minibwa 0.7 index files, e.g. <fasta>.{l2b,mbw}.",
                     "fa_icon": "fas fa-bezier-curve"
+                }
+            }
+        },
+        "genotype_options": {
+            "title": "Genotype options",
+            "type": "object",
+            "fa_icon": "fas fa-seedling",
+            "description": "Inputs and cuts of --step genotype.",
+            "properties": {
+                "lowcopy_bed": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.bed(\\.gz)?$",
+                    "description": "Low-copy BED (genes and non-TE ranges), built once outside the pipeline (docs/decisions.md).",
+                    "fa_icon": "fas fa-file"
+                },
+                "region": {
+                    "type": "string",
+                    "pattern": "^[^:\\s]+(:\\d+-\\d+)?$",
+                    "description": "The chromosome, or a window of it, to call: chr10 or chr10:1-20000000.",
+                    "fa_icon": "fas fa-map-marker-alt"
+                },
+                "check_sites": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.vcf(\\.gz)?$",
+                    "description": "VCF of the teosinte-vs-B73 sites at which the B73 check filter counts each B73 check's reads.",
+                    "fa_icon": "fas fa-file"
+                },
+                "max_check_alt_rate": {
+                    "type": "number",
+                    "default": 0.01,
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "B73 checks whose share of ALT reads at --check_sites exceeds this are dropped.",
+                    "fa_icon": "fas fa-filter"
+                },
+                "b73_controls": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "schema": "assets/schema_b73_controls.json",
+                    "pattern": "^\\S+\\.csv$",
+                    "mimetype": "text/csv",
+                    "description": "CSV of the B73 reference controls (sample_id, cram, crai), e.g. NCBI ERR3288215 aligned with --step alignment.",
+                    "fa_icon": "fas fa-file-csv"
+                },
+                "min_mean_coverage": {
+                    "type": "number",
+                    "default": 0.05,
+                    "minimum": 0,
+                    "description": "Samples whose CollectWgsMetrics MEAN_COVERAGE is under this are dropped before genotyping.",
+                    "fa_icon": "fas fa-filter"
                 }
             }
         },
@@ -172,6 +227,9 @@
         },
         {
             "$ref": "#/$defs/reference_genome_options"
+        },
+        {
+            "$ref": "#/$defs/genotype_options"
         },
         {
             "$ref": "#/$defs/generic_options"
