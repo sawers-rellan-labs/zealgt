@@ -49,7 +49,7 @@ Per chromosome, in `genotype/union/`:
 
 - `<chr>.union.vcf.gz` + `.tbi`: the union sites (biallelic SNPs, no samples).
 - `<chr>.donor_alleles.vcf.gz` + `.tbi`: one sample per donor; `GT` = `1` (ALT), `0` (REF) or `.` (missing); `FORMAT`
-  `LLR` (donor's reads), `PRIOR`, `PP` (posterior of ALT), `SRC` (`own` or `gap`).
+  `LLR` (donor's reads), `PRIOR`, `PALT` (posterior probability of ALT; `PP` is reserved in VCF for genotype posteriors), `SRC` (`own` or `gap`).
 
 ## Processes
 

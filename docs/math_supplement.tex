@@ -227,8 +227,8 @@ P(D_{ds}=\ALT\mid\text{reads})=\sigma\!\left(\LLR_{ds}+\log\frac{\pi_{ds}}{1-\pi
 \end{equation}
 a leave-one-out beta-binomial prior with mean $\mu_d$ (donor $d$'s sharing rate: tier A$/$(A$+$ref) at its gaps) and weight $w=2$.
 ALT is called at posterior $\ge0.999$ with reads at $s$; sites flagged \code{hidepth} or \code{af\_gt\_half} are never promoted. Own
-sites are re-scored the same way: an own site whose posterior falls below $0.999$ becomes missing, not REF (its reads give no evidence for
-B73), unless its reads are tier \code{ref}. The prior comes from all other donors; restricting it to the same taxon is an option once
+sites are re-scored the same way but are never REF: an own site whose posterior falls below $0.999$ becomes missing, also when its reads
+at the union are tier \code{ref} (then discovery and the second count disagree). The prior comes from all other donors; restricting it to the same taxon is an option once
 other taxa are added.
 The likelihood ratio models sequencing error but not artifacts; a site that is tier A in another donor, passed that donor's witness and is
 clean in the B73 pools is independent evidence that the site is real, which is what the prior carries. A mis-mapped paralog shows ALT in all

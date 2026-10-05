@@ -4,10 +4,11 @@
 Per donor d and site s, from the donor's site table at the union (score_pooled_likelihood.py --bc1-vcf):
   k = other donors with s among their own tier-A sites, m = k + other donors with s a gap scored tier 'ref'
   pi = (w mu_d + k) / (w + m), mu_d = (A + 0.5) / (A + R + 1) with A, R the tier-A and tier-ref sites among d's gaps
-  PP = sigmoid(LLR + logit pi)
-  GT = 0 at tier 'ref'; 1 at PP >= --alt with reads at s and neither hidepth nor af_gt_half; else missing.
-Own sites (s in d's tier-A set) are re-scored the same way: an own site under --alt becomes missing.
-Writes a bgzipped, tabix-indexed VCF with one haploid sample per donor: GT, LLR, PRIOR, PP, SRC (own or gap), with pysam.
+  PALT = sigmoid(LLR + logit pi)
+  GT = 0 at tier 'ref' (gaps only); 1 at PALT >= --alt with reads at s and neither hidepth nor af_gt_half; else missing.
+Own sites (s in d's tier-A set) are re-scored the same way, but never REF: an own site under --alt becomes missing,
+also at tier 'ref' (discovery and the union count disagree; user, 2026-10-05).
+Writes a bgzipped, tabix-indexed VCF with one haploid sample per donor: GT, LLR, PRIOR, PALT, SRC (own or gap), with pysam.
 """
 import argparse
 import gzip
@@ -25,7 +26,7 @@ FORMAT = [
     ("GT", 1, "String", "Donor allele: 1 ALT, 0 REF, . missing"),
     ("LLR", 1, "Float", "Pooled likelihood ratio of the donor's BC1 reads"),
     ("PRIOR", 1, "Float", "Prior of ALT from the other donors (Eq. eb)"),
-    ("PP", 1, "Float", "Posterior of ALT"),
+    ("PALT", 1, "Float", "Posterior probability that the donor allele is ALT (Eq. eb)"),
     ("SRC", 1, "String", "own: among the donor's tier-A sites; gap: discovered in other donors"),
 ]
 
@@ -85,19 +86,19 @@ def sharing_rate(sites, own, table):
     return (tiers.count("A") + 0.5) / (tiers.count("A") + tiers.count("ref") + 1)
 
 
-def call(row, pi, alt):
-    """(GT, PP) of one donor at one site."""
+def call(row, pi, alt, own):
+    """(GT, PALT) of one donor at one site; own: the site is among the donor's tier-A sites."""
     tier, n, llr, flags = row
     pp = sigmoid(llr + math.log(pi / (1 - pi)))
     if tier == "ref":
-        return "0", pp
+        return ("." if own else "0"), pp
     if n > 0 and pp >= alt and not set(flags.split(",")) & NEVER_ALT:
         return "1", pp
     return ".", pp
 
 
 def fill(sites, donors, own, tables, w, alt):
-    """Yield (site, [(GT, LLR, PRIOR, PP, SRC) per donor]) for every union site."""
+    """Yield (site, [(GT, LLR, PRIOR, PALT, SRC) per donor]) for every union site."""
     mu = {d: sharing_rate(sites, own[d], tables[d]) for d in donors}
     for d in donors:
         LOG.info("%s: %d own sites, mu = %.4f", d, len(own[d]), mu[d])
@@ -111,7 +112,7 @@ def fill(sites, donors, own, tables, w, alt):
             m = k + len(ref - {d})
             pi = min(max((w * mu[d] + k) / (w + m), 1e-6), 1 - 1e-6)
             row = tables[d].get(s, NO_ROW)
-            gt, pp = call(row, pi, alt)
+            gt, pp = call(row, pi, alt, d in carriers)
             cells.append((gt, row[2], pi, pp, "own" if d in carriers else "gap"))
         yield s, cells
         now = time.monotonic()
@@ -143,7 +144,7 @@ def main(argv=None):
             for d, (gt, llr, pi, pp, src) in zip(donors, cells):
                 call = rec.samples[d]
                 call["GT"] = (None,) if gt == "." else (int(gt),)
-                call["LLR"], call["PRIOR"], call["PP"], call["SRC"] = llr, pi, pp, src
+                call["LLR"], call["PRIOR"], call["PALT"], call["SRC"] = llr, pi, pp, src
                 counts[d][(src, gt)] = counts[d].get((src, gt), 0) + 1
             out.write(rec)
     pysam.tabix_index(a.out, preset="vcf", force=True)

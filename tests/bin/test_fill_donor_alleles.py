@@ -54,7 +54,16 @@ def test_prior_and_posterior_by_hand():
     ((".", 0, 0.0, "."), 1 - 1e-6, "."),         # no reads: never ALT from the prior alone
 ])
 def test_call(row, pi, gt):
-    assert fill.call(row, pi, 0.999)[0] == gt
+    assert fill.call(row, pi, 0.999, False)[0] == gt
+
+
+@pytest.mark.parametrize("row,gt", [
+    (("A", 20, 9.0, "."), "1"),
+    (("ref", 20, -6.0, "."), "."),   # discovery said ALT, the union count says B73: missing, never REF
+    (("C", 15, 1.0, "."), "."),
+])
+def test_call_own_site(row, gt):
+    assert fill.call(row, 0.5, 0.999, True)[0] == gt
 
 
 def test_own_site_without_support_is_missing():
@@ -77,8 +86,8 @@ def ours(tmp_path_factory):
         assert list(vcf.header.samples) == DONORS
         assert vcf.fetch("chr10")  # the .tbi is there
         for rec in vcf:
-            assert list(rec.format) == ["GT", "LLR", "PRIOR", "PP", "SRC"]
-            rows[str(rec.pos)] = [dict(GT=gt[c["GT"]], LLR=c["LLR"], PRIOR=c["PRIOR"], PP=c["PP"], SRC=c["SRC"])
+            assert list(rec.format) == ["GT", "LLR", "PRIOR", "PALT", "SRC"]
+            rows[str(rec.pos)] = [dict(GT=gt[c["GT"]], LLR=c["LLR"], PRIOR=c["PRIOR"], PALT=c["PALT"], SRC=c["SRC"])
                                   for c in rec.samples.values()]
     return rows
 
@@ -100,15 +109,15 @@ def test_gaps_match_zealbc1(ours, zealbc1):
             if o["SRC"] != "gap":
                 continue
             assert float(o["PRIOR"]) == pytest.approx(float(z[f"{d}_prior"]), abs=5.1e-4)  # zealbc1 rounds to 3 decimals
-            assert float(o["PP"]) == pytest.approx(float(z[f"{d}_posterior"]), abs=1e-3)
+            assert float(o["PALT"]) == pytest.approx(float(z[f"{d}_posterior"]), abs=1e-3)
             assert o["GT"] == {"1": "1", "0": "0", "NA": "."}[z[f"{d}_state_bayes"]], (pos, d)
 
 
 def test_own_sites_rescored(ours, zealbc1):
     # zealbc1 keeps every own site ALT; here an own site is ALT only at posterior >= 0.999
     own = [(o, z) for pos, z in zealbc1.items() for d, o in zip(DONORS, ours[pos]) if o["SRC"] == "own"]
-    assert all(float(o["PP"]) >= 0.999 for o, _ in own if o["GT"] == "1")
-    assert {o["GT"] for o, _ in own} == {"1", ".", "0"}
+    assert all(float(o["PALT"]) >= 0.999 for o, _ in own if o["GT"] == "1")
+    assert {o["GT"] for o, _ in own} == {"1", "."}
 
 
 def test_reference_covers_every_gap_state(zealbc1):
