@@ -3,7 +3,7 @@
 ## Why
 
 User, 2026-10-04: zealbc1 is a comparison, not a target; GENOTYPE's outputs should be close to zealbc1's, not
-identical (`docs/decisions.md`). The 20 Mb runs of Milestone 7 checked for bugs only; this run checks accuracy, on the
+identical (`docs/decisions.md`); close means a tier-A Jaccard of at least 0.99 (user, 2026-10-05). The 20 Mb runs of Milestone 7 checked for bugs only; this run checks accuracy, on the
 whole chromosome zealbc1 ran (handover 2026-10-05).
 
 ## Inputs and outputs
@@ -66,7 +66,10 @@ sbatch scripts/submit_head_job.sbatch hpc_dev --step genotype \
   - per BC1 pool, the ratio of our depth to zealbc1's on shared sites (aligner and `--mbq 20` vs 10).
 - Known reasons for differences: the alignment (zealgt's own split alignment), `--mbq 20`, the low-copy BED (8,084 vs
   8,095 ranges), the witness lines, the automatic B73 check filter.
-- Script in `agent/genotype_pilot/`; numbers in this file's report. Whether they are close is the user's call.
+- **Pass (user, 2026-10-05):** Jaccard of the tier-A positions inside both low-copy BEDs >= 0.99.
+- **Below that:** the report splits the sites found by one side only by cause (BED edge, LLR near the tier boundary,
+  depth difference per pool, B73-control error rate), and the user decides.
+- Script in `agent/genotype_pilot/`; numbers in this file's report.
 
 ## Before the run
 
@@ -77,7 +80,7 @@ sbatch scripts/submit_head_job.sbatch hpc_dev --step genotype \
 
 - The run succeeded and wrote both donors' VCF and site table and `b73_checks.tsv`.
 - Measured resources in `docs/RESOURCES.md`, whole-chromosome values in `conf/hpc_dev.config`.
-- The comparison is in this file; the user has judged it.
+- The comparison is in this file: tier-A Jaccard >= 0.99, or the user's decision on the breakdown.
 - Then on the user's removal list: the `/share` copy of the low-copy BED and, once judged, zealbc1's
   `bench_zx0540_chr10`.
 
