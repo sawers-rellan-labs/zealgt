@@ -9,7 +9,7 @@ nextflow_workflow {
     tag "fastq_align_minibwa"
 
     // aligns to tiny.fa, every tool in its container: the demultiplexed fixture library LIBX (3 samples, 2 lanes joined, inserts
-    // >= 250 bp, 300 pairs: 3 chunks of 100) and SI_1 (1 lane, 20 pairs whose reads run 20 bases past their mate: 1 chunk)
+    // >= 250 bp, 300 pairs: LX_1 in 3 chunks of 100, the others in 1) and SI_1 (1 lane, 20 pairs whose reads run 20 bases past their mate: 1 chunk)
     profile "test,docker"
 
     setup {
@@ -65,13 +65,13 @@ nextflow_workflow {
                 duplicates: rs.count { r -> flag(r, 0x400) }
             ]] }
             def lx = ['LX_1', 'LX_2', 'LX_3']
-            // tasks per process: one split per sample, the chain per chunk (3 x 3 + 1), one merge and markdup per sample
+            // tasks per process: one split per sample, the chain per chunk (3 + 1 + 1 + 1), one merge and markdup per sample
             def tasks = workflow.trace.tasks().countBy { t -> t.name.tokenize(':')[-1].tokenize(' ')[0] }
             assertAll(
                 { assert workflow.success },
-                { assert merged == lx.collectEntries { x -> [x, ['part_001', 'part_002', 'part_003']] } + [SI_1: ['part_001']] },
+                { assert merged == [LX_1: ['part_001', 'part_002', 'part_003'], LX_2: ['part_001'], LX_3: ['part_001'], SI_1: ['part_001']] },
                 { assert tasks.subMap('SEQKIT_SPLIT2', 'MINIBWA_MAP', 'FGUMI_CLIP', 'SAMTOOLS_FIXMATE', 'SAMTOOLS_SORT', 'SAMTOOLS_MERGE', 'SAMTOOLS_MARKDUP', 'SAMTOOLS_INDEX') ==
-                    [SEQKIT_SPLIT2: 4, MINIBWA_MAP: 10, FGUMI_CLIP: 10, SAMTOOLS_FIXMATE: 10, SAMTOOLS_SORT: 10, SAMTOOLS_MERGE: 4, SAMTOOLS_MARKDUP: 4, SAMTOOLS_INDEX: 4] },
+                    [SEQKIT_SPLIT2: 4, MINIBWA_MAP: 6, FGUMI_CLIP: 6, SAMTOOLS_FIXMATE: 6, SAMTOOLS_SORT: 6, SAMTOOLS_MERGE: 4, SAMTOOLS_MARKDUP: 4, SAMTOOLS_INDEX: 4] },
                 // one read group per sample, ID and SM = sample_id, PU lists its lanes
                 { assert rgs == lx.collectEntries { x -> [x, ["@RG\tID:${x}\tSM:${x}\tLB:LIBX\tPL:ILLUMINA\tPU:LIBX_TESTFC01_L1,LIBX_TESTFC01_L2".toString()]] } +
                     [SI_1: ["@RG\tID:SI_1\tSM:SI_1\tLB:LIBS\tPL:ILLUMINA\tPU:LIBS_TESTFC02_L1"]] },
