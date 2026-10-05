@@ -75,10 +75,6 @@
                 "hooks": [
                     {
                         "type": "command",
-                        "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/block_delete.py"
-                    },
-                    {
-                        "type": "command",
                         "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/require_background.py"
                     }
                 ]
