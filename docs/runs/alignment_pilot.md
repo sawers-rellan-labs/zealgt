@@ -45,3 +45,14 @@ aligned once, whole genome, with the split alignment of Milestone 2a.
 - The run succeeded and `cleanup` emptied its `work/`.
 - 107 CRAMs with `.crai` and CollectWgsMetrics in `ZEAL/alignment/cram/`; MEAN_COVERAGE per sample recorded in the run's
   report.
+
+## Attempts
+
+- 2026-10-05 05:20, head job 1102015 (tag `align-pilot-20261005`, `--mem=32G`): **succeeded** at 08:51 (3 h 31 min).
+  107 CRAMs with CollectWgsMetrics in `ZEAL/alignment/cram/` (62 GB); no retry. The head job's sacct MaxRSS was
+  33.5 GB, at its limit as in the 10-sample run at 8 GB: the Nextflow JVM grows into what it is given, so the peak is
+  not a need (V21 runs with 16 GB).
+- MEAN_COVERAGE (median, range): BC1 pools Zx.0540_P3 3.48x (2.07-5.07), Zx.0570_P2 3.33x (2.81-4.94); lines
+  Zx.0540_P3 0.29x (0.003-0.40), Zx.0570_P2 0.36x (0.011-0.48); B73 checks 0.35x (0.22-0.53); ERR3288215 13.3x.
+  Under the 0.05x cut of GENOTYPE: PN6_SID484 (0.003x), PN8_SID736 (0.011x). Per sample: `agent/pilot_align/pilot_coverage.tsv`
+  (laptop).
