@@ -57,7 +57,7 @@ sites[, key := paste(pos, ref, alt)]
 theme_set(theme_minimal(base_size = 11) + theme(panel.grid.minor = element_blank()))
 pal <- c(shared = "#4C78A8", `zealgt only` = "#F58518", `zealbc1 only` = "#54A24B")
 run_label <- c(
-  zealbc1 = "zealbc1", zealgt_mbq20 = "zealgt",
+  zealbc1 = "zealbc1", zealgt_mbq20 = "zealgt, duplicates removed",
   zealgt_mbq10 = "zealgt, lower base-quality cutoff", zealgt_nodup = "zealgt, duplicates counted"
 )
 tier_label <- c(A = "high", B = "medium", C = "low", ref = "B73 allele", none = "rejected")
@@ -152,6 +152,7 @@ both_tables <- function(x) {
   m[, run := run_label[x]]
 }
 bt <- rbind(both_tables("zealgt_mbq20"), both_tables("zealgt_nodup"))
+bt[, run := factor(run, run_label[c("zealgt_mbq20", "zealgt_nodup")])]
 xt <- bt[, .N, by = .(run, tier_x, tier_y)]
 xt[, `:=`(
   tier_x = factor(tier_label[tier_x], rev(tier_label)),
