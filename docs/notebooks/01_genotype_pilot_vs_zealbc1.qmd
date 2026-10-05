@@ -184,8 +184,9 @@ ggplot(bt, aes(llr_y, llr_x)) +
 
 Most variants sit on the diagonal: the two pipelines disagree about which variants exist, not about how good they are.
 The scores also show the duplicate inflation. With duplicates removed, zealgt's scores run about 7 % below zealbc1's
-(slope 0.93); with duplicates counted, they run about 9 % above (slope 1.09), the excess coming from zealgt's slightly
-deeper reads. Counting copies as evidence raises every score.
+(slope 0.93, median ratio 0.98); with duplicates counted, they run about 9 % above (slope 1.09, median ratio 1.07),
+the excess coming from zealgt's slightly deeper reads. The score grows with the number of reads, so counting copies as
+evidence raises every score. The slope is pulled mostly by the strongest variants; the median ratio weighs all alike.
 
 ## 4. Swapping one input at a time
 
