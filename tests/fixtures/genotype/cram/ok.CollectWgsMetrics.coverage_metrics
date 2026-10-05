@@ -1,0 +1,8 @@
+## htsjdk.samtools.metrics.StringHeader
+# CollectWgsMetrics --INPUT x.cram
+## htsjdk.samtools.metrics.StringHeader
+# Started on: Sat Oct 03 15:47:46 GMT 2026
+
+## METRICS CLASS	picard.analysis.WgsMetrics
+GENOME_TERRITORY	MEAN_COVERAGE	SD_COVERAGE	MEDIAN_COVERAGE
+32000	0.5	0.4	0
