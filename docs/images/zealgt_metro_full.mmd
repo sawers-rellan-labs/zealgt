@@ -12,6 +12,10 @@
 %%metro file: vcf_out | VCF
 %%metro file: sites_out | TSV
 %%metro legend: bl
+%%metro grid: demux | 0,0
+%%metro grid: align | 0,1
+%%metro grid: qc | 1,1
+%%metro grid: geno | 0,2
 
 graph LR
     subgraph demux [Demultiplex]
@@ -37,18 +41,22 @@ graph LR
     subgraph align [Alignment]
         %%metro entry: left | alignment
         %%metro exit: right | genotype
+        split[seqkit split2]
         minibwa[minibwa]
         fgumi[fgumi clip]
         fixmate[fixmate]
         sort[sort]
+        merge[merge]
         markdup[markdup]
         index[index]
         cram_out[cram]
 
+        split -->|alignment| minibwa
         minibwa -->|alignment| fgumi
         fgumi -->|alignment| fixmate
         fixmate -->|alignment| sort
-        sort -->|alignment| markdup
+        sort -->|alignment| merge
+        merge -->|alignment| markdup
         markdup -->|alignment| index
         index -->|alignment| cram_out
     end
@@ -101,7 +109,7 @@ graph LR
         tiers -->|genotype| sites_out
     end
 
-    fastq_sheet -->|alignment| minibwa
+    fastq_sheet -->|alignment| split
     index -->|alignment| samtools_stats
     index -->|alignment| picard_wgs
     index -->|alignment| mosdepth

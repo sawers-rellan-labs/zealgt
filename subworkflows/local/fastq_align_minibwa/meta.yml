@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
 name: "fastq_align_minibwa"
-description: Align each sample's reads with minibwa, soft-clip bases past the mate and mark duplicates into one CRAM
+description: Align each sample's reads with minibwa in chunks, soft-clip bases past the mate, merge and mark duplicates into one CRAM
 keywords:
   - alignment
   - minibwa
@@ -8,10 +8,12 @@ keywords:
   - markdup
   - cram
 components:
+  - seqkit/split2
   - minibwa/map
   - fgumi/clip
   - samtools/fixmate
   - samtools/sort
+  - samtools/merge
   - samtools/markdup
   - samtools/index
 input:
