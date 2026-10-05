@@ -129,3 +129,75 @@ def test_matches_zealbc1_step4(ours, zealbc1):
 def test_zealbc1_reference_covers_every_tier_and_flag(zealbc1):
     assert {r["tier"] for r in zealbc1.values()} == {"A", "B", "C", "ref", "-"}
     assert set().union(*(r["flags"].split(",") for r in zealbc1.values())) >= FLAGS
+
+
+def mpileup_vcfs(tmp, crisp):
+    """The CRISP fixture's BC1 counts as one mpileup-style VCF per pool (AD), its sites as a sites VCF, and the CRISP
+    VCF with the witness's counts set to zero; only biallelic SNPs."""
+    lines = [x.rstrip("\n").split("\t") for x in open(crisp) if not x.startswith("##")]
+    head, recs = lines[0], [x for x in lines[1:] if score.is_snp(x[3], x[4])]
+    zero = tmp / "crisp_no_witness.vcf"
+    with open(zero, "w") as fh:
+        fh.write("\t".join(head) + "\n")
+        for x in recs:
+            fh.write("\t".join(x[:9] + ["0:9:0:0,0:0,0:0,0"] + x[10:]) + "\n")
+    sites = tmp / "sites.vcf"
+    sites.write_text("##fileformat=VCFv4.2\n##contig=<ID=chr10>\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n"
+                     + "".join(f"{x[0]}\t{x[1]}\t.\t{x[3]}\t{x[4]}\t.\t.\t.\n" for x in recs))
+    pools = []
+    for j, name in enumerate(head[10:], start=10):
+        p = tmp / f"{name}.vcf"
+        with open(p, "w") as fh:
+            fh.write(f"##fileformat=VCFv4.2\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t{name}\n")
+            for x in recs:
+                fmt, v = x[8].split(":"), x[j].split(":")
+                r = sum(int(v[fmt.index(k)].split(",")[0]) for k in ("ADf", "ADr", "ADb"))
+                a = sum(int(v[fmt.index(k)].split(",")[1]) for k in ("ADf", "ADr", "ADb"))
+                fh.write(f"{x[0]}\t{x[1]}\t.\t{x[3]}\t{x[4]}\t.\t.\t.\tGT:AD\t0/1:{r},{a}\n")
+        pools.append(str(p))
+    return zero, sites, pools
+
+
+def read_table(path):
+    with gzip.open(path, "rt") as fh:
+        return list(csv.DictReader(fh, delimiter="\t"))
+
+
+def test_bc1_vcf_matches_crisp_mode(tmp_path):
+    # the same counts, read from mpileup VCFs at the given sites or from CRISP with a witness without reads
+    zero, sites, pools = mpileup_vcfs(tmp_path, FIX / "crisp_vetoed.vcf")
+    controls = [str(FIX / "B73_checks.vcf"), str(FIX / "B73_ERR3288215.vcf")]
+    score.main(["--vcf", str(zero), "--witness", "W", "--controls"] + controls + ["--out", str(tmp_path / "c.tsv.gz")] + SETTINGS)
+    score.main(["--bc1-vcf"] + pools + ["--sites", str(sites), "--controls"] + controls
+               + ["--out", str(tmp_path / "u.tsv.gz"), "--tier-a-vcf", str(tmp_path / "u.tier_a.vcf")] + SETTINGS)
+    crisp, union = read_table(tmp_path / "c.tsv.gz"), read_table(tmp_path / "u.tsv.gz")
+    assert len(union) == 320 and union == crisp
+    assert {r["tier"] for r in union} >= {"A", "ref"}
+
+
+def test_bc1_vcf_site_without_counts(tmp_path):
+    # a site no pool VCF has a record for: no reads, tier "."
+    sites = tmp_path / "sites.vcf"
+    sites.write_text("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\nchr10\t5\t.\tA\tC\t.\t.\t.\n")
+    pool = tmp_path / "P1.vcf"
+    pool.write_text("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tP1\n")
+    score.main(["--bc1-vcf", str(pool), "--sites", str(sites), "--out", str(tmp_path / "u.tsv.gz")] + SETTINGS)
+    (row,) = read_table(tmp_path / "u.tsv.gz")
+    assert (row["n"], row["tier"], row["pool_counts"]) == ("0", ".", "P1:0/0")
+
+
+def test_tier_a_vcf(tmp_path, ours):
+    out = tmp_path / "a.vcf"
+    score.main(["--vcf", str(FIX / "crisp_vetoed.vcf"), "--witness", "W", "--controls", str(FIX / "B73_checks.vcf"),
+                str(FIX / "B73_ERR3288215.vcf"), "--out", str(tmp_path / "s.tsv.gz"), "--tier-a-vcf", str(out)] + SETTINGS)
+    lines = out.read_text().splitlines()
+    # the fixture has no ##contig lines: one per chromosome of its records
+    assert lines[:3] == ["##fileformat=VCFv4.2", "##contig=<ID=chr10>", "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO"]
+    assert [int(x.split("\t")[1]) for x in lines[3:]] == sorted(p for p, r in ours.items() if r["tier"] == "A")
+
+
+@pytest.mark.parametrize("extra", [[], ["--vcf", "x"], ["--vcf", "x", "--witness", "W", "--bc1-vcf", "y", "--sites", "z"],
+                                   ["--bc1-vcf", "y"]])
+def test_input_modes_exclusive(extra):
+    with pytest.raises(SystemExit):
+        score.parse_args(["--out", "x"] + SETTINGS + extra)
