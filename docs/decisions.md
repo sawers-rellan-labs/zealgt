@@ -200,11 +200,14 @@ fqtk runs once per lane, and `CAT_FASTQ` joins each sample's lanes (user). Reaso
 
 ## 2026-10-04 Low-copy BED from bedtools, not a script
 
-- The low-copy BED is rebuilt from the B73 v5 gene and TE GFFs with
-  `bedtools` (`slop`, `subtract`, `merge -d 200`) and a length filter, one recorded command, built once outside the
-  pipeline and passed in like the reference.
-- It replaces zealbc1 `PHG/bin/make_union_bed.py` (13 lines of Python, chr10 hard-coded): a `bedtools merge -d 200`
-  plus a >= 500 bp filter on two BEDs made elsewhere. `zealgt-old/docs/REQUIREMENTS.md` records it as "gene +-500 bp
-  union non-TE intergenic, merged"; the 200 bp gap and 500 bp minimum appear only in the script.
-- Open: how zealbc1 made the script's two input BEDs, so the rebuilt BED can be checked against zealbc1's 8,095 chr10
-  ranges (26.0 Mb).
+- The low-copy BED is built once outside the pipeline, from the B73 v5 gene GFF and the MaizeGDB TE GFF
+  (`Zm-B73-REFERENCE-NAM-5.0.TE.gff3.gz`), with bedtools 2.31.1, and passed in like the reference:
+  - genes: `gene` features, `bedtools slop -b 500`, `bedtools merge`;
+  - non-TE: every TE feature `bedtools merge`d, `bedtools complement`, `bedtools merge -d 200`, ranges >= 500 bp;
+  - low-copy: both together, `bedtools merge -d 200`, ranges >= 500 bp.
+- It replaces zealbc1's chain: PHG `create-ranges --boundary gene --pad 500` for the genes, an inline Python TE
+  complement (`agent/suggested_script_20260919_004007_te_mask_chr10.sh`) and `PHG/bin/make_union_bed.py` (merge, length
+  filter, chr10 hard-coded). The 200 bp gap and 500 bp minimum were recorded only in those scripts.
+- Checked on chr10 (hazel job 1094464): 8,084 ranges, 26.1 Mb vs zealbc1's 8,095 ranges, 26.0 Mb; 8,040 ranges
+  identical, Jaccard 0.9985; the non-TE part identical (9,838 ranges, 20.7 Mb). The rest is near genes: `bedtools merge`
+  joins overlapping padded genes (2,239 ranges) where PHG keeps them apart (about 2,489). Good enough (user).
