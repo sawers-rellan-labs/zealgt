@@ -187,3 +187,13 @@ fqtk runs once per lane, and `CAT_FASTQ` joins each sample's lanes (user). Reaso
   folder from `source`).
 - The `/share` quota is the group's, so the run goes in waves of whole libraries, one sequencing batch per wave, each
   holding at most 2 TB of `work/`; 8 waves, chained, `cleanup` after each. Plan: `docs/runs/demultiplex_production.md`.
+
+## 2026-10-04 No read-start mask in GENOTYPE
+
+- The Twist read structures (2026-10-02 "Read processing, both kits") already skip every non-genomic base at
+  demultiplexing: 96-Plex R1 `8B12S+T` drops the barcode and the 12-nt randomer, R2 `8S+T` the 8-nt randomer; FlexPrep
+  `6B2S+T` drops the barcode and the 2 skip bases on both reads. Only template reaches minibwa.
+- So GENOTYPE has no `MASK_READ_STARTS` and no `READ_POSITION_QC`. zealgt-old needed both because cutadapt removed only
+  the barcode, leaving batch-1 R1 cycles 1-12 and BC1 cycles 1-2 in the reads, and recomputed the mask in five stages.
+- Read-through of the opposite primer at a read's 3' end lies past the mate's end and is soft-clipped by `fgumi clip`
+  in ALIGNMENT.
