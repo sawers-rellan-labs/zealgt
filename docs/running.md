@@ -52,6 +52,21 @@ already in the mount point list` in the task's `.command.err`, skips the duplica
 - Logs to report after every submission: the head log `/share/maize/frodrig4/nf_work/zealgt_head_<job id>.log`, the
   launch directory's `.nextflow.log`, and on failure the task's `.command.err`.
 
+## Slurm jobs outlive their tasks (hazel)
+
+- `squeue` / `sacct` can show more task jobs than `executor.queueSize`; Nextflow still caps its tasks. Its log states
+  the cap (`Creating task monitor for executor 'slurm' > capacity: 40`), and a slot frees when the task writes
+  `.exitcode` (`Task completed` in `.nextflow.log`).
+- The Slurm job ends later, CPU idle: V21 alignment (head job 1103869, 1,057 jobs), Slurm `End` minus Nextflow's
+  `Task completed`: < 1 min 529, 1-5 min 280, 5-30 min 202, > 30 min 46 (FGUMI_CLIP P4088, job 1104382: task 1 min, job
+  58 min, TotalCPU 1 min 49 s). Up to 168 jobs at once against 40 tasks.
+- Every process, 115 nodes, mostly at the run's busiest half hour, longest for the heavy writers (fixmate, sort, merge):
+  likely file closes stalling on `/share` under load; not confirmed. Nextflow's wrapper does nothing after `.exitcode`
+  (26.04.6: no scratch, no `sync`).
+- Effects: disk budgets hold (a finished task writes nothing); idle allocations count against fair-share. Nothing to
+  change on our side.
+- To check a run: compare each job's `Task completed` time in `.nextflow.log` with `sacct -j <ids> -X --format=JobID,End`.
+
 ## What reruns a step on `-resume`
 
 - Reruns: a change to the step's script, inputs, container, the `ext` values its script uses, or its process or calling
