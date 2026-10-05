@@ -27,3 +27,11 @@ for both BC2S3 batches through the same pipeline. Plate V21 (user).
 
 - The run succeeded and `cleanup` emptied its `work/`.
 - 96 CRAMs with CollectWgsMetrics in `ZEAL/alignment/cram/`; MEAN_COVERAGE per sample in the run's report.
+
+## Attempts
+
+- 2026-10-05 08:54, head job 1103869 (tag `align-pilot-20261005`, `--mem=16G`): **succeeded** at 10:45 (1 h 51 min).
+  96 CRAMs with CollectWgsMetrics in `ZEAL/alignment/cram/`.
+- MEAN_COVERAGE median 0.467x (5-95 %: 0.273-0.748x; 0.200-0.873x), none under 0.05x; PCT_EXC_TOTAL median 0.562
+  (batch-1 lines of the pilot: about 0.40). The read-pair estimate (0.68x, calibrated on batch 1) was high because batch 2
+  loses more bases to Picard's exclusions. Per sample: `agent/pilot_align/v21_coverage.tsv` (laptop).
