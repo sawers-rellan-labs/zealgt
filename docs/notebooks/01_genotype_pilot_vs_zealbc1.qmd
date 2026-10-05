@@ -283,8 +283,12 @@ zealgt goes forward as it is (user, 2026-10-05):
 - **Duplicates are marked.** The score treats each read as independent evidence; a PCR copy repeats one fragment and
   adds nothing new. About a quarter of zealbc1's high-confidence variants rest on such copies (sections 5 and 6).
 - **Reads are processed as Twist documents for the kits.** It gives slightly more reads (0-10 % more depth at the
-  variants both pipelines find, likely from the barcode matching) and no sign of artifacts (section 5: read ends and
-  clipped parts look the same in both pipelines). It is also the method that follows the manufacturer's instructions.
+  variants both pipelines find) and no sign of artifacts (section 5: read ends and clipped parts look the same in both
+  pipelines). It is also the method that follows the manufacturer's instructions. The extra reads come from the barcode
+  matching, measured on 5 million read pairs per kit (`docs/later/fqtk_vs_cutadapt.md`, 2026-10-03):
+  - fqtk assigns 2.72 % more pairs for FlexPrep and 1.91 % for 96-Plex;
+  - no pair goes to a different sample;
+  - the estimated cost is at most a few wrongly assigned pairs per million.
 
 The remaining 28 % difference with zealbc1 stays open; zealbc1 is not the truth, and accuracy will be measured on
 simulated data.
