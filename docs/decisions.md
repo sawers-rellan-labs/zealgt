@@ -242,3 +242,22 @@ fqtk runs once per lane, and `CAT_FASTQ` joins each sample's lanes (user). Reaso
   about 3 of it, a small part of the 0.32 % (not counted). The 0.06 % placed elsewhere are expected to be mostly
   mates in repeats, where either placement was already ambiguous (not checked); GENOTYPE works in low-copy regions,
   and the witness veto and the pooled likelihood use many reads per site.
+
+## 2026-10-05 GENOTYPE inputs and discovery outputs (Milestone 7 build choices)
+
+Confirmed by the user from the Milestone 7 report; item 11 for now, open to change.
+
+- `GENOTYPE` reads a CRAM samplesheet with a `wgs_metrics` column; the coverage filter reads MEAN_COVERAGE from it,
+  `--min_mean_coverage` default 0.05.
+- `--b73_controls` is a CSV (`sample_id, cram, crai`), at least one row; the controls are cut to `--region` with
+  `samtools merge -R` and get a read group.
+- `--region` goes to CRISP `--regions`; the low-copy BED is not clipped to it.
+- The witness veto keeps biallelic SNPs only (`-m2 -M2 -v snps`), so the donor VCF holds the same records as the site
+  table, and the any-ALT vs first-ALT question of multi-allelic sites does not arise.
+- The B73 check filter counts each check's ALT share over all check sites, no region filter.
+- `dropped_b73_checks.tsv` lists the dropped checks only (was `b73_checks.tsv`).
+- Roles from `meta/samples.csv`: `bc1_sample`, `nil` (was `line`), `check` with pedigree `B73-bulk`; `landrace_line`
+  stays.
+- Every biallelic SNP gets a site row; tier none is written ".".
+- `--step genotype` requires `--region`, `--lowcopy_bed`, `--check_sites`, `--b73_controls`; `--minibwa_index` only for
+  alignment.

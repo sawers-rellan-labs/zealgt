@@ -30,7 +30,7 @@ workflow GENOTYPE {
     )
 
     emit:
-    discovery_vcf   = CRAM_VARIANT_DISCOVERY_CRISP.out.vcf        // channel: [ meta, vcf.gz, tbi ], one per donor
-    discovery_sites = CRAM_VARIANT_DISCOVERY_CRISP.out.sites      // channel: [ meta, sites.tsv.gz ], one per donor
-    b73_checks      = CRAM_VARIANT_DISCOVERY_CRISP.out.b73_checks // channel: b73_checks.tsv
+    discovery_vcf      = CRAM_VARIANT_DISCOVERY_CRISP.out.vcf                // channel: [ meta, vcf.gz, tbi ], one per donor
+    discovery_sites    = CRAM_VARIANT_DISCOVERY_CRISP.out.sites              // channel: [ meta, sites.tsv.gz ], one per donor
+    dropped_b73_checks = CRAM_VARIANT_DISCOVERY_CRISP.out.dropped_b73_checks // channel: dropped_b73_checks.tsv
 }

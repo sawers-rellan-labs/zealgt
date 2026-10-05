@@ -81,7 +81,7 @@ use and status. The builder reads only listed files and refuses to run on a sha2
   - 50 landrace wells have no J2Teo row and keep the delivered name. The other 29 landrace wells have J2Teo pedigrees (`Zm.…`).
   - `mother_plant` = RR-23-Fields `Sheet12` female parent of the packet.
 - **Batch 2:** the chain is manifest well → plot (CLY24-C8A) → origin packet → J2Teo `All`.
-  - `role`: `B73`/`NC358` → check, `NA` → empty, otherwise line.
+  - `role`: `B73`/`NC358` → check, `NA` → empty, otherwise nil.
   - `mother_plant` = `PV24-block1` female parent of the packet.
   - `replicate_of`: the other sequenced plots sown from the same packet. CLY24-C8A "Bulk Plant to Plant" gives three pairs, each two
     replicate plots of one NIL: P4065/P4066 (PV24-1800), P4153/P4170 (PV24-1887) and P4154/P4169 (PV24-1888). Both wells of each pair

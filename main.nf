@@ -73,7 +73,7 @@ workflow SAWERSRELLANLABS_ZEALGT {
     def ch_multiqc_report = channel.empty()
     def ch_discovery_vcf = channel.empty()
     def ch_discovery_sites = channel.empty()
-    def ch_b73_checks = channel.empty()
+    def ch_dropped_b73_checks = channel.empty()
     if (params.step == 'demultiplex') {
         DEMULTIPLEX(samplesheet, params.head, file(params.multiqc_config ?: "${projectDir}/assets/multiqc_config.yml", checkIfExists: true))
         ch_fastq = DEMULTIPLEX.out.fastq
@@ -89,7 +89,7 @@ workflow SAWERSRELLANLABS_ZEALGT {
         )
         ch_discovery_vcf = GENOTYPE.out.discovery_vcf
         ch_discovery_sites = GENOTYPE.out.discovery_sites
-        ch_b73_checks = GENOTYPE.out.b73_checks
+        ch_dropped_b73_checks = GENOTYPE.out.dropped_b73_checks
     } else {
         ALIGNMENT (
             samplesheet,
@@ -108,13 +108,13 @@ workflow SAWERSRELLANLABS_ZEALGT {
     }
 
     emit:
-    multiqc_report = ch_multiqc_report // channel: /path/to/multiqc_report.html
-    fastq          = ch_fastq          // channel: [ sample_id:, fastq_1:, fastq_2:, source:, library:, lanes:, kit: ], one per sample
-    cram           = ch_cram           // channel: [ meta, cram, crai ], one per sample
-    cram_qc        = ch_cram_qc        // channel: [ meta, file ], several per sample
-    discovery_vcf   = ch_discovery_vcf   // channel: [ meta, vcf.gz, tbi ], one per donor
-    discovery_sites = ch_discovery_sites // channel: [ meta, sites.tsv.gz ], one per donor
-    b73_checks      = ch_b73_checks      // channel: b73_checks.tsv
+    multiqc_report     = ch_multiqc_report     // channel: /path/to/multiqc_report.html
+    fastq              = ch_fastq              // channel: [ sample_id:, fastq_1:, fastq_2:, source:, library:, lanes:, kit: ], one per sample
+    cram               = ch_cram               // channel: [ meta, cram, crai ], one per sample
+    cram_qc            = ch_cram_qc            // channel: [ meta, file ], several per sample
+    discovery_vcf      = ch_discovery_vcf      // channel: [ meta, vcf.gz, tbi ], one per donor
+    discovery_sites    = ch_discovery_sites    // channel: [ meta, sites.tsv.gz ], one per donor
+    dropped_b73_checks = ch_dropped_b73_checks // channel: dropped_b73_checks.tsv
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -161,7 +161,7 @@ workflow {
     cram_qc = SAWERSRELLANLABS_ZEALGT.out.cram_qc
     discovery_vcf = SAWERSRELLANLABS_ZEALGT.out.discovery_vcf
     discovery_sites = SAWERSRELLANLABS_ZEALGT.out.discovery_sites
-    b73_checks = SAWERSRELLANLABS_ZEALGT.out.b73_checks
+    dropped_b73_checks = SAWERSRELLANLABS_ZEALGT.out.dropped_b73_checks
 }
 
 output {
@@ -196,7 +196,7 @@ output {
     discovery_sites {
         path 'genotype/discovery'
     }
-    b73_checks {
+    dropped_b73_checks {
         path 'genotype/discovery'
     }
 }

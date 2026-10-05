@@ -178,14 +178,14 @@ for m in man:
     if re.match(r'^Z[a-z]\.', ped): by_packet[m['Origin']].append('P' + m['Plot_id'])
 for m in man:
     ped = m['Pedigree']; sid = 'P' + m['Plot_id']; fl = []
-    role = 'empty' if ped in ('NA', '') else ('check' if ped in ('B73', 'NC358') else 'line')
-    j = all_by_so.get(m['Origin'], []) if role == 'line' else []
+    role = 'empty' if ped in ('NA', '') else ('check' if ped in ('B73', 'NC358') else 'nil')
+    j = all_by_so.get(m['Origin'], []) if role == 'nil' else []
     jr = j[0] if len(j) == 1 else None
-    if role == 'line' and not jr: fl.append('j2teo_rows=%d' % len(j))
+    if role == 'nil' and not jr: fl.append('j2teo_rows=%d' % len(j))
     if jr and canon(jr['line_id']) != canon(ped): fl.append('manifest_pedigree_differs_from_j2teo')
     pk, instr = c8a.get(m['Plot_id'], ('', ''))
     if pk != m['Origin']: fl.append('cly24_c8a_packet=' + pk)
-    reps = [x for x in by_packet.get(m['Origin'], []) if x != sid] if role == 'line' else []
+    reps = [x for x in by_packet.get(m['Origin'], []) if x != sid] if role == 'nil' else []
     if reps: fl.append('replicate_plots:' + instr)
     pedigree = canon(jr['line_id']) if jr else ('' if role == 'empty' else ped)
     d = base(sample_id=sid, source='bc2s3_batch2', role=role, library=m['Library_pool'], raw_location=f"{RAW_B2}/{libdir[m['Library_pool']]}",
@@ -215,7 +215,7 @@ for r in rd('bc2s3_batch1_sample_sheet.csv'):
     excl = 'plate 1: another project (user 2026-09-24)' if plate == 1 else (
            'LANTEO*: another project (user 2026-09-24)' if g.startswith('LANTEO') else '')
     is_b73 = g.upper().startswith('B73'); is_purple = 'PURPLE' in g.upper()
-    role = 'check' if (is_b73 or is_purple) else ('landrace_line' if re.search(r'_BC1S[0-9]', g) else 'line')
+    role = 'check' if (is_b73 or is_purple) else ('landrace_line' if re.search(r'_BC1S[0-9]', g) else 'nil')
     jr = None
     if role != 'check':                        # well -> tissue plot -> J2Teo All; a plot with 2 rows is decided by its seed packet
         jt, js = all_by_so.get(p.get('tissue', ''), []), all_by_so.get(p.get('seed', ''), [])
@@ -271,7 +271,7 @@ for r in sheet(BRBP, 'library_prep_sheet_code')[1:]:
     if not chk and not jr: fl.append('j2teo_rows=%d' % len(j))
     if jr and canon(jr['line_id']) != canon(g): fl.append('sheet_genotype_differs_from_j2teo')
     if seq not in brb_reads: fl.append('no_trimmed_reads')
-    d = base(sample_id='BRB_' + seq, source='brbseq', role='check' if chk else 'line', library=f'BZeaRP{lib}', library_index=i7,
+    d = base(sample_id='BRB_' + seq, source='brbseq', role='check' if chk else 'nil', library=f'BZeaRP{lib}', library_index=i7,
              barcode_r1=bc, plate=plate, well=well, pedigree=canon(jr['line_id']) if jr else g, is_check='TRUE' if chk else 'FALSE',
              lab_seq_id=seq, delivered_name=g, field='CLY23-D4', field_plot=brb_plot.get((plate, well), ''), seed_packet=origin,
              mother_plant=s12.get(origin, ''), exclude='FALSE', flags=';'.join(fl))

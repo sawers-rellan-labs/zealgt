@@ -15,7 +15,7 @@
             },
             "role": {
                 "type": "string",
-                "enum": ["bc1_sample", "line", "check", "landrace_line", "empty"],
+                "enum": ["bc1_sample", "nil", "check", "landrace_line", "empty"],
                 "errorMessage": "role must be a meta/samples.csv role",
                 "meta": ["role"]
             },

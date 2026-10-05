@@ -39,7 +39,7 @@ nextflow_pipeline {
                 // L_excl excluded), the check pool, the B73 control; one mpileup per donor and B73 control
                 { assert tasks == [CHECK_COUNTS: 2, CHECK_ALT_RATE: 2, SAMTOOLS_MERGE: 4, SAMTOOLS_ADDREPLACERG: 4, SAMTOOLS_INDEX: 4, CRISP: 2,
                                    BED_CLIP: 2, WITNESS_VETO: 2, BCFTOOLS_MPILEUP: 4, POOLED_LIKELIHOOD_TIERS: 2] },
-                // the stub drops no check, so no b73_checks.tsv
+                // the stub drops no check, so no dropped_b73_checks.tsv
                 { assert stable_path.sort() == ['Zx.9001_P1', 'Zx.9002_P1'].collectMany { d ->
                     ["genotype/discovery/${d}.chrA.vcf.gz", "genotype/discovery/${d}.chrA.vcf.gz.tbi", "genotype/discovery/${d}.chrA.sites.tsv.gz"]
                 }*.toString().sort() },
@@ -73,7 +73,7 @@ nextflow_pipeline {
         then {
             def d = "$outputDir/genotype/discovery"
             def sites = path("$d/Zx.9001_P1.chrA_1-5000.sites.tsv.gz").linesGzip.drop(1)*.tokenize('\t')
-            def checks = path("$d/b73_checks.tsv").readLines()*.tokenize('\t')
+            def checks = path("$d/dropped_b73_checks.tsv").readLines()*.tokenize('\t')
             assert workflow.success
             assertAll(
                 // CRISP calls 1000, 1101, 2000, 2500, 4000; 1101 lies one past a range end, the witness has no ALT read at 1000 and 2500
