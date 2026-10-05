@@ -115,7 +115,7 @@ variant is scored.
 ```{r fig-stages, fig.height = 4}
 stg <- fread(file.path(d, "stages.tsv"))
 stage_levels <- c("CRISP, in BED", "after the witness veto", "site table", "tier A")
-stage_labels <- c("called", "supported\nby the lines", "scored", "high\nconfidence")
+stage_labels <- c("called", "supported\nby the lines", "scored\n(all levels)", "high")
 stg[, stage := factor(stage, levels = stage_levels, labels = stage_labels)]
 p1 <- ggplot(stg, aes(stage, records / 1000, fill = pipeline)) +
   geom_col(position = position_dodge(0.75), width = 0.7) +
@@ -127,7 +127,8 @@ tr[, direction := fifelse(
   grepl("^zealbc1", direction), "zealbc1's variants\nmissing in zealgt", "zealgt's variants\nmissing in zealbc1"
 )]
 where_levels <- c("not called by CRISP", "removed by the witness veto", "kept by the veto, not scored")
-tr[, where := factor(where, levels = where_levels, labels = c("never called", "no support in the lines", "other"))]
+where_labels <- c("never called", "no support in the lines", "not a simple SNP in zealbc1")
+tr[, where := factor(where, levels = where_levels, labels = where_labels)]
 p2 <- ggplot(tr, aes(sites / 1000, direction, fill = where)) +
   geom_col(width = 0.6) +
   scale_fill_manual(values = c("#9D755D", "#BAB0AC", "#B279A2")) +
@@ -137,6 +138,8 @@ p1 + p2 + plot_layout(widths = c(1, 1.2))
 ```
 
 The loss is at the very first step: our caller finds a third fewer variants. The later filters are not the cause.
+Only simple SNPs (one base, two alleles) are scored; zealgt drops the others together with the line filter,
+zealbc1 just before scoring.
 
 ## 3. Variants found by both get the same verdict
 
