@@ -21,12 +21,13 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
 
+      # containers even in stub mode: the version commands run
       - name: Stub run per step
         run: |
           G=tests/fixtures/genotype
-          nextflow run . -profile test -stub --step demultiplex --input tests/fixtures/samplesheet.csv --outdir out_demultiplex
-          nextflow run . -profile test -stub --step alignment --read_qc --outdir out_alignment
-          nextflow run . -profile test -stub --step genotype --input $G/samplesheet_cram.csv --b73_controls $G/b73_controls.csv \
+          nextflow run . -profile test,docker -stub --step demultiplex --input tests/fixtures/samplesheet.csv --outdir out_demultiplex
+          nextflow run . -profile test,docker -stub --step alignment --read_qc --outdir out_alignment
+          nextflow run . -profile test,docker -stub --step genotype --input $G/samplesheet_cram.csv --b73_controls $G/b73_controls.csv \
             --lowcopy_bed $G/lowcopy.bed --check_sites $G/check_sites.vcf.gz --region chrA --outdir out_genotype
 
       - name: Process names from the traces
