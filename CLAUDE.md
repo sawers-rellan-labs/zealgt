@@ -29,6 +29,7 @@ the `ALIGNMENT` workflow stops at one CRAM per sample, then the `GENOTYPE` workf
 - No code that checks files, tracks state, caches results or skips tasks: `-resume` and Nextflow's cache do that.
 - A built-in directive or operator first; a custom Groovy function only when none fits, with the reason in the commit message.
 - nf-core modules first; patch them only with `nf-core modules patch`.
+- Established tools (bcftools, bedtools, samtools, ...) before own scripts; an own script only when none fits, with the reason in the commit message.
 - Resources only in config, measured per process; modules read only `task.cpus` and `task.memory`.
 - Comments: one line saying what the code does; history goes in commits.
 - `workflows/<name>.nf`: the list of stage calls only, <= 100 lines.

@@ -6,9 +6,12 @@
 %%metro file: reads_report | HTML
 %%metro line: demultiplex | --step demultiplex | #2db572
 %%metro line: alignment | --step alignment | #0570b0
+%%metro line: genotype | --step genotype | #e6550d
+%%metro file: sites_out | TSV
 %%metro legend: bl
 %%metro grid: demux | 0,0
 %%metro grid: align | 0,1
+%%metro grid: geno | 0,2
 
 graph LR
     subgraph demux [Demultiplex]
@@ -33,6 +36,7 @@ graph LR
 
     subgraph align [Alignment]
         %%metro entry: left | alignment
+        %%metro exit: right | genotype
         split[seqkit split2]
         minibwa[minibwa]
         fgumi[fgumi clip]
@@ -52,4 +56,25 @@ graph LR
     end
 
 
+    subgraph geno [Genotype]
+        %%metro entry: left | genotype
+        cov_filter[coverage filter]
+        check_filter[B73 check filter]
+        merge_pools[samtools merge]
+        crisp[CRISP]
+        veto[witness veto]
+        mpileup_ctrl[mpileup]
+        tiers[LLR tiers]
+        sites_out[sites]
+
+        cov_filter -->|genotype| check_filter
+        check_filter -->|genotype| merge_pools
+        merge_pools -->|genotype| crisp
+        crisp -->|genotype| veto
+        veto -->|genotype| mpileup_ctrl
+        mpileup_ctrl -->|genotype| tiers
+        tiers -->|genotype| sites_out
+    end
+
+    cram_out -->|genotype| cov_filter
     fastq_sheet -->|alignment| split

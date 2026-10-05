@@ -148,3 +148,20 @@ extracted, then lanes and joins). Raw sizes from the lane files on hazel and the
 | 07   | bc2s3_batch1 | BZea2-BZea9 (8)   | 747          | 0.73   | 1.97            | 0.62     |
 | 08   | bc2s3_batch1 | BZea10-BZea17 (8) | 768          | 0.73   | 1.96            | 0.62     |
 | all  |              | 80                | 2,283        | 6.94   | max 1.97        | 5.90     |
+
+## GENOTYPE variant discovery, measured (2026-10-05, Milestone 7, job 1101952)
+
+Donor Zx.0540_P3 on chr10:1-20 Mb: 2 BC1 pools (3.5-5.0x), 4 lines (witness), 3 B73 checks, ERR3288215 (13.3x), all
+from the full split-alignment CRAMs (job 1100086). 3 min 52 s wall, 21 tasks, `hpc_dev` placeholders; too small to set
+whole-chromosome resources (the pilot does).
+
+| process                    | max realtime | max peak RSS | requested         |
+| -------------------------- | ------------ | ------------ | ----------------- |
+| `CHECK_COUNTS`             | 31 s         | 619 MB       | 1 cpu, 2 GB, 1 h  |
+| `CHECK_ALT_RATE`           | < 1 s        | 3.4 MB       | 1 cpu, 1 GB, 1 h  |
+| `SAMTOOLS_MERGE` (pools)   | 7 s          | 327 MB       | 4 cpus, 4 GB, 1 h |
+| `SAMTOOLS_ADDREPLACERG`    | 19 s         | 403 MB       | 2 cpus, 2 GB, 1 h |
+| `CRISP`                    | 45 s         | 196 MB       | 1 cpu, 16 GB, 2 h |
+| `BED_CLIP`, `WITNESS_VETO` | < 1 s        | 3.5 MB       | 1 cpu, 1 GB, 1 h  |
+| `BCFTOOLS_MPILEUP`         | 5 s          | 221 MB       | 1 cpu, 2 GB, 1 h  |
+| `POOLED_LIKELIHOOD_TIERS`  | < 1 s        | 13 MB        | 1 cpu, 4 GB, 1 h  |

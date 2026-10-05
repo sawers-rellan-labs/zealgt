@@ -188,6 +188,41 @@ fqtk runs once per lane, and `CAT_FASTQ` joins each sample's lanes (user). Reaso
 - The `/share` quota is the group's, so the run goes in waves of whole libraries, one sequencing batch per wave, each
   holding at most 2 TB of `work/`; 8 waves, chained, `cleanup` after each. Plan: `docs/runs/demultiplex_production.md`.
 
+## 2026-10-04 No read-start mask in GENOTYPE
+
+- The Twist read structures (2026-10-02 "Read processing, both kits") already skip every non-genomic base at
+  demultiplexing: 96-Plex R1 `8B12S+T` drops the barcode and the 12-nt randomer, R2 `8S+T` the 8-nt randomer; FlexPrep
+  `6B2S+T` drops the barcode and the 2 skip bases on both reads. Only template reaches minibwa.
+- So GENOTYPE has no `MASK_READ_STARTS` and no `READ_POSITION_QC`. zealgt-old needed both because cutadapt removed only
+  the barcode, leaving batch-1 R1 cycles 1-12 and BC1 cycles 1-2 in the reads, and recomputed the mask in five stages.
+- Read-through of the opposite primer at a read's 3' end lies past the mate's end and is soft-clipped by `fgumi clip`
+  in ALIGNMENT.
+
+## 2026-10-04 Low-copy BED from bedtools, not a script
+
+- The low-copy BED is built once outside the pipeline, from the B73 v5 gene GFF and the MaizeGDB TE GFF
+  (`Zm-B73-REFERENCE-NAM-5.0.TE.gff3.gz`), with bedtools 2.31.1, and passed in like the reference:
+  - genes: `gene` features, `bedtools slop -b 500`, `bedtools merge`;
+  - non-TE: every TE feature `bedtools merge`d, `bedtools complement`, `bedtools merge -d 200`, ranges >= 500 bp;
+  - low-copy: both together, `bedtools merge -d 200`, ranges >= 500 bp.
+- It replaces zealbc1's chain: PHG `create-ranges --boundary gene --pad 500` for the genes, an inline Python TE
+  complement (`agent/suggested_script_20260919_004007_te_mask_chr10.sh`) and `PHG/bin/make_union_bed.py` (merge, length
+  filter, chr10 hard-coded). The 200 bp gap and 500 bp minimum were recorded only in those scripts.
+- Checked on chr10 (hazel job 1094464): 8,084 ranges, 26.1 Mb vs zealbc1's 8,095 ranges, 26.0 Mb; 8,040 ranges
+  identical, Jaccard 0.9985; the non-TE part identical (9,838 ranges, 20.7 Mb). The rest is near genes: `bedtools merge`
+  joins overlapping padded genes (2,239 ranges) where PHG keeps them apart (about 2,489). Good enough (user).
+
+## 2026-10-04 zealbc1 is a comparison, not a target
+
+- GENOTYPE follows its specs; zealbc1 outputs are for comparison, close but not identical (user). Milestone 7's tier A
+  keeps zealbc1's `inconsistent` flag: the first spec draft dropped it without a reason (user).
+- "Close enough" at the mosaic (ancestry) level: Dice–Sørensen > 90 % (user); no metric computed yet.
+
+## 2026-10-05 CRISP pool size: -p 12 for every pool
+
+- `-p 12` (6 plants x 2 haplotypes) is what matters for the BC1 pools. The witness pool gets the same 12: at its low
+  coverage the number of lines would not change the calls, so no per-pool sizes in the `--bams` file (user).
+
 ## 2026-10-05 Split alignment: insert size estimated from the sample, as sarek
 
 - Why split: one map, clip and fixmate chain per full BC1 library needs 6 h and 16 cpus on `compute` / normal, where
