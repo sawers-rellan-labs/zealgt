@@ -275,3 +275,16 @@ The missing variants are spread along the whole chromosome, not clustered in one
 With duplicates counted, 28 % of the variants still differ. That comes from how each pipeline cleaned the reads before
 alignment (barcode matching, adapter trimming, mapping-quality filter). Testing each step means realigning all 5 BC1
 samples per step, and would only compare two cleaning recipes. Accuracy will be measured on simulated data instead.
+
+## Closing: could a smarter deduplication recover good reads?
+
+zealgt marks duplicates by position: two read pairs are copies when their fragments start and end at the same places.
+Deduplication with molecular barcodes (UMIs) would keep independent fragments that happen to share both ends. For this
+data the gain would be small:
+
+- **The BC1 libraries carry no molecular barcode.** Their read layout is barcode, 2 skipped bases, then DNA; there is
+  nothing to deduplicate with. Batch 1 has random bases at the read starts, but they are not recorded as UMIs.
+- **At 3-5x coverage, chance matches are rare.** Two independent fragments seldom share both ends, so most of the
+  12-17 % of reads marked as duplicates here are true PCR or optical copies.
+
+Position-based duplicate marking stays: it is what makes each read independent evidence.
