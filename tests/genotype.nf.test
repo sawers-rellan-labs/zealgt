@@ -18,7 +18,7 @@ nextflow_pipeline {
                 sheet.parentFile.mkdirs()
                 sheet.text = new File("$baseDir/tests/fixtures/genotype/$name").text.replace('tests/fixtures/', "$baseDir/tests/fixtures/")
                 sheet.path
-            }
+            }.toList() // a bare closing brace here ends nf-core lint's scan of the when block before params
             params {
                 outdir = "$outputDir"
                 input        = cram_sheet
@@ -58,7 +58,7 @@ nextflow_pipeline {
                 sheet.parentFile.mkdirs()
                 sheet.text = new File("$baseDir/tests/fixtures/genotype/$name").text.replace('tests/fixtures/', "$baseDir/tests/fixtures/")
                 sheet.path
-            }
+            }.toList() // a bare closing brace here ends nf-core lint's scan of the when block before params
             params {
                 outdir = "$outputDir"
                 input        = cram_sheet
