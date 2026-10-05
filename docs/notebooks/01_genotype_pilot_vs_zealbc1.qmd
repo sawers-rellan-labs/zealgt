@@ -32,6 +32,20 @@ here means shared variants divided by all variants found by either.
   alignment. Not pursued: it would compare two cleaning recipes, not accuracy.
 :::
 
+**Confidence levels.** Each variant gets a score: how much better "real variant" explains its reads than "sequencing
+error", as odds on a log scale (zealbc1 and zealgt use the same rules).
+
+| Label here | Pipeline tier | Rule |
+|---|---|---|
+| high | A | odds ≥ 1,000 : 1 (score ≥ 6.9), variant reads in ≥ 2 BC1 samples, no warning |
+| medium | B | odds ≥ 100 : 1 (score ≥ 4.6), no depth warning |
+| low | C | odds ≥ 9 : 1 (score ≥ 2.2) |
+| B73 allele | ref | odds ≥ 55 : 1 for error (score ≤ −4), ≥ 12 reads |
+| rejected | none | anything else |
+
+Warnings: *too deep* (over twice the usual read depth, a likely repeat), *over half variant reads* (more than a BC1
+sample can carry), *contradictory* (one BC1 sample with ≥ 3 variant reads while another has ≥ 10 reads and none).
+
 ```{r setup}
 library(data.table)
 library(ggplot2)
