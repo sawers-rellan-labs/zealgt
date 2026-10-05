@@ -20,6 +20,9 @@ process SEQKIT_SPLIT2 {
     script:
     def args = task.ext.args ?: ''
     prefix = task.ext.prefix ?: "${meta.id}"
+    // seqkit writes no part for an empty input: then one empty part_001 per read
+    def parts = [reads].flatten().collect { f -> f.name.replaceFirst(/(\.f(ast)?q(\.gz)?)$/, '.part_001$1') }
+    def empty = parts.collect { f -> "printf '' | gzip > ${prefix}/${f}" }.join('; ')
     if (meta.single_end) {
         """
         seqkit \\
@@ -28,6 +31,8 @@ process SEQKIT_SPLIT2 {
             --threads ${task.cpus} \\
             ${reads} \\
             --out-dir ${prefix}
+
+        ls ${prefix}/* > /dev/null 2>&1 || { mkdir -p ${prefix}; ${empty}; }
         """
     }
     else {
@@ -39,6 +44,8 @@ process SEQKIT_SPLIT2 {
             --read1 ${reads[0]} \\
             --read2 ${reads[1]} \\
             --out-dir ${prefix}
+
+        ls ${prefix}/* > /dev/null 2>&1 || { mkdir -p ${prefix}; ${empty}; }
         """
     }
 
