@@ -257,6 +257,39 @@ The likelihood ratio models sequencing error but not artifacts; a site that is t
 clean in the B73 pools is independent evidence that the site is real, which is what the prior carries. A mis-mapped paralog shows ALT in all
 donors, so sharing alone does not separate real alleles from artifacts; the B73 zero class and the flags do.
 
+\paragraph{Expected prior from the teosinte panel.} $\mu_d$ and the $k$, $m$ of Eq.~\eqref{eq:eb} are estimated within a run, from the
+donors' own calls, so no external prior is needed. Their expected values come from a genotyped panel, without assemblies. For
+individual $i$ at site $s$, $q_i(s)=G_i(s)/2$ is the probability that its gamete carries ALT ($G_i\in\{0,1,2\}$ ALT copies). For a donor
+of taxon $B$ given a donor of taxon $A$ that carries the allele,
+\begin{equation}
+c_{AB}=\frac{\sum_{i\in A}\sum_{j\in B,\,j\ne i}\sum_s q_i(s)\,q_j(s)}{\sum_{i\in A}\sum_{j\in B,\,j\ne i}\sum_s q_i(s)\,\mathbb{1}[j\text{ called at }s]}
+\;\approx\;\frac{E_s[p_A(s)\,p_B(s)]}{E_s[p_A(s)]},
+\label{eq:panelprior}
+\end{equation}
+the probability that $j$'s gamete carries ALT given that $i$'s does, with $p_A(s)$ the ALT frequency in taxon $A$. It is the quantity
+$\mu_d$ estimates (with $B$ the donor's taxon and $A$ the taxa of the other donors). The unconditional rate is $d_B=E_s[p_B(s)]$, the
+transmitted donor dose. Within a taxon $c_{BB}=E[p_B^2]/E[p_B]\ge E[p_B]=d_B$, so the prior mean of Eq.~\eqref{eq:eb} lies above
+$d_B$ even when nothing is wrong. On the teosinte panel of \citet{grzybowski2023} (217 individuals, 49{,}002 SNP50K sites, biallelic,
+minor allele frequency $\ge0.05$; ``other'' = diploperennis, luxurians and huehuetenangensis, the cluster these donors form in the
+ZEAL PCA):
+\begin{center}
+\begin{tabular}{lrcccc}
+\toprule
+donor taxon $B$ & $n$ & $d_B$ & $c_{\text{mexicana},B}$ & $c_{\text{parviglumis},B}$ & $c_{\text{other},B}$\\
+\midrule
+mexicana & 79 & 0.312 & 0.662 & 0.567 & 0.453\\
+parviglumis & 88 & 0.264 & 0.482 & 0.551 & 0.401\\
+other & 15 & 0.332 & 0.485 & 0.504 & 0.677\\
+\bottomrule
+\end{tabular}
+\end{center}
+Sharing within a group is about twice $d_B$, and the ``other'' group shares most within itself (0.68; luxurians, diploperennis and
+nicaraguensis each 0.64--0.70 with it), which supports taking the prior donors of Eq.~\eqref{eq:eb} from the donor's group. The panel
+sites are common variants, while tier-A sites also include rare and private alleles, so these values are upper bounds for $\mu_d$: the
+two mexicana pilot donors gave $\mu_d=0.52$ and $0.44$ (chr10:1--20\,Mb), between $d$ and $c_{\text{mexicana},\text{mexicana}}$. The
+simulated QC set (inbred assembly founders Gigi and TIL18, all assembly SNPs) gave $\mu_d=0.24$ and $0.20$, below both; it does not
+model outbred donors. A run's $\mu_d$ outside $[d_B,\,c_{BB}]$ flags the donor.
+
 \subsection{Gap filling, step 2: evidence from the lines}
 \label{sec:step2}
 Equation~\eqref{eq:eb} leaves a gap missing when the BC$_1$ reads are neither REF (tier \code{ref}) nor ALT at posterior $\ge0.999$. The
@@ -385,6 +418,9 @@ expectation for bulks of a BC$_2$S$_2$ parent. \todo{derive the expected segment
 \bibitem[Bansal(2010)]{bansal2010crisp} Bansal V. 2010. A statistical method for the detection of variants from next-generation
 resequencing of DNA pools. \textit{Bioinformatics} 26:i318--i324.
 \bibitem[Campos-Martin et~al.(2023)]{campos2023rtiger} Campos-Martin R, et al. 2023. RTIGER. \todo{full citation: title and journal not checked}
+\bibitem[Grzybowski et~al.(2023)]{grzybowski2023} Grzybowski MW, Mural RV, Xu G, Turkus J, Yang J, Schnable JC. 2023. A common
+resequencing-based genetic marker data set for global maize diversity. \textit{The Plant Journal} 113(6):1109--1121.
+doi:10.1111/tpj.16123.
 \bibitem[Huang et~al.(2015)]{huang2015pooled} Huang HW, Mullikin JC, Hansen NF. 2015. Evaluation of variant detection software for pooled
 next-generation sequence data. \textit{BMC Bioinformatics} 16:235.
 \bibitem[Van~der Auwera et~al.(2013)]{vanderauwera2013} Van der Auwera GA, Carneiro MO, Hartl C, Poplin R, et al. 2013. From FastQ data to
