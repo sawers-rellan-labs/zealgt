@@ -2,6 +2,12 @@
     "--step genotype - stub": {
         "content": [
             {
+                "ANCESTRY_GRID": {
+                    "nilHMM": "0.3.1"
+                },
+                "ANCESTRY_VCF_INDEX": {
+                    "bcftools": "1.23.1"
+                },
                 "BCFTOOLS_MERGE": {
                     "bcftools": "1.23.1"
                 },
@@ -17,10 +23,16 @@
                 "BIALLELIC_UNION": {
                     "bcftools": "1.23.1"
                 },
+                "CALL_ANCESTRY": {
+                    "nilHMM": "0.3.1"
+                },
                 "CHECK_ALT_RATE": {
                     "bcftools": "1.23.1"
                 },
                 "CHECK_COUNTS": {
+                    "bcftools": "1.23.1"
+                },
+                "COUNT_LINES": {
                     "bcftools": "1.23.1"
                 },
                 "COUNT_UNION": {
@@ -58,6 +70,17 @@
                 }
             },
             [
+                "genotype/ancestry/Zx.9001_P1.chrA.ancestry.vcf.gz",
+                "genotype/ancestry/Zx.9001_P1.chrA.ancestry.vcf.gz.tbi",
+                "genotype/ancestry/Zx.9001_P1.chrA.dropped_lines.tsv",
+                "genotype/ancestry/Zx.9001_P1.chrA.rqtl.csv",
+                "genotype/ancestry/Zx.9001_P1.chrA.segments.bed",
+                "genotype/ancestry/Zx.9002_P1.chrA.ancestry.vcf.gz",
+                "genotype/ancestry/Zx.9002_P1.chrA.ancestry.vcf.gz.tbi",
+                "genotype/ancestry/Zx.9002_P1.chrA.dropped_lines.tsv",
+                "genotype/ancestry/Zx.9002_P1.chrA.rqtl.csv",
+                "genotype/ancestry/Zx.9002_P1.chrA.segments.bed",
+                "genotype/ancestry/chrA.grid.tsv",
                 "genotype/discovery/Zx.9001_P1.chrA.sites.tsv.gz",
                 "genotype/discovery/Zx.9001_P1.chrA.vcf.gz",
                 "genotype/discovery/Zx.9001_P1.chrA.vcf.gz.tbi",
@@ -70,7 +93,7 @@
                 "genotype/union/chrA.union.vcf.gz.tbi"
             ]
         ],
-        "timestamp": "2026-10-05T19:20:44.309478",
+        "timestamp": "2026-10-05T21:28:16.128461",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

@@ -151,6 +151,14 @@
                     "minimum": 0,
                     "description": "Samples whose CollectWgsMetrics MEAN_COVERAGE is under this are dropped before genotyping.",
                     "fa_icon": "fas fa-filter"
+                },
+                "genetic_map": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.tsv$",
+                    "description": "Genetic map (TSV: chr, bp, cm; chr without 'chr') for the ancestry grid; unset: nilHMM's bundled B73 v5 map.",
+                    "fa_icon": "fas fa-map"
                 }
             }
         },

@@ -184,3 +184,17 @@ chr10 run plan.
 | `DONOR_ALLELES_INDEX` | 1     | < 1 s        | 3.5 MB       |
 
 `DONOR_ALLELES_INDEX` was folded into `FILL_DONOR_ALLELES` afterwards: pysam writes the `.vcf.gz` and its `.tbi`.
+
+### Ancestry with RTIGER (Milestone 9), whole chr10
+
+Both pilot donors on the whole chr10 (`hpc_dev`, jobs 1113306 and 1113622, resuming job 1111642): 82 lines counted at
+their donor's tier-A sites (32,750 and 48,251), RTIGER on 39 and 43 lines, the grid from 70,210 union sites. Every
+ancestry process stays under 400 MB and 1 min, so `hpc_dev` and `hpc_prod` give each 1 cpu, 1 GB, 1 h. RTIGER runs on
+one thread (nilhmm#31).
+
+| process              | tasks | max realtime | max peak RSS |
+| -------------------- | ----- | ------------ | ------------ |
+| `COUNT_LINES`        | 82    | 3.9 s        | 241 MB       |
+| `CALL_ANCESTRY`      | 2     | 49 s         | 393 MB       |
+| `ANCESTRY_GRID`      | 1     | 1.9 s        | 51.9 MB      |
+| `ANCESTRY_VCF_INDEX` | 2     | < 1 s        | 4.2 MB       |

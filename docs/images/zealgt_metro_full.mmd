@@ -13,6 +13,9 @@
 %%metro file: sites_out | TSV
 %%metro file: union_out | VCF
 %%metro file: alleles_out | VCF
+%%metro file: segments_out | BED
+%%metro file: rqtl_out | CSV
+%%metro file: ancestry_out | VCF
 %%metro legend: bl
 %%metro grid: demux | 0,0
 %%metro grid: align | 0,1
@@ -52,6 +55,10 @@
 %%metro process: count_union | COUNT_UNION
 %%metro process: union_tiers | UNION_TIERS
 %%metro process: fill | FILL_DONOR_ALLELES
+%%metro process: count_lines | COUNT_LINES
+%%metro process: rtiger | CALL_ANCESTRY
+%%metro process: grid | ANCESTRY_GRID
+%%metro process: index_ancestry | ANCESTRY_VCF_INDEX
 
 graph LR
     subgraph demux [Demultiplex]
@@ -125,16 +132,23 @@ graph LR
         veto[witness veto]
         vcf_out[ ]
         mpileup_ctrl[mpileup]
-        tiers[LLR tiers]
+        tiers[pooled likelihood]
         sites_out[ ]
         merge_union[merge]
         norm_union[norm]
         biallelic[biallelic]
         union_out[ ]
         count_union[mpileup union]
-        union_tiers[LLR union]
-        fill[donor alleles]
+        union_tiers[pooled likelihood (union)]
+        fill[gap filling]
         alleles_out[ ]
+        count_lines[mpileup lines]
+        rtiger[RTIGER]
+        segments_out[ ]
+        grid[0.1 cM grid]
+        rqtl_out[ ]
+        index_ancestry[index]
+        ancestry_out[ ]
 
         cov_filter -->|genotype| check_counts
         check_counts -->|genotype| check_rate
@@ -160,6 +174,15 @@ graph LR
         count_union -->|genotype| union_tiers
         union_tiers -->|genotype| fill
         fill -->|genotype| alleles_out
+        tiers -->|genotype| count_lines
+        cov_filter -->|genotype| count_lines
+        count_lines -->|genotype| rtiger
+        rtiger -->|genotype| segments_out
+        rtiger -->|genotype| grid
+        biallelic -->|genotype| grid
+        grid -->|genotype| rqtl_out
+        grid -->|genotype| index_ancestry
+        index_ancestry -->|genotype| ancestry_out
     end
 
     fastq_sheet -->|alignment| split

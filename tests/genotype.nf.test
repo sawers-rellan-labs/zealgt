@@ -26,6 +26,7 @@ nextflow_pipeline {
                 b73_controls = controls_sheet
                 lowcopy_bed  = "$baseDir/tests/fixtures/genotype/lowcopy.bed"
                 check_sites  = "$baseDir/tests/fixtures/genotype/check_sites.vcf.gz"
+                genetic_map  = "$baseDir/tests/fixtures/genotype/chrA_map.tsv"
                 region       = 'chrA'
             }
         }
@@ -37,15 +38,19 @@ nextflow_pipeline {
             assertAll(
                 // 2 donors; B73-bulk checks C_1, C_2 (C_3 is a Purple check); pools: 2 witnesses (L_low under 0.05x,
                 // L_excl excluded), the check pool, the B73 control; one mpileup per donor and B73 control;
-                // one union; one union count per BC1 sample (4) and B73 control (the check pool, B73_ctrl)
+                // one union; one union count per BC1 sample (4) and B73 control (the check pool, B73_ctrl);
+                // one count per line (L_1, M_1), one RTIGER call per donor, one grid, one VCF per donor
                 { assert tasks == [CHECK_COUNTS: 2, CHECK_ALT_RATE: 2, SAMTOOLS_MERGE: 4, SAMTOOLS_ADDREPLACERG: 4, SAMTOOLS_INDEX: 4, CRISP: 2,
                                    BED_CLIP: 2, WITNESS_VETO: 2, BCFTOOLS_MPILEUP: 4, POOLED_LIKELIHOOD_TIERS: 2,
                                    BCFTOOLS_MERGE: 1, BCFTOOLS_NORM: 1, BIALLELIC_UNION: 1, COUNT_UNION: 6, UNION_TIERS: 2,
-                                   FILL_DONOR_ALLELES: 1] },
+                                   FILL_DONOR_ALLELES: 1, COUNT_LINES: 2, CALL_ANCESTRY: 2, ANCESTRY_GRID: 1, ANCESTRY_VCF_INDEX: 2] },
                 // the stub drops no check, so no dropped_b73_checks.tsv
                 { assert stable_path.sort() == (['Zx.9001_P1', 'Zx.9002_P1'].collectMany { d ->
                     ["genotype/discovery/${d}.chrA.vcf.gz", "genotype/discovery/${d}.chrA.vcf.gz.tbi", "genotype/discovery/${d}.chrA.sites.tsv.gz"]
                 } + ['union', 'donor_alleles'].collectMany { f -> ["genotype/union/chrA.${f}.vcf.gz", "genotype/union/chrA.${f}.vcf.gz.tbi"] }
+                  + ['Zx.9001_P1', 'Zx.9002_P1'].collectMany { d ->
+                    ['segments.bed', 'dropped_lines.tsv', 'rqtl.csv', 'ancestry.vcf.gz', 'ancestry.vcf.gz.tbi'].collect { f -> "genotype/ancestry/${d}.chrA.${f}" }
+                } + ['genotype/ancestry/chrA.grid.tsv']
                 )*.toString().sort() },
                 // software versions as in the other pipeline tests
                 { assert snapshot(removeNextflowVersion("$outputDir/pipeline_info/zealgt_software_mqc_versions.yml"), stable_path.sort()).match() }
@@ -70,6 +75,7 @@ nextflow_pipeline {
                 b73_controls = controls_sheet
                 lowcopy_bed  = "$baseDir/tests/fixtures/genotype/lowcopy.bed"
                 check_sites  = "$baseDir/tests/fixtures/genotype/check_sites.vcf.gz"
+                genetic_map  = "$baseDir/tests/fixtures/genotype/chrA_map.tsv"
                 region       = 'chrA:1-5000'
             }
         }
@@ -80,6 +86,8 @@ nextflow_pipeline {
             def checks = path("$d/dropped_b73_checks.tsv").readLines()*.tokenize('\t')
             def u = "$outputDir/genotype/union"
             def alleles = path("$u/chrA_1-5000.donor_alleles.vcf.gz").linesGzip.findAll { l -> !l.startsWith('#') }*.tokenize('\t')
+            def a = "$outputDir/genotype/ancestry"
+            def ancestry = path("$a/Zx.9001_P1.chrA_1-5000.ancestry.vcf.gz").linesGzip.findAll { l -> !l.startsWith('##') }*.tokenize('\t')
             assert workflow.success
             assertAll(
                 // CRISP calls 1000, 1101, 2000, 2500, 4000; 1101 lies one past a range end, the witness has no ALT read at 1000 and 2500
@@ -90,7 +98,14 @@ nextflow_pipeline {
                 { assert checks*.getAt(0) == ['sample_id', 'C_2'] && (checks[1][3] as double) > 0.01 },
                 // both donors (the same BC1 CRAMs) own both sites: the union, and ALT in both at prior (2 x 0.5 + 1) / (2 + 1)
                 { assert path("$u/chrA_1-5000.union.vcf.gz").linesGzip.findAll { l -> !l.startsWith('#') }*.tokenize('\t')*.getAt(1) == ['2000', '4000'] },
-                { assert alleles*.getAt(1) == ['2000', '4000'] && alleles.every { r -> r[9..10].every { c -> c ==~ /1:[0-9.]+:0\.66666?7:1:own/ } } }
+                { assert alleles*.getAt(1) == ['2000', '4000'] && alleles.every { r -> r[9..10].every { c -> c ==~ /1:[0-9.]+:0\.66666?7:1:own/ } } },
+                // ancestry: L_1 (the witness reads, ALT at both sites) one het segment over both tier-A sites, none dropped (r 1, cut 2)
+                { assert path("$a/Zx.9001_P1.chrA_1-5000.segments.bed").readLines() == ['#chrom\tstart\tend\tline\tstate', 'chrA\t1999\t4000\tL_1\t1'] },
+                { assert path("$a/Zx.9001_P1.chrA_1-5000.dropped_lines.tsv").readLines() == ['line\tcovered_markers\tcut'] },
+                // the grid: both union sites, 2 cM apart on the chrA map; R/qtl and VCF read at it
+                { assert path("$a/chrA_1-5000.grid.tsv").readLines()*.tokenize('\t')*.getAt(0) == ['marker', 'chrA_2000', 'chrA_4000'] },
+                { assert path("$a/Zx.9001_P1.chrA_1-5000.rqtl.csv").readLines() == ['id,,,L_1', 'chrA_2000,A,2.0000,1', 'chrA_4000,A,4.0000,1'] },
+                { assert ancestry[0][9] == 'L_1' && ancestry.drop(1).collect { r -> [r[1], r[9]] } == [['2000', '0/1'], ['4000', '0/1']] }
             )
         }
     }

@@ -368,9 +368,18 @@ better truth about homology.
 \label{sec:checks}
 %======================================================================
 
-\paragraph{Ancestry inference.} Per line, RTIGER \citep{campos2023rtiger} on the donor's own tier-A sites (rigidity 500; RTIGER learns its transition and emission parameters from the data, so no design prior enters). Lines with any chromosome below $2\times$ rigidity covered markers are excluded before inference
-gives segments with dosage $x\in\{0,1,2\}$. These feed the QTL scan (R/qtl \code{bcsft}, Haley--Knott) on a 0.1\,cM grid built from the
-union markers.
+\paragraph{Ancestry inference.} Per donor and chromosome, RTIGER \citep{campos2023rtiger} (nilHMM's port) on the donor's own tier-A
+sites, with the REF and donor-ALT read counts of each line; RTIGER learns its transition and emission parameters from the data, so no
+design prior enters. Rigidity $r=\max(1,\operatorname{round}(0.005\,n_d))$, with $n_d$ the donor's tier-A sites on the chromosome (an
+Arabidopsis 250 per $\sim$50\,k SNPs carried over as a ratio). A line with fewer than $2r$ covered markers (at least one read) on the
+chromosome is excluded before inference: RTIGER stops below that. The states are RTIGER's single-plant dosages $x\in\{0,1,2\}$, read as
+they are although each line is a bulk (Text~\ref{sec:bulk}). Inference gives segments, from a run's first marker to its last.
+
+\paragraph{Grid.} The union sites, placed on the B73 v5 consensus map (a monotone spline through its bp--cM pairs), thinned to markers
+at least 0.1\,cM apart by the greedy sweep (sort by cM, keep the first, skip all within 0.1\,cM; exact on a line,
+\citealp{jena2018mddis}); one grid per chromosome, shared by all donors. Each line's segments are read at the grid; a marker between two
+segments is missing. These feed the QTL scan (R/qtl \code{bcsft}, BC$_2$S$_2$, Haley--Knott), one population per donor, and a VCF
+whose genotype is the ancestry dosage on the union site's REF and ALT.
 
 \paragraph{Genotype imputation.} Per donor, a two-founder PHG graph (B73 and the donor founder built from $D_{d\cdot}$ on $U$), imputing
 only that donor's lines, rasterised at $U$ (Eq.~\eqref{eq:projection}). These feed GWAS.
@@ -385,6 +394,8 @@ expectation for bulks of a BC$_2$S$_2$ parent. \todo{derive the expected segment
 \bibitem[Bansal(2010)]{bansal2010crisp} Bansal V. 2010. A statistical method for the detection of variants from next-generation
 resequencing of DNA pools. \textit{Bioinformatics} 26:i318--i324.
 \bibitem[Campos-Martin et~al.(2023)]{campos2023rtiger} Campos-Martin R, et al. 2023. RTIGER. \todo{full citation: title and journal not checked}
+\bibitem[Jena et~al.(2018)]{jena2018mddis} Jena SK, Jallu RK, Das GK, Nandy SC. 2018. The maximum distance-$d$ independent set
+problem on unit disk graphs. \textit{Frontiers in Algorithmics (FAW 2018)}, LNCS, Springer. \todo{volume and pages not checked}
 \bibitem[Huang et~al.(2015)]{huang2015pooled} Huang HW, Mullikin JC, Hansen NF. 2015. Evaluation of variant detection software for pooled
 next-generation sequence data. \textit{BMC Bioinformatics} 16:235.
 \bibitem[Van~der Auwera et~al.(2013)]{vanderauwera2013} Van der Auwera GA, Carneiro MO, Hartl C, Poplin R, et al. 2013. From FastQ data to

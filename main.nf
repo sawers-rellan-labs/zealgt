@@ -76,6 +76,7 @@ workflow SAWERSRELLANLABS_ZEALGT {
     def ch_dropped_b73_checks = channel.empty()
     def ch_union = channel.empty()
     def ch_donor_alleles = channel.empty()
+    def ch_ancestry = channel.empty()
     if (params.step == 'demultiplex') {
         DEMULTIPLEX(samplesheet, params.head, file(params.multiqc_config ?: "${projectDir}/assets/multiqc_config.yml", checkIfExists: true))
         ch_fastq = DEMULTIPLEX.out.fastq
@@ -88,12 +89,14 @@ workflow SAWERSRELLANLABS_ZEALGT {
             params.check_sites,
             params.max_check_alt_rate,
             params.min_mean_coverage,
+            params.genetic_map,
         )
         ch_discovery_vcf = GENOTYPE.out.discovery_vcf
         ch_discovery_sites = GENOTYPE.out.discovery_sites
         ch_dropped_b73_checks = GENOTYPE.out.dropped_b73_checks
         ch_union = GENOTYPE.out.union
         ch_donor_alleles = GENOTYPE.out.donor_alleles
+        ch_ancestry = GENOTYPE.out.ancestry
     } else {
         ALIGNMENT (
             samplesheet,
@@ -121,6 +124,7 @@ workflow SAWERSRELLANLABS_ZEALGT {
     dropped_b73_checks = ch_dropped_b73_checks // channel: dropped_b73_checks.tsv
     union              = ch_union              // channel: [ meta, vcf.gz, tbi ]
     donor_alleles      = ch_donor_alleles      // channel: [ meta, vcf.gz, tbi ]
+    ancestry           = ch_ancestry           // channel: [ meta, files ], the grid and each donor's mosaic outputs
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -170,6 +174,7 @@ workflow {
     dropped_b73_checks = SAWERSRELLANLABS_ZEALGT.out.dropped_b73_checks
     union = SAWERSRELLANLABS_ZEALGT.out.union
     donor_alleles = SAWERSRELLANLABS_ZEALGT.out.donor_alleles
+    ancestry = SAWERSRELLANLABS_ZEALGT.out.ancestry
 }
 
 output {
@@ -213,6 +218,10 @@ output {
     }
     donor_alleles {
         path 'genotype/union'
+    }
+    // each donor's mosaic (segments, dropped lines, R/qtl, VCF) and the R/qtl grid
+    ancestry {
+        path 'genotype/ancestry'
     }
 }
 

@@ -7,7 +7,10 @@
 %%metro line: demultiplex | --step demultiplex | #2db572
 %%metro line: alignment | --step alignment | #0570b0
 %%metro line: genotype | --step genotype | #e6550d
-%%metro file: sites_out | TSV
+%%metro file: b73_in | CRAM | B73 checks
+%%metro file: alleles_out | VCF | donor alleles
+%%metro file: ancestry_out | VCF | ancestry
+%%metro off_track: b73_in
 %%metro legend: bl
 %%metro grid: demux | 0,0
 %%metro grid: align | 0,1
@@ -58,29 +61,28 @@ graph LR
 
     subgraph geno [Genotype]
         %%metro entry: left | genotype
-        cov_filter[coverage filter]
-        check_filter[B73 check filter]
-        merge_pools[samtools merge]
         crisp[CRISP]
         veto[witness veto]
-        mpileup_ctrl[mpileup]
-        tiers[LLR tiers]
-        sites_out[sites]
+        b73_in[ ]
+        tiers[pooled likelihood]
         union[sites union]
-        fill[donor alleles]
+        fill[gap filling]
         alleles_out[donor alleles]
+        rtiger[RTIGER]
+        grid[0.1 cM grid]
+        ancestry_out[ancestry]
 
-        cov_filter -->|genotype| check_filter
-        check_filter -->|genotype| merge_pools
-        merge_pools -->|genotype| crisp
         crisp -->|genotype| veto
-        veto -->|genotype| mpileup_ctrl
-        mpileup_ctrl -->|genotype| tiers
-        tiers -->|genotype| sites_out
+        veto -->|genotype| tiers
+        b73_in -->|genotype| tiers
         tiers -->|genotype| union
         union -->|genotype| fill
         fill -->|genotype| alleles_out
+        tiers -->|genotype| rtiger
+        rtiger -->|genotype| grid
+        union -->|genotype| grid
+        grid -->|genotype| ancestry_out
     end
 
-    cram_out -->|genotype| cov_filter
+    cram_out -->|genotype| crisp
     fastq_sheet -->|alignment| split
