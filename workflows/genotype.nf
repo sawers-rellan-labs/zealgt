@@ -1,5 +1,6 @@
 include { CRAM_VARIANT_DISCOVERY_CRISP } from '../subworkflows/local/cram_variant_discovery_crisp/main'
 include { SITES_UNION_GAPFILL          } from '../subworkflows/local/sites_union_gapfill/main'
+include { CRAM_ANCESTRY_RTIGER         } from '../subworkflows/local/cram_ancestry_rtiger/main'
 include { samplesheetToList            } from 'plugin/nf-schema'
 
 workflow GENOTYPE {
@@ -11,6 +12,7 @@ workflow GENOTYPE {
     check_sites        // string: VCF of the sites the B73 check filter counts
     max_check_alt_rate // number: B73 checks with a larger share of ALT reads are dropped
     min_mean_coverage  // number: samples under this CollectWgsMetrics MEAN_COVERAGE are dropped
+    genetic_map        // string or null: TSV chr, bp, cm for the ancestry grid; null = nilHMM's bundled v5 map
 
     main:
     // excluded rows and samples under the coverage floor dropped first; MEAN_COVERAGE is in the metrics table's first row
@@ -40,10 +42,23 @@ workflow GENOTYPE {
         file("${projectDir}/bin/fill_donor_alleles.py", checkIfExists: true),
     )
 
+    CRAM_ANCESTRY_RTIGER(
+        CRAM_VARIANT_DISCOVERY_CRISP.out.tier_a,
+        SITES_UNION_GAPFILL.out.union,
+        ch_cram,
+        ch_fasta,
+        genetic_map ? file(genetic_map, checkIfExists: true) : [],
+        file("${projectDir}/bin/call_ancestry.R", checkIfExists: true),
+        file("${projectDir}/bin/write_ancestry_grid.R", checkIfExists: true),
+    )
+
     emit:
     discovery_vcf      = CRAM_VARIANT_DISCOVERY_CRISP.out.vcf                // channel: [ meta, vcf.gz, tbi ], one per donor
     discovery_sites    = CRAM_VARIANT_DISCOVERY_CRISP.out.sites              // channel: [ meta, sites.tsv.gz ], one per donor
     dropped_b73_checks = CRAM_VARIANT_DISCOVERY_CRISP.out.dropped_b73_checks // channel: dropped_b73_checks.tsv
     union              = SITES_UNION_GAPFILL.out.union                       // channel: [ meta, vcf.gz, tbi ]
     donor_alleles      = SITES_UNION_GAPFILL.out.donor_alleles               // channel: [ meta, vcf.gz, tbi ]
+    ancestry           = CRAM_ANCESTRY_RTIGER.out.segments.mix(             // channel: [ meta, files ], the grid and each donor's outputs
+        CRAM_ANCESTRY_RTIGER.out.dropped, CRAM_ANCESTRY_RTIGER.out.grid, CRAM_ANCESTRY_RTIGER.out.rqtl, CRAM_ANCESTRY_RTIGER.out.vcf
+    )
 }

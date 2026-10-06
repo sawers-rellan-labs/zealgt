@@ -31,7 +31,7 @@ Per chromosome, in `genotype/ancestry/`:
     BED coordinates).
   - `<donor>.<chr>.rqtl.csv`: R/qtl `csvr` (markers in rows: `marker, chr, cM`, then one column per line; `0`, `1`,
     `2` = state; `NA` where the line has no segment), for `read.cross()` with `format = "csvr"`,
-    `crosstype = "bcsft"`, `BCsFt = c(2, 2)`, `genotypes = c("0", "1", "2")` (BC2S2, user 2026-10-05).
+    `crosstype = "bcsft"`, `BC.gen = 2`, `F.gen = 2`, `genotypes = c("0", "1", "2")` (BC2S2, user 2026-10-05).
   - `<donor>.<chr>.ancestry.vcf.gz` + `.tbi`: the grid markers, one sample per line; `REF`, `ALT` the union site's
     bases (`REF` = B73); `GT` `0/0`, `0/1`, `1/1` = ancestry dosage 0, 1, 2, `./.` without a segment; the header
     says `GT` is ancestry on the site's alleles, not the line's bases (as zealhmm `scripts/zeal_export_release.R`).
