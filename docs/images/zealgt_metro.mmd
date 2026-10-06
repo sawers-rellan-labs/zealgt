@@ -7,9 +7,11 @@
 %%metro line: demultiplex | --step demultiplex | #2db572
 %%metro line: alignment | --step alignment | #0570b0
 %%metro line: genotype | --step genotype | #e6550d
+%%metro file: b73_in | CRAM | B73 checks
 %%metro file: sites_out | TSV | sites
 %%metro file: alleles_out | VCF | donor alleles
 %%metro file: ancestry_out | VCF | ancestry
+%%metro off_track: b73_in, sites_out
 %%metro legend: bl
 %%metro grid: demux | 0,0
 %%metro grid: align | 0,1
@@ -62,6 +64,7 @@ graph LR
         %%metro entry: left | genotype
         crisp[CRISP]
         veto[witness veto]
+        b73_in[ ]
         tiers[pooled likelihood]
         sites_out[sites]
         union[sites union]
@@ -73,6 +76,7 @@ graph LR
 
         crisp -->|genotype| veto
         veto -->|genotype| tiers
+        b73_in -->|genotype| tiers
         tiers -->|genotype| sites_out
         tiers -->|genotype| union
         union -->|genotype| fill
