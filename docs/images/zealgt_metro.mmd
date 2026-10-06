@@ -66,6 +66,9 @@ graph LR
         mpileup_ctrl[mpileup]
         tiers[LLR tiers]
         sites_out[sites]
+        union[sites union]
+        fill[donor alleles]
+        alleles_out[donor alleles]
 
         cov_filter -->|genotype| check_filter
         check_filter -->|genotype| merge_pools
@@ -74,6 +77,9 @@ graph LR
         veto -->|genotype| mpileup_ctrl
         mpileup_ctrl -->|genotype| tiers
         tiers -->|genotype| sites_out
+        tiers -->|genotype| union
+        union -->|genotype| fill
+        fill -->|genotype| alleles_out
     end
 
     cram_out -->|genotype| cov_filter

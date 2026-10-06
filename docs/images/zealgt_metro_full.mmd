@@ -11,6 +11,8 @@
 %%metro file: checks_out | TSV
 %%metro file: vcf_out | VCF
 %%metro file: sites_out | TSV
+%%metro file: union_out | VCF
+%%metro file: alleles_out | VCF
 %%metro legend: bl
 %%metro grid: demux | 0,0
 %%metro grid: align | 0,1
@@ -44,6 +46,12 @@
 %%metro process: veto | WITNESS_VETO
 %%metro process: mpileup_ctrl | BCFTOOLS_MPILEUP
 %%metro process: tiers | POOLED_LIKELIHOOD_TIERS
+%%metro process: merge_union | BCFTOOLS_MERGE
+%%metro process: norm_union | BCFTOOLS_NORM
+%%metro process: biallelic | BIALLELIC_UNION
+%%metro process: count_union | COUNT_UNION
+%%metro process: union_tiers | UNION_TIERS
+%%metro process: fill | FILL_DONOR_ALLELES
 
 graph LR
     subgraph demux [Demultiplex]
@@ -119,6 +127,14 @@ graph LR
         mpileup_ctrl[mpileup]
         tiers[LLR tiers]
         sites_out[ ]
+        merge_union[merge]
+        norm_union[norm]
+        biallelic[biallelic]
+        union_out[ ]
+        count_union[mpileup union]
+        union_tiers[LLR union]
+        fill[donor alleles]
+        alleles_out[ ]
 
         cov_filter -->|genotype| check_counts
         check_counts -->|genotype| check_rate
@@ -135,6 +151,15 @@ graph LR
         veto -->|genotype| mpileup_ctrl
         mpileup_ctrl -->|genotype| tiers
         tiers -->|genotype| sites_out
+        tiers -->|genotype| merge_union
+        merge_union -->|genotype| norm_union
+        norm_union -->|genotype| biallelic
+        biallelic -->|genotype| union_out
+        biallelic -->|genotype| count_union
+        index_pools -->|genotype| count_union
+        count_union -->|genotype| union_tiers
+        union_tiers -->|genotype| fill
+        fill -->|genotype| alleles_out
     end
 
     fastq_sheet -->|alignment| split
