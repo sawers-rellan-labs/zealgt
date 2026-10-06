@@ -44,7 +44,7 @@ Stage `CRAM_ANCESTRY_RTIGER`, one RTIGER call per donor and chromosome:
 1. `COUNT_LINES` (nf-core `bcftools/mpileup`, patched in Milestone 8 to stage the index): each line at its donor's
    tier-A sites, `-I -a AD -q 20 -Q 20 -r <region>`, one task per line (as `COUNT_UNION`).
 2. `CALL_ANCESTRY` (local module, nilHMM container, own tool `bin/call_ancestry.R`): per donor, the lines' counts in;
-   rigidity r = 0.5 % of the donor's tier-A sites on the chromosome (user, 2026-10-05; chr10: Zx.0540_P3 163,
+   rigidity r = 0.5 % of the donor's tier-A sites on the chromosome (user, 2026-10-05; chr10: Zx.0540_P3 164,
    Zx.0570_P2 241); lines with fewer than 2r covered markers (≥ 1 read) on the chromosome dropped (user: RTIGER fails
    below 2r); nilHMM `call_ancestry(caller = "rtiger", rigidity = r)`; segments and dropped lines out.
 3. `ANCESTRY_GRID` (local module, nilHMM container, own tool `bin/write_ancestry_grid.R`): the union sites placed on
