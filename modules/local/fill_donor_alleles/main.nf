@@ -32,7 +32,7 @@ process FILL_DONOR_ALLELES {
     stub:
     prefix = task.ext.prefix ?: "${meta.id}"
     """
-    echo '' | gzip > ${prefix}.vcf.gz
+    python3 -c "import gzip; gzip.open('${prefix}.vcf.gz', 'wt').close()"
     touch ${prefix}.vcf.gz.tbi
     """
 }
