@@ -39,7 +39,7 @@ workflow CRAM_ANCESTRY_RTIGER {
         ch_union.combine(
             CALL_ANCESTRY.out.segments.toSortedList { x, y -> x[0].id <=> y[0].id }
                 .map { rows -> [rows.collect { r -> r[0].id }, rows.collect { r -> r[1] }] }
-        ).map { meta, vcf, tbi, donors, beds -> [meta, vcf, tbi, donors, beds] },
+        ),
         genetic_map,
         grid_tool
     )
