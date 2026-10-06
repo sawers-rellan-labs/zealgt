@@ -60,3 +60,7 @@ done
 - The nine runs succeeded and the counts per chromosome are in Attempts.
 
 ## Attempts
+
+- 2026-10-05 20:30, head jobs 1111681-1111689 (chr1-chr9) submitted behind the chr10 run; **cancelled** before any
+  started (user: not worth it without the ancestry step). The low-copy BED `lowcopy_chr1-10.bed` stays in
+  `ZEAL/reference/`.
