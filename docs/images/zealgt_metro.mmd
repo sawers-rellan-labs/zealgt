@@ -8,6 +8,8 @@
 %%metro line: alignment | --step alignment | #0570b0
 %%metro line: genotype | --step genotype | #e6550d
 %%metro file: sites_out | TSV
+%%metro file: alleles_out | VCF
+%%metro file: ancestry_out | VCF
 %%metro legend: bl
 %%metro grid: demux | 0,0
 %%metro grid: align | 0,1
@@ -67,11 +69,11 @@ graph LR
         tiers[LLR tiers]
         sites_out[sites]
         union[sites union]
-        fill[donor alleles]
-        alleles_out[donor alleles]
+        fill[gap filling]
+        alleles_out[ ]
         rtiger[RTIGER]
         grid[0.1 cM grid]
-        ancestry_out[ancestry]
+        ancestry_out[ ]
 
         cov_filter -->|genotype| check_filter
         check_filter -->|genotype| merge_pools
