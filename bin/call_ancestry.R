@@ -45,8 +45,10 @@ read_line_counts <- function(path, sites) {
   if (!nrow(v)) {
     return(sites[, .(name = name, pos = POS, n_ref = 0L, n_alt = 0L)])
   }
-  ad_at <- match("AD", strsplit(v$FORMAT[1], ":", fixed = TRUE)[[1]])
-  v[, ad := vapply(strsplit(get(name), ":", fixed = TRUE), `[`, "", ad_at)]
+  # AD's place in FORMAT per record: bcftools call writes GT:AD where no ALT read is seen, GT:PL:AD elsewhere
+  ad_at <- vapply(strsplit(v$FORMAT, ":", fixed = TRUE), match, 0L, x = "AD")
+  cells <- strsplit(v[[name]], ":", fixed = TRUE)
+  v[, ad := vapply(seq_along(cells), function(i) cells[[i]][ad_at[i]], "")]
   m <- v[sites, on = .(CHROM, POS), nomatch = NA]
   alleles <- strsplit(paste(m$REF, m$ALT, sep = ","), ",", fixed = TRUE)
   depths <- lapply(strsplit(m$ad, ",", fixed = TRUE), function(x) suppressWarnings(as.integer(x)))

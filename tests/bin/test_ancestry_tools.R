@@ -33,20 +33,24 @@ write_sites_vcf <- function(sites, path) {
   )
 }
 
-# a line's counts as bcftools mpileup | call -m -A writes them: no record without reads, the donor ALT
-# first or second among the ALT alleles
+# a line's counts as bcftools mpileup | call -m -A writes them: no record without reads; without ALT reads ALT '.',
+# FORMAT GT:AD and one depth; with ALT reads GT:PL:AD, the donor ALT first or second among the ALT alleles
 write_counts_vcf <- function(obs, sites, line, path) {
   name <- line
   o <- obs[obs$name == line][sites, on = "pos"][n_ref + n_alt > 0]
   swap <- o$pos %% 3L == 0L
-  o[, alt_field := ifelse(swap, paste0("T,", alt, ",<*>"), paste0(alt, ",<*>"))]
-  o[, ad := ifelse(swap, sprintf("%d,0,%d,0", n_ref, n_alt), sprintf("%d,%d,0", n_ref, n_alt))]
+  o[, alt_field := fifelse(n_alt == 0L, ".", fifelse(swap, paste0("T,", alt), alt))]
+  o[, fmt := fifelse(n_alt == 0L, "GT:AD", "GT:PL:AD")]
+  o[, cell := fifelse(
+    n_alt == 0L, sprintf("0/0:%d", n_ref),
+    fifelse(swap, sprintf("0/1:0,3,30,9,40,50:%d,0,%d", n_ref, n_alt), sprintf("0/1:30,0,30:%d,%d", n_ref, n_alt))
+  )]
   writeLines(c(
     "##fileformat=VCFv4.2", "##contig=<ID=chr10,length=152435371>",
     "##FORMAT=<ID=AD,Number=R,Type=Integer,Description=\"Allelic depths\">",
     paste0("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t", name)
   ), path)
-  fwrite(o[, .("chr10", pos, ".", ref, alt_field, ".", ".", ".", "GT:AD", paste0("0/0:", ad))], path,
+  fwrite(o[, .("chr10", pos, ".", ref, alt_field, ".", ".", ".", fmt, cell)], path,
     sep = "\t", col.names = FALSE, append = TRUE
   )
 }
@@ -84,6 +88,18 @@ res <- run_tool("call_ancestry.R", c(
 test_that("call_ancestry.R runs and logs with timestamps", {
   expect_equal(res$status, 0L, info = paste(res$log, collapse = "\n"))
   expect_match(res$log[1], "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9:]{8} INFO call_ancestry: ")
+})
+
+test_that("each line's REF and donor-ALT counts are read back exactly, whatever the record's FORMAT", {
+  tool <- new.env()
+  sys.source(file.path(root, "bin", "call_ancestry.R"), envir = tool)
+  tier <- tool$read_vcf(file.path(dir, "tier_a.vcf"))[, .(CHROM, POS, REF, ALT)]
+  for (l in lines[2:4]) {
+    got <- tool$read_line_counts(counts[[l]], tier)
+    want <- obs[name == l][order(pos)]
+    expect_equal(got[order(pos)]$n_ref, want$n_ref)
+    expect_equal(got[order(pos)]$n_alt, want$n_alt)
+  }
 })
 
 test_that("the line under 2r covered markers is dropped and listed", {
