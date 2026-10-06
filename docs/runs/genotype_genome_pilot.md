@@ -26,7 +26,7 @@ in one run is a milestone, not done).
 - Command (from `ZEAL/zealgt`):
 
 ```
-prev=
+prev=1111642  # the chr10 run
 for chr in chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9; do
   prev=$(sbatch --parsable ${prev:+--dependency=afterany:$prev} scripts/submit_head_job.sbatch hpc_dev --step genotype \
     --input /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/docs/runs/genotype_pilot_chr10/samplesheet.csv \
