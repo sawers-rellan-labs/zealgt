@@ -1,0 +1,178 @@
+---
+title: "The witness veto: what it costs and what it buys"
+subtitle: "Expected loss over the 96 donors, and a measurement on the simulated QC set (chr10; 2026-10-06)"
+author: "Fausto Rodríguez-Zapata"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    embed-resources: true
+    fig-width: 8
+    fig-height: 4.5
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+Variant discovery keeps a CRISP candidate only if the donor's BC2S3 lines, merged into one witness pool, show at least one
+ALT read there (math supplement, Section 4.2). The veto was meant to keep only variants observed in the BC2S3 population.
+This notebook asks what it costs in real alleles and how many false alleles it removes.
+
+::: {.callout-note}
+## In short
+
+- **Expected cost (Eq. 8):** a typical donor (14 lines, 5.8x of line coverage) loses about **half of its real alleles** to
+  the veto; only donors with 10x or more of line coverage lose under a third.
+- **Measured on the QC set:** with realistic witnesses the veto keeps **29-45 %** of the true alleles, fewer than Eq. 8
+  predicts, and **precision does not change** (TIL18 0.74, Gigi 0.68-0.70 with or without the veto).
+- **ROC:** neither the witness's ALT reads nor step 4's likelihood ratio separate true from false alleles: AUROC
+  0.50-0.53 for every score. Among CRISP's candidates, the read evidence of a false allele looks like that of a real one.
+- **Not tested:** library errors and contaminated BC1 pools, which the simulation does not have and which are what the
+  veto can catch.
+:::
+
+```{r setup}
+library(data.table)
+library(ggplot2)
+library(patchwork)
+
+d <- "witness_veto"
+theme_set(theme_minimal(base_size = 11) + theme(panel.grid.minor = element_blank(), plot.title.position = "plot"))
+q <- function(l) 27 / 32 + 3 / 32 * exp(-l) + 1 / 16 * ((1 + exp(-l / 12)) / 2)^12
+donors <- fread(file.path(d, "veto_loss_per_donor.tsv"))
+tab <- fread(file.path(d, "veto_effect_table.tsv"))
+roc <- fread(file.path(d, "roc_counts.tsv"))
+```
+
+## What the veto costs: Eq. 8 over the 96 donors
+
+A real allele of the donor is missed by one line of coverage $\lambda$ with probability $q(\lambda)$ (Section 4.2, Eq. 8),
+so a witness of lines $i$ misses it with probability $\prod_i q(\lambda_i)$. Each line's coverage is its CollectWgsMetrics
+MEAN_COVERAGE where zealgt aligned it (173 lines: the pilot and plate V21), otherwise its demultiplexed read pairs times its
+batch's coverage per million pairs (0.070x batch 1, 0.050x batch 2; 1,594 lines). Lines are taken as independent, so these
+are lower bounds: sibling lines share BC1 and BC2 ancestry.
+
+```{r fig-donors, fig.height = 4.2}
+a <- ggplot(donors, aes(100 * loss)) +
+  geom_histogram(binwidth = 5, boundary = 0, fill = "#2a78d6", colour = "white", linewidth = 0.3) +
+  scale_x_continuous("real alleles lost to the veto (%)", limits = c(0, 100), breaks = seq(0, 100, 20)) +
+  labs(y = "donors", title = sprintf("Expected loss over the %d donors", nrow(donors)))
+b <- ggplot(donors, aes(cov, 100 * loss)) +
+  geom_point(size = 2, colour = "#2a78d6", alpha = 0.85) +
+  geom_vline(xintercept = 10, colour = "grey60", linetype = 2) +
+  labs(x = "donor's line coverage: sum over its lines (x)", y = "real alleles lost to the veto (%)",
+       title = "Expected loss vs the donor's line coverage")
+a | b
+```
+
+Median over donors: `r median(donors$L)` lines, `r sprintf("%.1f", median(donors$cov))`x of line coverage,
+**`r sprintf("%.0f", 100 * median(donors$loss))` %** of real alleles lost; `r sum(donors$loss > 0.5)` donors lose more than
+half. The `r sum(donors$cov >= 10)` donors with 10x or more lose `r sprintf("%.0f-%.0f", 100 * min(donors[cov >= 10]$loss),
+100 * max(donors[cov >= 10]$loss))` %.
+
+## Measured on the QC set
+
+The QC set (design B, chr10) simulates two founders, TIL18 (*mexicana*) and Gigi (*diploperennis*), each with 5 BC1 pools and
+10 lines at six coverages, from reads of the founders' own assemblies; the truth is each founder's SNPs against B73 in the
+low-copy space. The witness was rebuilt from the founder's 10 lines at 0.05x, 0.4x and 0.8x per line (0.5x, 4x and 8x in
+all; real donors: median 5.8x), counted at CRISP's records with the pipeline's mpileup settings. Three versions:
+
+- **none:** every CRISP record kept;
+- **own:** at least one ALT read in the founder's own lines (the pipeline's rule);
+- **population:** at least one ALT read in its own lines or in the other founder's lines at the same coverage.
+
+Each kept set then went through step 4 (`score_pooled_likelihood.py`, the pipeline's arguments). Recall is relative to the
+true alleles with no veto; precision is TP / (TP + FP) and a lower bound, since the truth misses some real alleles.
+
+```{r tab-qc}
+show <- tab[set == "tierA"]
+show[, version := fifelse(veto == "none", "no veto", fifelse(lambda == "-",
+                          "pipeline witness (all 60 line samples, ~27x)", sprintf("%s, %sx per line", veto, lambda)))]
+knitr::kable(show[, .(founder, version, kept, TP, FP, recall = sprintf("%.2f", recall),
+                      precision = sprintf("%.3f", precision), `Eq. 8 loss` = fifelse(eq8_own_loss == "-", "",
+                      eq8_own_loss))], align = "llrrrrrr", caption = "Tier A after step 4")
+```
+
+- **Precision barely moves:** at most 1-2 points between no veto and any veto.
+- **The veto keeps fewer true alleles than Eq. 8 predicts:** 29 % at 0.4x per line (Eq. 8: 35 %), 45 % at 0.8x (53 %).
+  Eq. 8 uses the nominal coverage; the coverage left after the MAPQ and base-quality filters is lower.
+- **The population veto** gives back 2-6 points of recall at the same precision.
+
+## ROC: does the witness separate true from false alleles?
+
+Each CRISP record is scored by the witness's ALT reads at the site; the veto is the cut at one read. Moving the cut gives
+the ROC: the share of true alleles kept (TPR) against the share of false alleles kept (FPR). For comparison, the same curve
+with step 4's likelihood ratio (LLR) as the score.
+
+```{r roc-calc}
+curve <- function(x) {
+  x <- x[order(-value)]
+  data.table(fpr = c(0, cumsum(x$n_false) / sum(x$n_false)), tpr = c(0, cumsum(x$n_true) / sum(x$n_true)))
+}
+auc <- function(cv) sum(diff(cv$fpr) * (head(cv$tpr, -1) + tail(cv$tpr, -1)) / 2)
+score_label <- c(own_lam0.05 = "own witness, 0.05x per line", own_lam0.4 = "own witness, 0.4x per line",
+                 own_lam0.8 = "own witness, 0.8x per line", population_lam0.4 = "population witness, 0.4x per line",
+                 witness27x = "pipeline witness, ~27x", llr = "step 4 LLR")
+r <- roc[score %in% names(score_label)]
+curves <- r[, curve(.SD), by = .(founder, set, score)]
+aucs <- curves[, .(auroc = auc(.SD)), by = .(founder, set, score)]
+curves[, score := factor(score_label[score], score_label)]
+aucs[, score := factor(score_label[score], score_label)]
+```
+
+```{r fig-roc, fig.height = 5}
+pal <- setNames(c("#9ec5f4", "#5598e7", "#1c5cab", "#1baf7a", "#0d366b", "#eb6834"), score_label)
+ggplot(curves[set == "tierA"], aes(fpr, tpr, colour = score)) +
+  geom_abline(colour = "grey70", linetype = 2) +
+  geom_step(direction = "vh", linewidth = 0.7) +
+  facet_wrap(~founder) +
+  scale_colour_manual(values = pal, name = NULL) +
+  coord_equal() +
+  labs(x = "false alleles kept (FPR)", y = "true alleles kept (TPR)", title = "ROC of the veto's score, tier A") +
+  theme(legend.position = "right")
+```
+
+```{r tab-auc}
+w <- dcast(aucs, score ~ founder + set, value.var = "auroc")
+knitr::kable(w, digits = 3, caption = "AUROC (0.5 = chance)")
+```
+
+## Why the witness cannot see these false alleles
+
+A false allele here is a site where the founder is REF but its reads show ALT, mostly reads from a copy the donor has and
+B73 lacks (a donor-only duplicate, a new TE insertion carrying a gene fragment) that map onto a low-copy B73 site. The
+low-copy BED is defined on B73, so it cannot remove copies that exist only in the donor.
+
+- **Linked copy** (a tandem duplicate, about 10 % of maize genes; Ac/Ds hops to linked sites): the copy co-segregates with
+  the segment at the site, so the lines that carry the segment show ALT reads exactly as for a real allele. Neither the
+  veto nor any segregation test can tell them apart; for ancestry it is still a valid marker of the segment, and wrong only
+  as a base call.
+- **Unlinked copy** (dispersed duplicates, Helitron and Pack-MULE gene fragments, homeologs): ALT reads follow the lines'
+  ancestry at the copy's locus, not at the site. A witness pooled over all lines still shows them.
+
+Either way the witness shows ALT reads at false alleles about as often as at real ones, which is what the flat precision
+and the near-diagonal ROC say. Step 4's likelihood ratio is no better (AUROC 0.52-0.53): the BC1 pools' reads at a false
+allele also look like those at a real one, so read counts alone cannot remove these false alleles.
+
+## The veto's two goals
+
+1. **Remove per-library artefacts**, errors in one BC1 library that an independent set of samples does not reproduce.
+   Step 4's tier-A rule already asks for ALT reads in at least two BC1 pools, which are separate libraries, so a
+   single-library artefact fails tier A with or without the veto. What only the veto catches is an artefact shared by two
+   or more BC1 libraries but absent from the lines, such as contaminated BC1 material. The simulation cannot test this.
+2. **Thin the data set.** It keeps a third to a half of the sites, but at random with respect to truth (AUROC about 0.5),
+   and it preferentially drops alleles that few lines carry. Explicit thinning (the 0.1 cM ancestry grid) does not have that
+   bias, and RTIGER at full marker density takes minutes per donor and chromosome.
+
+## What this does not test
+
+- **Library and sequencing errors, contamination, a wrong plant in a BC1 pool:** none in the simulation (wgsim with a
+  uniform 0.001 error). These are non-reproducible errors, the case the veto can catch; step 4's B73 zero class and its
+  "ALT reads in at least two BC1 pools" rule for tier A also guard against single-pool errors.
+- **Many donors:** the population version here has only one other founder, of another taxon.
+- **Independence of lines:** the simulated lines are independent draws; real sibling lines are not.
+
+Sources: QC-set run `ZEAL/results/zealgt_checks/veto_effect_qcset_20261006/run_1130389/` (hazel jobs 1130389, 1130500);
+data in `witness_veto/`.

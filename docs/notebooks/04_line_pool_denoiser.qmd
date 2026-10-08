@@ -1,0 +1,214 @@
+---
+title: "The BC2S3 line pool as a denoiser, and the Zx.0090_P2 family"
+subtitle: "What the in-silico pool of each donor's lines does in discovery, and how the six-donor test's failure was narrowed down to two families (chr10, 2026-10-07)"
+author: "Fausto Rodríguez-Zapata"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    embed-resources: true
+    fig-width: 8
+    fig-height: 5
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+Variant discovery runs CRISP per donor on its BC1 pools plus one in-silico pool of all its BC2S3 lines (math supplement,
+Section 4), then keeps a site only if that line pool shows an ALT read (the witness veto, Section 4.2), then step 4's tiers
+(ALT in at least 2 BC1 pools, likelihood ratio, flags). RTIGER then infers each line's ancestry at the donor's tier-A sites.
+In the six-donor union test (`docs/runs/genotype_union_6donors_races_chr10.md`) two of the six donors failed: few sites and
+fragmented ancestry. This notebook records what the line pool does for the other four, and how the failure was traced to
+the two families rather than to the method or the sequencing.
+
+::: {.callout-note}
+## In short
+
+- **The line pool is a denoiser for RTIGER.** Markers from the BC1 pools alone fragment the ancestry of good donors (8-10.5
+  donor segments per line on chr10); with the line pool and the veto they give 1-2, like the independent SNP50K calls. Only
+  the deepest donor (Zx.0550_P4, 47 thousand markers) stays clean without it.
+- **Zx.0090_P2 is a family problem, Zx.0500_P2 a milder one.** Their BC1 pools are normal; their line samples carry a
+  background of their own donor's alleles (Zx.0090_P2 4-10 %, Zx.0500_P2 1-3 %, clean lines 0.3-1 %, B73 0.07 %) all along
+  chr10, also in lines that SNP50K calls B73, in both sequencing batches. No marker set fixes them.
+- **Most likely cause, upstream of sequencing:** a problem in the cross or seed from the wrong ear in the planted packet
+  (user). If the line samples are bulks of seedlings, a few off-type seeds of the same donor family in the packet give every
+  bulk exactly this kind of background.
+:::
+
+```{r setup}
+library(data.table)
+library(ggplot2)
+theme_set(theme_classic(base_size = 12) + theme(strip.background = element_blank()))
+pal <- c(REF = "gold", HET = "springgreen4", ALT = "purple4") # nilHMM paint_calls() palette
+d <- "line_pool_denoiser"
+seg <- fread(file.path(d, "segments_zealgt.tsv"))
+snp <- fread(file.path(d, "snp50k_rtiger_calls_lines.tsv"))
+cnt <- fread(file.path(d, "private_site_counts.tsv"))
+cov <- fread(file.path(d, "coverage.tsv"))
+short <- function(x) sub("_P\\d+$", "", x)
+```
+
+## The data
+
+Six mexicana donors on chr10: the four of the first test (Zx.0540_P3, Zx.0570_P2 races Durango and Nobogame, Zx.0550_P4,
+Zx.0580_P2) and two added for new races, Zx.0500_P2 (Mesa Central) and Zx.0090_P2 (Chalco). GENOTYPE runs: jobs 1134902 and
+1146812. Independent reference: zealhmm's RTIGER on the SNP50K panel (zealtiger `fit_rtiger_by_donor.R`: per donor accession,
+rigidity 8, ~49 thousand panel markers genome-wide, ~3.4 thousand on chr10), which covers the batch-1 lines of all six donors.
+
+| Donor | Race | BC1 pools | Lines | Line plates |
+|---|---|---|---|---|
+| Zx.0540_P3 | Durango | 5 | 40 batch-1 | BZea5, BZea6 |
+| Zx.0550_P4 | Durango | 4 | 43 batch-1 | BZea5 |
+| Zx.0570_P2 | Nobogame | 5 | 44 batch-1 | BZea8, BZea9 |
+| Zx.0580_P2 | Nobogame | 5 | 50 batch-1 | BZea7, BZea8 |
+| Zx.0500_P2 | Mesa Central | 5 | 11 batch-1 + 11 batch-2 | BZea4; BZeaV2_4 |
+| Zx.0090_P2 | Chalco | 5 | 12 batch-1 + 11 batch-2 | BZea3, BZea4; BZeaV2_3 |
+
+## 1. The line pool as a denoiser
+
+### Discovery with and without the line pool
+
+CRISP was also run on each donor's BC1 pools alone (jobs 1148722, 1148870, 1149032), with the pipeline's command and
+container. Markers for RTIGER from that run: biallelic SNPs in the low-copy ranges with ALT reads in at least 2 BC1 pools
+(step 4's pool rule; no veto, no likelihood or flags); lines counted and RTIGER run as in the pipeline (job 1149090).
+
+| Donor | CRISP, BC1 pools only | CRISP, BC1 pools + line pool | Kept by the veto | Tier A |
+|---|---|---|---|---|
+| Zx.0540_P3 | 8,099 | 60,312 | 43,925 (73 %) | 32,750 |
+| Zx.0570_P2 | 11,741 | 100,331 | 64,640 (64 %) | 48,251 |
+| Zx.0550_P4 | 60,634 | 184,394 | 111,740 (61 %) | 85,952 |
+| Zx.0580_P2 | 28,226 | 178,789 | 122,413 (68 %) | 82,601 |
+| Zx.0500_P2 | 6,903 | 20,518 | 13,749 (67 %) | 9,060 |
+| Zx.0090_P2 | 22,104 | 45,606 | 12,477 (27 %) | 7,482 |
+
+(CRISP with the line pool counted after the low-copy clip; jobs 1147356, 1149087.) The line pool multiplies CRISP's calls
+3-9 fold, but mostly by adding statistical power: 89 % of the pre-veto calls have ALT reads in at least 2 BC1 pools. Among
+those, the veto drops the ones without an ALT read in the lines: removing it would add 17-32 % of sites for the four good
+donors and 30 % for Zx.0500_P2, but 204 % for Zx.0090_P2 (upper bounds before step 4's likelihood and flags; job 1149087,
+validated against step 4's tables).
+
+### Ancestry from the three marker sets
+
+```{r three-columns, fig.width = 13, fig.height = 9}
+z <- seg[, .(source = fifelse(markers == "bc1_only", "CRISP BC1", "CRISP BC1 + BC2S3 pool"), donor = short(donor),
+             line, start, end, state)]
+s <- snp[chr == 10, .(source = "SNP50K", donor = short(donor), line = name, start = start_bp, end = end_bp, state)]
+both <- Reduce(intersect, list(unique(s$line), unique(z[source == "CRISP BC1"]$line),
+                               unique(z[source == "CRISP BC1 + BC2S3 pool"]$line)))
+dt <- rbind(s, z)[line %in% both]
+dt[, row := match(line, rev(sort(unique(line)))), by = donor]
+dt[, source := factor(source, levels = c("SNP50K", "CRISP BC1", "CRISP BC1 + BC2S3 pool"))]
+dt[, state := factor(state, levels = 0:2, labels = names(pal))]
+ggplot(dt) +
+  geom_rect(aes(xmin = start / 1e6, xmax = end / 1e6, ymin = row - 0.48, ymax = row + 0.48, fill = state)) +
+  scale_fill_manual(values = pal, name = "State") +
+  facet_grid(donor ~ source, scales = "free_y", space = "free_y") +
+  scale_y_continuous(breaks = NULL, expand = c(0, 0)) + scale_x_continuous(expand = c(0, 0)) +
+  labs(title = "chr10 ancestry per line (RTIGER per donor, same lines)", x = "chr10 position (Mb)", y = "lines") +
+  theme(strip.text.y = element_text(angle = 0), legend.position = "bottom", panel.spacing.y = unit(4, "pt"))
+```
+
+```{r segments-table}
+per_line <- dt[, .(segs = sum(state != "REF"), share = sum((end - start) * (as.integer(state) - 1) / 2) / sum(end - start)),
+               by = .(donor, source, line)]
+tab <- per_line[, .(lines = .N, `donor segments per line (median, lines with any)` = as.numeric(median(segs[segs > 0])),
+                    `lines with no introgression (< 2 %)` = sum(share < 0.02)), by = .(donor, source)]
+knitr::kable(dcast(tab, donor + lines ~ source, value.var = c("donor segments per line (median, lines with any)",
+                                                              "lines with no introgression (< 2 %)")))
+```
+
+For the four good donors the line pool removes what the BC1 pools alone call but the lines do not support (false alleles,
+pool errors): the right column matches SNP50K, the middle one does not. That is the denoising the veto was meant to do at
+RTIGER's input (user: "the BC2S3 pool works as a noise filter for most of the donors"). For the two problem donors neither
+marker set gives SNP50K's picture.
+
+## 2. Narrowing down the Zx.0090_P2 problem
+
+Each step below ruled out a candidate.
+
+**1. The calls are broken, the plants are not.** SNP50K RTIGER on the same batch-1 lines shows a normal BC2S3 pattern for both
+donors (table above: most lines without introgression on chr10, a few long segments); ours spreads short segments over every
+line. RTIGER is fitted per donor in both, so the difference is the markers, not the model.
+
+**2. Not coverage.**
+
+```{r coverage}
+cv <- cov[, .(`BC1 pools` = sum(role == "bc1_sample"), `BC1 coverage, summed` = round(sum(mean_coverage[role == "bc1_sample"]), 1),
+              lines = sum(role == "nil"), `line coverage, summed` = round(sum(mean_coverage[role == "nil"]), 1)), by = donor]
+knitr::kable(cv)
+```
+
+The problem donors' BC1 pools are as deep as the others'; they have half as many lines.
+
+**3. Not the BC1 pools.** At each donor's private tier-A sites (sites only that donor called among the six), every BC1 pool is
+highest at its own donor's sites; the problem donors' pools look like the others'. BC1-only CRISP finds 6,903 sites for
+Zx.0500_P2 against 8,099 for Zx.0540_P3.
+
+```{r pools}
+pc <- cnt[role == "bc1_sample", .(pct = 100 * sum(alt_reads) / sum(ref_reads + alt_reads)),
+          by = .(sample_donor, own = fifelse(site_set == sample_donor, "own donor's sites", "other donors' sites"))]
+knitr::kable(dcast(pc, sample_donor ~ own, value.var = "pct", fun.aggregate = function(x) round(mean(x), 1)),
+             col.names = c("pools of", "% non-REF reads at other donors' private sites (mean)",
+                           "% at own donor's private sites"))
+```
+
+**4. The lines carry a background of their own donor's alleles; B73 does not.**
+
+```{r background, fig.height = 4.5}
+lines_snp <- snp[chr == 10, .(chr10_donor = sum((end_bp - start_bp) * state / 2) / sum(end_bp - start_bp)), by = name]
+bg <- merge(cnt[role == "nil" & site_set == sample_donor, .(sample, sample_donor, batch, pct = 100 * alt_reads / (ref_reads + alt_reads))],
+            lines_snp, by.x = "sample", by.y = "name", all.x = TRUE)
+b73 <- cnt[sample_donor %in% c("B73", "B73-bulk") & site_set == "Zx.0090_P2",
+           .(group = fifelse(batch == "wgs", "B73 WGS control", fifelse(batch == "bc2s3_batch2", "B73 checks, batch 2",
+                                                                       "B73 checks, batch 1")),
+             pct = 100 * alt_reads / (ref_reads + alt_reads))]
+clean <- bg[!is.na(chr10_donor) & chr10_donor < 0.02]
+ggplot(clean, aes(short(sample_donor), pct)) +
+  geom_jitter(width = 0.15, height = 0, size = 2, colour = "grey30") +
+  scale_y_log10() +
+  labs(title = "Lines with no chr10 introgression (SNP50K): % non-REF reads at their own donor's private sites",
+       x = NULL, y = "% non-REF reads (log scale)")
+knitr::kable(b73[, .(`% non-REF reads at Zx.0090_P2's private sites` = round(mean(pct), 2)), by = group])
+```
+
+In lines that SNP50K calls B73 on chr10, the four good donors' lines show the error background (0.3-1 %); Zx.0500_P2's lines
+1-3 %, Zx.0090_P2's 4-10 %. B73 shows 0.07 % at the same sites, so these are not paralog or mapping artifacts. The signal also
+tracks real chr10 introgression in every donor (correlation with the SNP50K chr10 donor share 0.93-0.99) and not the
+genome-wide share (Zx.0090_P2: -0.44): it is real donor DNA on chr10 plus a baseline. A plant can only give 0, ~50 or ~100 %
+at a site; a steady few percent in every line means each line sample carries some DNA that is not that plant's.
+
+**5. Not a sequencing batch or a plate.** Zx.0090_P2's batch-1 lines (plate 3) and batch-2 lines (BZeaV2_3) carry the same
+background; they were sampled and sequenced separately. Most batch-1 B73 checks are clean (0.1-0.4 %); two are noisy
+(PN3_SID236 on plate 3, PN5_SID429 on plate 5), not a whole plate. The good donors' lines on plates 5-9 are clean.
+
+**6. Why SNP50K does not see it.** The panel's markers are mostly not this donor's alleles, so a few percent of the donor's DNA
+shows at only some of them and stays near the error rate; our markers are exactly the donor's alleles, and the veto selects
+those where the lines show ALT reads. The same reads look clean on panel markers and dirty on donor markers.
+
+## 3. Interpretation
+
+The problem follows the family, upstream of the sequencing: both batches, separate libraries, normal BC1 pools, B73 clean,
+the background specific to the donor's own alleles. The contaminating material carries this donor's alleles in much larger
+amount than a BC2S3 line: an earlier generation of the same family (BC1, BC2, BC2S1) or a highly introgressed sib ear. The
+user's reading: a problem in the cross, or seed from the wrong ear in the planted seed packet. A wrong ear alone would give
+whole off-type plants (some lines clean genotypes of another family), not a background in every line; if each line sample is
+a bulk of seedlings (the pedigree has a `BC2S3-blk` stage for these families), a few off-type seeds in the packet put a
+fraction of off-type DNA into every bulk, and both batches drew from the same packets. Zx.0500_P2 shows the same at about a
+third of the dose.
+
+## Open questions
+
+- Field and seed records of these two families: whether their BC2S3 packets or plots were near or mixed with earlier-generation
+  seed of the same donor; whether batch-2 samples are bulks too.
+- A per-line background measure (% non-REF reads at the donor's own sites where the line is B73) as a line QC before the
+  in-silico pool and RTIGER, run over the whole population to see whether other families are affected.
+- Whether the veto should act only at RTIGER's input (where it denoises) and not cut discovery
+  (`agent/notes_discovery_bc1_rescue_20261007.md`).
+- CRISP models every pool with 12 haplotypes (`-p 12`), the line pool (22-50 lines) included.
+
+## Sources
+
+Scripts and logs in `agent/union6/` (discovery-step counts, veto gain, private-site counts in `identity/`, BC1-only lane in
+`bc1only_rtiger/`); SNP50K calls: zealhmm `data/zeal/rtiger_50K_calls.csv` (from zealtiger `fit_rtiger_by_donor.R`).
