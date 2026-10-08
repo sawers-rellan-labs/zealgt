@@ -18,6 +18,7 @@ once. Measured on chr10 (union tests, `docs/runs/genotype_union_6donors_races_ch
 | 2      | 70,210      | 5.2 s / 100 MB     | 16.6 s / 198 MB         | 37 s / 246 MB               |
 | 4      | 170,729     | 15.5 s / 309 MB    | 33 s / 428 MB           | 42 s / 254 MB               |
 | 6      | 178,300     | 24.4 s / 469 MB    | 41 s / 469 MB           | 45 s / 252 MB               |
+| 8      | 196,645     | 35.3 s / 648 MB    | 45 s / 513 MB           | 74 s / 252 MB               |
 
 `COUNT_UNION` and `UNION_TIERS` already run one task per pool or donor; only `FILL_DONOR_ALLELES` grows with donors x
 sites. At 95 donors and 0.4-1 M chr10 sites (`docs/notebooks/03_union_rarefaction.qmd`) its one task would need tens of

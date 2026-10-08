@@ -185,6 +185,18 @@ chr10 run plan.
 
 `DONOR_ALLELES_INDEX` was folded into `FILL_DONOR_ALLELES` afterwards: pysam writes the `.vcf.gz` and its `.tbi`.
 
+### Gap filling split (Milestone 8a), whole chr10, eight donors
+
+`hpc_dev`, job 1152864, resuming attempt 3 of the union test (job 1152382): 196,645 union sites. The old one-task
+`FILL_DONOR_ALLELES` grew with donors x sites: 100 MB at 2 donors, 309 MB at 4, 469 MB at 6, 648 MB (35.3 s) at 8.
+Split, each task holds one donor and the per-site counts: 1 cpu, 1 GB, 1 h in `hpc_dev`.
+
+| process               | tasks | max realtime | max peak RSS |
+| --------------------- | ----- | ------------ | ------------ |
+| `UNION_SITE_COUNTS`   | 1     | 10.1 s       | 240 MB       |
+| `FILL_DONOR_ALLELES`  | 8     | 10.6 s       | 227 MB       |
+| `DONOR_ALLELES_MERGE` | 1     | 5.3 s        | 35.2 MB      |
+
 ### Ancestry with RTIGER (Milestone 9), whole chr10
 
 Both pilot donors on the whole chr10 (`hpc_dev`, jobs 1113306 and 1113622, resuming job 1111642): 82 lines counted at
