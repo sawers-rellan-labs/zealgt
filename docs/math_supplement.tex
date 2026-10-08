@@ -363,6 +363,62 @@ reads show at each site (ALT if $\ge50\%$ of $\ge5$ reads are ALT, REF if none o
 precision is $\approx0.97$ for own tier-A sites and $\approx0.99$ for gap ALT. This is the right reference for the read-based steps, not a
 better truth about homology.
 
+\subsection{Size of the union}
+\label{sec:unionsize}
+The union $U$ sets the cost of the union counts, of gap filling and of every per-line table, so its growth with the number of donors
+$n$ is projected before a run over all donors. The data are the sharing patterns of the four-donor chr10 union (four mexicana donors:
+which donors' tier-A sets contain each union site; notebook \code{docs/notebooks/03\_union\_rarefaction.qmd}).
+
+\paragraph{Starting point: the allele frequency spectrum.} Let a site's ALT frequency among donors be $p$, with the neutral spectrum
+$g(p)\propto1/p$; each donor carries the ALT with probability $p$, independently, and finds a carried ALT with probability $\eta$
+(discovery sensitivity). A site is missing from the union of $n$ donors only if no donor finds it, so over $S$ sites
+\begin{equation}
+E[|U_n|]=S\sum_p g(p)\left[1-(1-\eta p)^n\right].
+\label{eq:afs-union}
+\end{equation}
+With one $\eta$ for every donor, Eq.~\eqref{eq:afs-union} predicts $1.74$--$1.95$ times the two-donor union at four donors
+($\eta=0.1$--$0.3$); the test gave $2.43$ (70{,}210 to 170{,}729 sites), because the two added donors each find twice as many sites
+as the first two. The observed curve is therefore fitted directly. Its points are the \emph{rarefaction curve}, the mean union over
+all $\binom4n$ donor sets of size $n$: $\bar U_1,\dots,\bar U_4=62{,}149$, $106{,}965$, $141{,}993$, $170{,}729$.
+
+\paragraph{Michaelis--Menten: an empirical curve from ecology.} Species accumulation curves are routinely fitted with
+\begin{equation}
+\bar U_n=\frac{U_\infty\,n}{K+n},
+\label{eq:mm}
+\end{equation}
+two parameters: the asymptote $U_\infty$ and the number of donors $K$ that reach half of it \citep{soberon1993accumulation}. It is
+interpretable as follows. If site $s$ is found by each donor independently with rate $k_s$, it is in the union of $n$ donors with
+probability $1-e^{-k_sn}$; with $k_s$ gamma-distributed across sites (shape $\alpha$, scale $1/K$),
+\begin{equation}
+\bar U_n=U_\infty\left[1-\left(1+\frac nK\right)^{-\alpha}\right],
+\label{eq:gamma-accum}
+\end{equation}
+which is Eq.~\eqref{eq:mm} at $\alpha=1$ and the negative exponential $U_\infty(1-e^{-kn})$ as $\alpha\to\infty$. Since
+$k_s=-\log(1-\eta p_s)\approx\eta p_s$, $\alpha$ is the shape of the spectrum near $p=0$: the neutral spectrum $1/p$ is the limit
+$\alpha\to0$, which gives logarithmic growth without an asymptote (Fisher's log-series, \citealp{fisher1943}). Michaelis--Menten,
+$\alpha=1$, is a spectrum with fewer rare alleles than neutral and a finite pool of sites. Fitted to the four points:
+$U_\infty=414{,}000$ and $K=5.7$ (RMSE 418 sites), $263{,}000$ sites at ten donors.
+
+\paragraph{Watterson with false alleles.} If B73 and the $n$ donors were $n+1$ haplotypes of one neutral population, the union would
+be the segregating sites of that sample, with expectation $\theta\sum_{i=1}^{n}1/i=\theta H_n$ \citep{watterson1975}. Two additions
+make it fit the data: the sites where every mexicana differs from B73 (fixed differences, $c$) are in the union from the first donor,
+and a false allele (Text~\ref{sec:union}) is private to the donor that called it, so false alleles add a constant number $\varepsilon_f$
+per donor ($f$ for false; $\epsilon$ alone is the sequencing error rate):
+\begin{equation}
+\bar U_n=c+\theta_\eta H_n+\varepsilon_f\,n,
+\label{eq:watterson-false}
+\end{equation}
+with $\theta_\eta$ the $\theta$ of the sites found. Fitted: $\theta_\eta=63{,}831$, $\varepsilon_f=13{,}204$ per donor, against
+$(1-0.74)\times62{,}149=16{,}159$ expected from TIL18's tier-A precision on the QC set (0.74, Benchmark above)
+if every false allele were private; false alleles from a donor-only copy carried by several donors are shared and fall into
+$\theta_\eta H_n$ instead. $c=-14{,}947$ is negative, which the model does not allow; three parameters on four points leave one
+degree of freedom, so this is a consistency check. Ten donors: $304{,}000$ sites.
+
+\paragraph{Use.} Both curves are fitted to four mexicana donors and agree near the data ($263$ and $304$ thousand sites at ten
+donors). Far from it they differ in kind: Eq.~\eqref{eq:mm} stops at $U_\infty$, Eq.~\eqref{eq:watterson-false} grows without
+limit, and the false alleles alone grow linearly ($\approx1.25$\,M on chr10 at 95 donors at the fitted $\varepsilon_f$). Donors of
+other taxa share fewer sites than these four.
+
 %======================================================================
 \section{Ancestry inference, genotype imputation, and their checks}
 \label{sec:checks}
@@ -390,7 +446,7 @@ bulks is that of their BC$_2$S$_2$ parent. (ii) B73 controls free of donor segme
 expectation for bulks of a BC$_2$S$_2$ parent. \todo{derive the expected segment-length distribution of a bulk from Eq.~\eqref{eq:bulk}}
 
 \bibliographystyle{plainnat}
-\begin{thebibliography}{9}
+\begin{thebibliography}{99}
 \bibitem[Bansal(2010)]{bansal2010crisp} Bansal V. 2010. A statistical method for the detection of variants from next-generation
 resequencing of DNA pools. \textit{Bioinformatics} 26:i318--i324.
 \bibitem[Campos-Martin et~al.(2023)]{campos2023rtiger} Campos-Martin R, et al. 2023. RTIGER. \todo{full citation: title and journal not checked}
@@ -400,5 +456,11 @@ problem on unit disk graphs. \textit{Frontiers in Algorithmics (FAW 2018)}, LNCS
 next-generation sequence data. \textit{BMC Bioinformatics} 16:235.
 \bibitem[Van~der Auwera et~al.(2013)]{vanderauwera2013} Van der Auwera GA, Carneiro MO, Hartl C, Poplin R, et al. 2013. From FastQ data to
 high-confidence variant calls: the Genome Analysis Toolkit best practices pipeline. \textit{Curr Protoc Bioinformatics} 43:11.10.1--11.10.33.
+\bibitem[Fisher et~al.(1943)]{fisher1943} Fisher RA, Corbet AS, Williams CB. 1943. The relation between the number of species and the
+number of individuals in a random sample of an animal population. \textit{J Anim Ecol} 12:42--58. \todo{pages not checked}
+\bibitem[Sober\'on and Llorente(1993)]{soberon1993accumulation} Sober\'on J, Llorente J. 1993. The use of species accumulation functions
+for the prediction of species richness. \textit{Conserv Biol} 7:480--488. \todo{pages not checked}
+\bibitem[Watterson(1975)]{watterson1975} Watterson GA. 1975. On the number of segregating sites in genetical models without
+recombination. \textit{Theor Popul Biol} 7:256--276. \todo{pages not checked}
 \end{thebibliography}
 \end{document}

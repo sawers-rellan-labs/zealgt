@@ -1,4 +1,4 @@
-process FILL_DONOR_ALLELES {
+process UNION_SITE_COUNTS {
     tag "${meta.id}"
     label 'process_single'
 
@@ -8,11 +8,11 @@ process FILL_DONOR_ALLELES {
         : 'community.wave.seqera.io/library/python_pysam:3717afc71d152b3b'}"
 
     input:
-    tuple val(meta), path(union), path(union_tbi), path(tier_a), path(table), path(counts)
+    tuple val(meta), path(union), path(union_tbi), val(donors), path(tier_a, stageAs: 'tier_a/*'), path(tables, stageAs: 'tables/*')
     path tool
 
     output:
-    tuple val(meta), path("${prefix}.vcf.gz"), path("${prefix}.vcf.gz.tbi"), emit: vcf
+    tuple val(meta), path("${prefix}.tsv.gz"), emit: tsv
     tuple val("${task.process}"), val('python'), eval("python3 --version | sed 's/Python //'"), topic: versions, emit: versions_python
     tuple val("${task.process}"), val('pysam'), eval("python3 -c 'import pysam; print(pysam.__version__)'"), topic: versions, emit: versions_pysam
 
@@ -22,15 +22,16 @@ process FILL_DONOR_ALLELES {
     script:
     def args = task.ext.args ?: ''
     prefix = task.ext.prefix ?: "${meta.id}"
+    // donors, their tier-A VCFs and their union tables come in the same order
+    def donor_args = [donors, [tier_a].flatten(), [tables].flatten()].transpose().collect { d, a, t -> "--donor ${d} ${a} ${t}" }.join(' ')
     // the tool is a path input, so an edit to it reruns the task (docs/running.md)
     """
-    python3 ${tool} fill --union ${union} --donor ${meta.id} ${tier_a} ${table} --counts ${counts} --out ${prefix}.vcf.gz ${args}
+    python3 ${tool} counts --union ${union} ${donor_args} --out ${prefix}.tsv.gz ${args}
     """
 
     stub:
     prefix = task.ext.prefix ?: "${meta.id}"
     """
-    python3 -c "import gzip; gzip.open('${prefix}.vcf.gz', 'wt').close()"
-    touch ${prefix}.vcf.gz.tbi
+    python3 -c "import gzip; gzip.open('${prefix}.tsv.gz', 'wt').close()"
     """
 }

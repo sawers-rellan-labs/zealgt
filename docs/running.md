@@ -71,6 +71,9 @@ already in the mount point list` in the task's `.command.err`, skips the duplica
 
 - Reruns: a change to the step's script, inputs, container, the `ext` values its script uses, or its process or calling
   workflow name (docs). Tested: changing `ext.args` reruns the step.
+- Reruns: every process after a newly added process with `eval` outputs (the nf-core versions topic): `.command.sh`
+  numbers the eval outputs across the pipeline (`nxf_out_eval_37` became `_39`), so their scripts change (tested
+  2026-10-08, job 1152864: the ancestry tasks reran after `UNION_SITE_COUNTS` was added; outputs identical).
 - Does not rerun: a change to cpus or memory, even when the script uses `${task.cpus}` (tested). So a resumed run after
   a resource change returns the result made with the old resources.
 - Does not rerun: an edit to a script in `bin/` or in a module's `resources/usr/bin/` (tested 2026-10-04): the step
