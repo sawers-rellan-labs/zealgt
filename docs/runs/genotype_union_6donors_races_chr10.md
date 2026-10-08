@@ -132,3 +132,23 @@ lines have SNP50K calls. A new donor that shows the background is reported, not 
 
 Read: the rarefaction curve from the six good-layout donors (four first-set + two new; the patterns allow any subset),
 with the problem families shown separately; whether a donor from a new race adds more private sites than a race-mate.
+
+### Attempt 3 results (2026-10-08)
+
+- Stage 1: head job 1149521, 2 h 45 min, head MaxRSS 16.0 GB (at the request, exit 0), `/share` +1.10 TB over the start
+  (peak 1.39 TB), raw 140 GB, work/raw 8.0x; all 38 samples have CRAM, index and CollectWgsMetrics.
+- Stage 2: head job 1152382, 32 min, head 0.8 GB; 308 tasks cached. At 8 vs 6 donors: FILL_DONOR_ALLELES 35.3 s / 648 MB
+  (24.4 s / 469 MB), UNION_TIERS 31-45 s / 360-513 MB (36-41 s / 395-469 MB), COUNT_UNION <= 74 s / 252 MB (<= 45 s /
+  252 MB). Union 196,645 (178,300 at 6).
+- Checks: Zx.0160_P2 (Chalco) is clean: tier A 19,767, veto gain +20 %, 2 RTIGER donor segments per line on chr10, its
+  lines that SNP50K calls B73 carry 0.8-2.4 % of its private alleles (clean donors 0.6-1.6 %). Zx.0470_P2 (Mesa Central)
+  shows the background: 1.6-6.0 % in those lines, veto gain +206 % (Zx.0090_P2: +204 %), 16 donor segments per line
+  (SNP50K: 0), tier B 56,671 against tier A 16,283; reported, not used for the curve.
+- Union at 7 donors (attempt-1 six + one, from the patterns): 186,497 with Zx.0470_P2, 188,457 with Zx.0160_P2.
+- Rarefied mean union (all subsets averaged), good five (Zx.0540_P3, Zx.0570_P2, Zx.0550_P4, Zx.0580_P2, Zx.0160_P2):
+  53,555 / 95,024 / 128,664 / 156,954 / 181,386 at 1-5 donors; with Zx.0470_P2 (six): 189,781 at 6. The problem families
+  add 3,801 (Zx.0500_P2) and 3,243 (Zx.0090_P2), 6,864 together, to the six.
+- New race vs race-mate: Zx.0160_P2 has 10,925 sites absent from the four Durango/Nobogame donors, 0.56 of its own;
+  race-mates against their three: 0.31-0.53 of their own, 10-45 k sites. A larger share, fewer sites, because the new
+  donor's discovery finds fewer tier-A sites.
+- Patterns: `docs/notebooks/union_rarefaction/patterns_8donors.tsv`; details: `agent/union8/results_attempt3.md`.
