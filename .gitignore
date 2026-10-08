@@ -21,3 +21,6 @@ docs/*.fls
 docs/*.log
 docs/*.out
 docs/*.synctex.gz
+
+# per-notebook lintr settings stay local (user, 2026-10-07)
+docs/notebooks/.lintr
