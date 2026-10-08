@@ -1,0 +1,619 @@
+---
+title: "Marker union rarefaction"
+subtitle: "How the union of donor sites grows with donors: a demographic model of teosinte, the simulations that would complete it, and the curves fitted to the four-donor chr10 test (2026-10-07)"
+author: "Fausto Rodríguez-Zapata"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    embed-resources: true
+    fig-width: 8
+    fig-height: 5
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+The marker union is every site found in at least one donor (math supplement, Section 5.1). Its size sets the cost of the
+union counts, of gap filling and of every per-line table, so it is projected before a run over all donors. This notebook
+(i) states what is known about the donors' populations and the union it implies, (ii) writes down the simulations that would
+turn that into a predicted curve, (iii) fits empirical curves to the data we have, and (iv) reads the fits against the
+demographic picture, including what to expect from other taxa. The simulations are not run: they are written here to be run
+once the union over all samples exists. The math supplement's Section 5.6 summarises sections 3-4.
+
+::: {.callout-note}
+## In short
+
+- **Demography (Chen et al. 2022).** Mexicana's effective size fell about threefold between ~30 and ~5 thousand years ago
+  (MSMC2), and mexicana accessions carry about **6x** the private variation a neutral equilibrium predicts. Mexicana races are
+  topographically isolated populations (Sánchez-González et al. 2018). Expected: real alleles saturate within a population,
+  each new population adds a block of private alleles, and false alleles add a constant number per donor.
+- **Simulations proposed** (section 2): the expected site frequency spectrum of the donors under (S1) mexicana's Ne history,
+  (S2) races as demes, (S3) the Zea species tree with ZEAL's donor composition; Eq. 1 turns each into a union curve.
+- **Empirical fits** (four mexicana donors, two races): Michaelis-Menten ($U_\infty \approx 414$ thousand sites on chr10),
+  Watterson, and Watterson with false alleles ($\varepsilon_f \approx 13$ thousand per donor): 263, 253 and 304 thousand sites at 10
+  donors. The false-allele term's linear growth is what sets the last apart (section 3.7).
+- **Reading.** Chen's numbers are genome-wide; scaled to our low-copy ranges (section 4), most of the private term
+  $\varepsilon_f$ is false alleles, as the QC-set precision implies; the discovery sensitivity is not determined from Chen.
+  Other taxa: Zea as a whole carries 2.3x mexicana's SNPs in Chen's panel, an upper bound for the union's growth when ZEAL's
+  parviglumis and other donors are added.
+:::
+
+```{r setup}
+library(data.table)
+library(ggplot2)
+theme_set(theme_bw(base_size = 14) + theme(legend.text = element_text(size = 12)))
+```
+
+## 1. A demographic model of the donors
+
+### 1.1 Who the donors are
+
+ZEAL has 96 teosinte donors (`meta/samples.csv`). Mexicana races from the passport
+table (`meta/accessions.csv`, J2Teo); teosinte races are "geographical populations spatially isolated by the topography in
+Mexico and Central America" (Sánchez-González et al. 2018).
+
+```{r donors-table}
+knitr::kable(data.table(
+  taxon = c("mexicana", "parviglumis", "diploperennis", "luxurians", "huehuetenangensis"),
+  donors = c(43, 40, 6, 5, 2),
+  `mexicana donors by race` = c("Mesa Central 21, Chalco 14, Durango 5, Nobogame 3", "", "", "", "")
+))
+```
+
+### 1.2 What Chen et al. (2022) measured
+
+Chen et al. resequenced 237 teosinte accessions (22x) with 507 maize lines. Their Supplementary Table 2 (diversity map),
+Supplementary Table 4 (BPP demography), Fig. 2a (F~ST~) and Supplementary Fig. 3 (MSMC2 Ne through time) give:
+
+```{r chen-diversity}
+chen <- data.table(
+  taxon = c("mexicana", "parviglumis", "diploperennis", "perennis", "luxurians", "nicaraguensis", "huehuetenangensis"),
+  accessions = c(81, 70, 20, 19, 14, 14, 5),
+  snps_M = c(31.32, 41.51, 11.66, 15.29, 9.04, 7.41, 7.99),
+  taxon_specific_M = c(4.26, 5.97, 1.13, 1.70, 0.48, 0.37, 0.64),
+  specific_downsampled_M = c(1.82, 1.14, 1.06, 1.70, 0.58, 0.41, 1.00),
+  pi = c(0.00804, 0.00847, 0.00629, 0.01038, 0.00592, 0.00543, 0.00572),
+  fst_mexicana = c(NA, 0.068, 0.277, 0.277, 0.290, 0.270, 0.248),
+  fst_maize = c(0.158, 0.101, 0.356, 0.354, 0.364, 0.342, 0.330)
+)
+knitr::kable(chen, digits = 5, col.names = c("taxon", "accessions", "SNPs (M)", "taxon-specific SNPs (M)",
+                                              "taxon-specific, downsampled (M)", "π per bp", "F_ST with mexicana",
+                                              "F_ST with maize"))
+```
+
+F~ST~ with maize is Chen's cultivated panel (507 inbreds; B73's subspecies): parviglumis and mexicana are closest to maize
+(0.101, 0.158), the other taxa 0.33-0.36, so B73 is the outgroup of Eq. 1 for every donor, nearer to some taxa than others.
+All Zea together (744 genomes, maize included): 70.73 M SNPs, 16.90 M taxon-specific. Mexicana's chr10 windows (Fig. 2b data):
+mean $\pi$ = 0.00903. SNPs specific to one accession (Fig. 2d data): mexicana median 402,200 per accession (166,559-518,710),
+parviglumis 322,355.
+
+**Ne through time** (Supplementary Fig. 3, MSMC2; values read off the figure, approximate):
+
+| Time before present | mexicana | parviglumis |
+|---|---|---|
+| ~30 ky | ~82,000 | ~86,000 |
+| ~20 ky | ~77,000 | ~86,000 |
+| ~12 ky | ~60,000 | ~86,000 |
+| ~8 ky | ~44,000 | ~76,000 |
+| ~5 ky to now | ~27,000 | ~62,000, then ~49,000 since ~4 ky |
+
+The perennial and Central American taxa (diploperennis, luxurians, nicaraguensis, huehuetenangensis, perennis) decline from
+35-60 thousand around 50-100 ky to 10-25 thousand around 8-10 ky, then rise again (diploperennis and luxurians to ~42-47
+thousand). BPP divergence times (Supplementary Table 4, years): the (maize, parviglumis, mexicana) clade 30,467; with
+huehuetenangensis 67,800; with diploperennis and perennis 121,533; the Zea crown 124,233; Zea-Tripsacum 653,733. BPP's Ne for
+mexicana is 171,508 (95 % HPD 146,817-197,008), on a different scale from MSMC2's; only the shape of the MSMC2 history is used.
+
+### 1.3 The union under a coalescent
+
+Take B73 as the outgroup: a union site is a position where at least one donor carries an allele different from B73. Under
+infinite sites, such alleles arise (a) on the B73 lineage or on the donors' lineage before their common ancestor, carried by
+every donor (the fixed differences, $C$ of them), or (b) on the donors' genealogy, carried by $k$ of the $n$ donors. Each donor
+finds a carried allele with probability $\eta$ (discovery sensitivity), and calls $\varepsilon_f$ false alleles of its own. Then
+
+$$
+\mathbb{E}[U_n] = C\,\big[1 - (1 - \eta)^n\big] \;+\; \theta \sum_{k=1}^{n-1} \xi_k(n)\, \big[1 - (1 - \eta)^k\big] \;+\; \varepsilon_f\, n
+\tag{1}
+$$
+
+with $\theta = 4 N_e \mu L$ over the sites considered and $\xi_k(n)$ the expected site frequency spectrum of $n$ donors in units of
+$\theta$ (the expected length of the genealogy's branches that subtend exactly $k$ donors, scaled). **Demography and structure
+enter only through $\xi_k(n)$.** For one population at constant size (Wright-Fisher equilibrium), $\xi_k(n) = 1/k$; with
+$\eta = 1$ and $\varepsilon_f = 0$, Eq. 1 is Watterson's (1975)
+
+$$
+\mathbb{E}[U_n] = C + \theta \sum_{k=1}^{n-1} \frac{1}{k} = C + \theta H_{n-1}
+\tag{2}
+$$
+
+How $\xi_k(n)$ departs from $1/k$:
+
+- **A recent contraction** (mexicana, threefold over the last ~30 ky, recent relative to the current $2 N_e \approx 54$ ky):
+  fewer singletons and low-frequency alleles than $1/k$, more at intermediate frequencies; the union saturates faster than
+  $H_{n-1}$.
+- **Structure** (isolated races, low migration): donors from one deme share recent ancestry; a donor from a new deme adds the
+  long branches of that deme, a block of private alleles. The union grows by steps as demes are added.
+- **Several taxa**: the same, at the scale of the species tree (Section 5).
+
+### 1.4 The equilibrium baseline
+
+zealgt-old notebook 01 (2026-09-26) used the large-population version of Eq. 2: site frequencies $p$ in the population with
+the neutral spectrum $g(p) \propto 1/p$ (a flat spectrum as the contrast), a carried allele found with probability $\eta$,
+no fixed differences and no false alleles:
+
+$$
+\mathbb{E}[U_n] = S \sum_{p} g(p) \left[ 1 - (1 - \eta p)^n \right], \qquad
+\hat U_n = U_2^{\mathrm{obs}} \, \frac{\mathbb{E}[U_n]}{\mathbb{E}[U_2]}
+\tag{3}
+$$
+
+```{r data}
+donors <- data.table(donor = c("Zx.0540_P3", "Zx.0570_P2", "Zx.0550_P4", "Zx.0580_P2"),
+                     race = c("Durango", "Nobogame", "Durango", "Nobogame"),
+                     own_sites = c(32750, 48251, 85952, 82601))
+unions <- data.table(set = c("pilot pair", "+ Zx.0550_P4", "+ Zx.0580_P2", "all four"),
+                     donors = c(2, 3, 3, 4), members = list(1:2, 1:3, c(1, 2, 4), 1:4),
+                     sites = c(70210, 128964, 125970, 170729))
+pat <- fread("union_rarefaction/patterns.tsv", header = FALSE, col.names = c("pattern", "n"),
+             colClasses = c("character", "numeric"))
+z <- do.call(rbind, lapply(strsplit(pat$pattern, ""), as.integer))
+```
+
+```{r afs, fig.height = 5.5, fig.width = 11}
+g <- (1:2000) / 2000
+g1 <- head(g, -1)
+spectra <- list(`neutral 1/p` = (1 / g1) / sum(1 / g1), flat = rep(1 / length(g1), length(g1)))
+afs <- rbindlist(lapply(names(spectra), function(k) rbindlist(lapply(c(0.05, 0.1, 0.15, 0.3), function(eta) {
+  eu <- sapply(1:10, function(n) sum(spectra[[k]] * (1 - (1 - eta * g1)^n)))
+  data.table(spectrum = k, eta = sprintf("η = %.2f", eta), donors = 2:10, sites = unions$sites[1] * eu[2:10] / eu[2])
+}))))
+afs[, spectrum := factor(spectrum, levels = names(spectra))]
+lab <- unions[, .(donors, sites, label = paste0(set, ": ", format(sites, big.mark = ",")), vj = c(1.6, -0.6, 1.6, 1.6))]
+plot_curves <- function(curves, title, colour) {
+  ggplot(curves, aes(donors, sites / 1e3, colour = eta)) +
+    geom_line(linewidth = 0.9) +
+    geom_point(size = 1.5) +
+    geom_point(data = lab, aes(donors, sites / 1e3), inherit.aes = FALSE, size = 4, shape = 21, fill = "black") +
+    geom_text(data = lab, aes(donors, sites / 1e3, label = label, vjust = vj), inherit.aes = FALSE, hjust = -0.08,
+              size = 3.5) +
+    scale_x_continuous(breaks = 1:10) +
+    labs(title = title, x = "Donors in the union", y = "Union sites (thousands)", colour = colour)
+}
+plot_curves(afs, "Equilibrium baseline (Eq. 3) and the observed unions", "Discovery sensitivity") + facet_wrap(~spectrum)
+```
+
+At 4 donors Eq. 3 gives
+`r paste(round(afs[spectrum == "neutral 1/p" & donors == 4, range(sites)] / unions$sites[1], 2), collapse = "-")`x
+(neutral) the 2-donor union; the test gave `r round(unions$sites[4] / unions$sites[1], 2)`x. The equilibrium baseline has no
+private term: neither the false alleles nor the demes of section 1.3.
+
+## 2. Proposed simulations (not run)
+
+Each simulation produces $\xi_k(n)$ for the donor sets of interest; Eq. 1 turns it into a union curve with $\theta$ from
+Chen's $\pi$, $\eta$ and $\varepsilon_f$ from our data (section 4), and $C$ from the fixed differences (or fitted). Tool: msprime
+with a demes model (demography as a YAML file), infinite sites, no recombination needed for expectations (or chr10's
+recombination map to get the variance along the chromosome); about $10^4$ replicate genealogies per donor set.
+
+| | Model | Parameters (source) | Donor sampling | Output |
+|---|---|---|---|---|
+| **S0** | one population, constant $N_e$ | none | $n$ haplotypes | $\xi_k(n) = 1/k$: checks the pipeline against Eq. 2 |
+| **S1** | mexicana, one population, piecewise $N_e(t)$ | Supplementary Fig. 3 steps (section 1.2; digitise the figure for exact values); generation time 1 year | $n = 1, \dots, 43$ | the contraction's effect on $\xi_k(n)$ and the union's saturation |
+| **S2** | mexicana races as demes (Mesa Central, Chalco, Durango, Nobogame), each with S1's history, symmetric migration $m$ | $m$ swept so that within-race vs between-race diversity matches Chen's accession-specific SNPs (6x neutral, section 4) and mexicana's K = 2 | ZEAL's mexicana donors: 21 / 14 / 5 / 3 by race, added in random order and race by race | the step a new race adds; the 43-donor mexicana union |
+| **S3** | the Zea species tree | BPP divergence times and Ne (Supplementary Table 4), MSMC2 histories per taxon, introgression ignored at first | ZEAL's 96 donors (43 / 40 / 6 / 5 / 2 by taxon), in random order and taxon by taxon | the union over all donors, and the block each taxon adds |
+
+Calibration targets for S1-S3 (Chen's panel, 22x individual genomes): per-taxon SNP counts, taxon-specific and
+downsampled taxon-specific SNPs, $\pi$, F~ST~ (section 1.2). Chen's samples are not ZEAL's donors (none of the six donors'
+collection numbers is among them), so the simulations use Chen for the populations and ZEAL only for the sampling. The
+targets should be Chen's counts **within our low-copy ranges** (their SNP positions intersected with `lowcopy_chr1-10.bed`),
+not the genome-wide totals of section 1.2: the share of their SNPs in our ranges is unknown (section 4).
+
+## 3. Empirical curves fitted to the data
+
+### 3.1 The data
+
+Four mexicana donors from two races, chr10, tier-A sites (step 4 of variant discovery). Own sites from the tier-A VCFs; unions
+from `BIALLELIC_UNION` (2 and 4 donors: GENOTYPE runs, jobs 1111642 and 1134902) and from the same bcftools merge, norm and
+biallelic filter outside the pipeline (3 donors: jobs 1143221, 1143222). The **sharing pattern** of a union site is which
+donors' own sites include it, $z \in \{0, 1\}^4$ (job 1143239, `union_rarefaction/patterns.tsv`). The Durango donors were
+collected about 2 km apart (Nombre de Dios, Durango), the Nobogame donors about 3 km apart (Guadalupe y Calvo, Chihuahua).
+
+```{r data-tables}
+knitr::kable(donors, format.args = list(big.mark = ","), col.names = c("donor", "race", "own tier-A sites"))
+knitr::kable(unions[, .(set, donors, sites)], format.args = list(big.mark = ","),
+             col.names = c("union", "donors", "union sites"))
+knitr::kable(pat[order(-n)], format.args = list(big.mark = ","), col.names = c("pattern z", "union sites"))
+```
+
+### 3.2 The rarefaction curve
+
+As in species-richness rarefaction, donors are the samples and sites the species. The rarefaction curve is the mean union over
+every set of $n$ donors, computed exactly from the sharing patterns:
+
+$$
+\bar U_n = \binom{4}{n}^{-1} \sum_{|D| = n} \; \sum_{z} N_z \, \mathbb{1}\Big[\max_{d \in D} z_d = 1\Big], \qquad n = 1, \dots, 4
+\tag{4}
+$$
+
+```{r rarefaction}
+subsets <- unlist(lapply(1:4, function(n) combn(4, n, simplify = FALSE)), recursive = FALSE)
+sub_dt <- rbindlist(lapply(subsets, function(d) {
+  data.table(donors = length(d), set = paste(donors$donor[d], collapse = " + "),
+             sites = sum(pat$n[apply(z[, d, drop = FALSE], 1, max) == 1]))
+}))
+rare <- sub_dt[, .(sites = mean(sites)), by = donors]
+knitr::kable(rare, format.args = list(big.mark = ","), col.names = c("donors n", "rarefied union (Eq. 4)"))
+```
+
+```{r curve-fits}
+# harmonic number H_n, continuous in n: digamma(n + 1) + Euler's gamma
+harm <- function(n) digamma(n + 1) - digamma(1)
+models <- list(
+  `Michaelis-Menten` = list(f = sites ~ um * donors / (k + donors), start = list(um = 3e5, k = 4)),
+  `Watterson + false alleles` = list(f = sites ~ cc + th * harm(donors) + eps * donors,
+                                     start = list(cc = 1e4, th = 5e4, eps = 1e4)),
+  Watterson = list(f = sites ~ cc + th * harm(donors), start = list(cc = 1e4, th = 5e4)),
+  Logarithmic = list(f = sites ~ a + b * log(donors), start = list(a = 5e4, b = 5e4)),
+  Power = list(f = sites ~ a * donors^b, start = list(a = 6e4, b = 0.7)),
+  `Square root` = list(f = sites ~ a * sqrt(donors), start = list(a = 6e4)),
+  `Negative exponential` = list(f = sites ~ um * (1 - exp(-k * donors)), start = list(um = 3e5, k = 0.2))
+)
+sym <- c(cc = "c", th = "θ_η", eps = "ε_f", um = "U_∞", k = "K", a = "a", b = "b")
+emp <- lapply(models, function(m) nls(m$f, data = rare, start = m$start, control = nls.control(maxiter = 500)))
+emp_table <- rbindlist(lapply(names(emp), function(k) {
+  cf <- coef(emp[[k]])
+  data.table(model = k, parameters = paste(sprintf("%s = %s", sym[names(cf)], signif(cf, 3)), collapse = ", "),
+             rmse = sqrt(mean(residuals(emp[[k]])^2)),
+             at_10 = predict(emp[[k]], data.table(donors = 10)))
+}))
+plot_fits <- function(keep, title) {
+  cv <- rbindlist(lapply(keep, function(k) {
+    data.table(model = k, donors = seq(1, 10, 0.1), sites = predict(emp[[k]], data.table(donors = seq(1, 10, 0.1))))
+  }))
+  ggplot(cv, aes(donors, sites / 1e3, colour = model)) +
+    geom_line(linewidth = 0.9) +
+    geom_point(data = sub_dt, aes(donors, sites / 1e3), inherit.aes = FALSE, colour = "grey50", size = 2) +
+    geom_point(data = rare, aes(donors, sites / 1e3), inherit.aes = FALSE, size = 4, shape = 21, fill = "black") +
+    scale_x_continuous(breaks = 1:10) +
+    labs(title = title, subtitle = "black: rarefied union (Eq. 4); grey: each of the 15 donor sets",
+         x = "Donors in the union", y = "Union sites (thousands)", colour = NULL)
+}
+mm <- coef(emp$`Michaelis-Menten`)
+wf <- coef(emp$`Watterson + false alleles`)
+```
+
+### 3.3 Michaelis-Menten
+
+Species accumulation curves are routinely fitted with (supplement Eq. 21; Soberón and Llorente 1993)
+
+$$
+\bar U_n = \frac{U_\infty\, n}{K + n}
+\tag{5}
+$$
+
+the asymptote $U_\infty$ and the number of donors $K$ that reach half of it. Fitted: $U_\infty$ =
+`r format(signif(mm[["um"]], 3), big.mark = ",")`, $K$ = `r round(mm[["k"]], 1)`, RMSE
+`r round(emp_table[model == "Michaelis-Menten", rmse])` sites. If each site is found by each donor with rate $k_s$ and $k_s$ is
+gamma-distributed across sites (shape $\alpha$, scale $1/K$) (supplement Eq. 22),
+
+$$
+\bar U_n = U_\infty \left[ 1 - \left( 1 + \frac{n}{K} \right)^{-\alpha} \right]
+\tag{6}
+$$
+
+which is Eq. 5 at $\alpha = 1$, the negative exponential as $\alpha \to \infty$, logarithmic growth (Fisher's log-series) as
+$\alpha \to 0$ and power growth for $\alpha < 0$. Since $k_s \approx \eta p_s$, $\alpha$ is the shape of the spectrum near
+$p = 0$: the neutral $1/p$ is $\alpha \to 0$; Michaelis-Menten is a spectrum with fewer rare alleles than neutral and a finite
+pool of sites.
+
+### 3.4 Watterson
+
+Eq. 1 at equilibrium, $\xi_k(n) = 1/k$, with $\eta$ absorbed into the fitted constants and no private term: the union grows with
+the harmonic number, like $\ln n$, and has no ceiling.
+
+$$
+\bar U_n = c + \theta_\eta H_n
+\tag{7}
+$$
+
+```{r watterson}
+wa <- coef(emp$Watterson)
+wa_res <- round(residuals(emp$Watterson))
+```
+
+Fitted: $c$ = `r format(round(wa[["cc"]]), big.mark = ",")`, $\theta_\eta$ = `r format(round(wa[["th"]]), big.mark = ",")`, RMSE
+`r format(round(emp_table[model == "Watterson", rmse]), big.mark = ",")` sites. $c$ is negative, which Eq. 2 does not allow
+(fixed differences cannot be fewer than none), and the residuals follow a pattern, not noise (`r paste(format(wa_res, big.mark = ","), collapse = ", ")`
+for $n = 1, \dots, 4$: above, below, below, above): the curve bends too early.
+
+### 3.5 Watterson with false alleles
+
+Eq. 7 plus the private term of Eq. 1 (supplement Eq. 23):
+
+$$
+\bar U_n = c + \theta_\eta H_n + \varepsilon_f\, n
+\tag{8}
+$$
+
+```{r watterson-false}
+wf_cor <- cov2cor(vcov(emp$`Watterson + false alleles`))
+wf_se <- summary(emp$`Watterson + false alleles`)$coefficients[, 2]
+```
+
+Fitted: $c$ = `r format(round(wf[["cc"]]), big.mark = ",")`, $\theta_\eta$ = `r format(round(wf[["th"]]), big.mark = ",")`,
+$\varepsilon_f$ = `r format(round(wf[["eps"]]), big.mark = ",")` per donor, RMSE
+`r format(round(emp_table[model == "Watterson + false alleles", rmse]), big.mark = ",")` sites. $c$ is still negative; three
+parameters on four points leave one degree of freedom, so this is a consistency check.
+
+### 3.6 The three curves together
+
+```{r main-plot}
+main_models <- c("Michaelis-Menten", "Watterson", "Watterson + false alleles")
+plot_fits(main_models, "Rarefaction curve and the three fitted curves")
+```
+
+```{r main-table}
+knitr::kable(emp_table[model %in% main_models], digits = 0, format.args = list(big.mark = ","),
+             col.names = c("model", "fitted parameters", "RMSE (sites)", "predicted at 10 donors"))
+proj <- data.table(donors = c(4, 6, 10, 20, 43))
+proj[, `:=`(mm = predict(emp$`Michaelis-Menten`, proj), watterson = predict(emp$Watterson, proj),
+            wf = predict(emp$`Watterson + false alleles`, proj),
+            wf_real = wf[["cc"]] + wf[["th"]] * harm(donors), wf_false = wf[["eps"]] * donors)]
+knitr::kable(proj, digits = 0, format.args = list(big.mark = ","),
+             col.names = c("donors", "Michaelis-Menten", "Watterson", "Watterson + false alleles",
+                           "of which c + θ_η H_n", "of which ε_f n"))
+```
+
+### 3.7 Why Watterson with false alleles diverges from the other curves
+
+The curves agree on the four points and part beyond them, and they part into two groups: those whose growth fades
+(logarithmic, negative exponential, Watterson, Michaelis-Menten: 237-263 thousand sites at 10 donors, Appendix A) and those
+with a term that never fades (Watterson with false alleles and the power curve: 304-331 thousand).
+
+1. **The data grow faster than a logarithm and slower than a line.** The free power curve puts the exponent at 0.71. Watterson
+   (Eq. 7) can only grow like $\ln n$; its residuals run above, below, below, above (section 3.4), so it bends too early and falls short beyond the
+   data. That is also why it needs a negative $c$.
+2. **The $\varepsilon_f n$ term takes the excess growth.** With it, $\theta_\eta$ drops from
+   `r format(round(wa[["th"]]), big.mark = ",")` to `r format(round(wf[["th"]]), big.mark = ",")`, $\varepsilon_f$ takes
+   `r format(round(wf[["eps"]]), big.mark = ",")` per donor, and the RMSE falls from
+   `r format(round(emp_table[model == "Watterson", rmse]), big.mark = ",")` to
+   `r format(round(emp_table[model == "Watterson + false alleles", rmse]), big.mark = ",")` sites. Beyond the data the linear
+   term keeps adding $\varepsilon_f$ per donor while $\theta_\eta H_n$ flattens; past about 15 donors $\varepsilon_f n$ is the larger
+   part (table above).
+3. **The split between $\theta_\eta$ and $\varepsilon_f$ is poorly determined.** Their estimates are correlated at
+   `r round(wf_cor["th", "eps"], 2)` (standard errors `r format(round(wf_se[["th"]]), big.mark = ",")` and
+   `r format(round(wf_se[["eps"]]), big.mark = ",")`): many combinations fit the four points almost equally and differ widely at
+   10 donors and beyond, so the projection is less certain than these standard errors suggest.
+
+**Where Michaelis-Menten puts the false alleles.** Eq. 5 has no private term, so a constant $\varepsilon_f$ per donor is absorbed
+by both parameters: the only way it can imitate growth that never fades is to saturate later and higher, raising $K$ and
+$U_\infty$ (for $K \gg n$, Eq. 5 is nearly the line $(U_\infty / K)\, n$). Fitting Eq. 5 to the full rarefied curve and to its
+real-allele part only (Eq. 8 without $\varepsilon_f n$) shows the size of the effect:
+
+```{r mm-split}
+mm_real <- nls(sites ~ um * donors / (k + donors), data = rare[, .(donors, sites = wf[["cc"]] + wf[["th"]] * harm(donors))],
+               start = list(um = 3e5, k = 4))
+mm_split <- rbindlist(lapply(list(`full curve (real + false)` = emp$`Michaelis-Menten`, `real-allele part only` = mm_real),
+  function(m) data.table(um = coef(m)[["um"]], k = coef(m)[["k"]], slope = coef(m)[["um"]] / coef(m)[["k"]])),
+  idcol = "fitted to")
+knitr::kable(mm_split, digits = c(0, 0, 1, 0), format.args = list(big.mark = ","),
+             col.names = c("Eq. 5 fitted to", "U_∞", "K", "initial gain U_∞ / K"))
+```
+
+The private term nearly doubles the asymptote and delays saturation. So $U_\infty$ is not a ceiling on real alleles, and once
+donors keep adding false or population-private sites at a constant rate Eq. 5 will fall short. The real-allele part comes from
+Eq. 8's split of $\theta_\eta$ and $\varepsilon_f$, which is poorly determined (point 3), so its $U_\infty$ is an illustration, not
+an estimate.
+
+The four donors cannot tell the two groups apart; the next donors can, since the groups already differ at 6 donors
+(table above). Donors from new races (the six-donor run) test whether the private term is real: section 4 reads it as about a
+third population-private variation and two thirds false alleles.
+
+## 4. Interpretation in the light of the demographic model
+
+Our counts are all within the low-copy ranges (`lowcopy_chr1-10.bed`: 367 Mb, about 17 % of the 2.2 Gb B73 genome, roughly
+its unmasked part; chr10 26.1 Mb). Chen's counts are genome-wide. The share of **Chen's SNPs** that falls in our ranges is not
+known: about 17 % if SNPs were spread evenly per base, more if Chen's filters on maize-mapped reads kept mostly SNPs in unique
+sequence, up to nearly all of them. Every Chen number below is given at both bounds; intersecting Chen's SNP positions with our
+BED would settle it (their VCF is not in `agent/papers/chen2022/`).
+
+```{r chen-numbers}
+bounds <- c(`17 % (even per base)` = 0.17, `~100 % (unique sequence)` = 1)
+chr10_share <- 26.1 / 367
+a_hap <- sum(1 / (1:161))
+own <- range(donors$own_sites)
+til18_diffs <- 444982
+theta_pi <- 0.00903 * 26.1e6
+eta_lo <- own[1] / til18_diffs
+eta_hi <- wf[["th"]] / theta_pi
+singletons_neutral_acc <- 2 * (31316555 / a_hap) / 162
+per_donor <- rbindlist(lapply(names(bounds), function(b) {
+  private_real <- 402200 / 2 * bounds[[b]] * chr10_share * c(eta_lo, eta_hi)
+  data.table(share = b, theta_counts = 31316555 * bounds[[b]] * chr10_share / a_hap,
+             real_private = paste(format(round(private_real, -1), big.mark = ","), collapse = "-"),
+             false_share = paste(round(100 * (1 - rev(private_real) / wf[["eps"]])), collapse = "-"))
+}))
+```
+
+1. **Discovery sensitivity $\eta$ is not determined from Chen.** Routes to how much variation a mexicana haplotype carries in
+   chr10's ranges:
+   - Chen's chr10 $\pi$ (0.00903) times 26.1 Mb: $\theta \approx$ `r format(signif(theta_pi, 3), big.mark = ",")`, so
+     $\eta = \theta_\eta / \theta \approx$ `r round(eta_hi, 2)`; this assumes Chen's per-base $\pi$ holds for every base of our
+     ranges.
+   - Chen's 31.3 M mexicana SNPs in our ranges, by Watterson ($H_{161} \approx$ `r round(a_hap, 2)`): $\theta \approx$
+     `r paste(format(round(per_donor$theta_counts, -3), big.mark = ","), collapse = " to ")` at the two bounds, so
+     $\eta \approx$ `r paste(round(wf[["th"]] / per_donor$theta_counts, 2), collapse = " to ")`; above 1 at the 17 % bound,
+     which is impossible.
+   - The TIL18 assembly differs from B73 at `r format(til18_diffs, big.mark = ",")` sites in chr10's ranges (AnchorWave), more
+     than Chen's whole mexicana panel there at the 17 % bound: our donors' own sites give
+     $\eta \approx$ `r sprintf("%.2f-%.2f", eta_lo, own[2] / til18_diffs)` (zealgt-old's ~0.1). This is the most direct route
+     for our discovery; $\pi$'s `r round(eta_hi, 2)` is an upper value.
+2. **The excess of private variation is genome-wide.** Under Eq. 2 the expected number of singletons equals $\theta$: Chen's
+   31.3 M mexicana SNPs over 161 haplotype intervals predict about `r format(signif(singletons_neutral_acc, 2), big.mark = ",")`
+   per diploid accession, and Chen observe 402,200 accession-specific SNPs, about
+   `r round(402200 / singletons_neutral_acc)`x more. A contraction would give fewer; isolated populations, mapping errors and
+   private insertions in repeats give more. Until Chen's SNPs are placed in our ranges, this excess is not evidence that
+   population-private blocks dominate our union.
+3. **Most of the private term $\varepsilon_f$ is false alleles.** $\varepsilon_f$ counts the sites per donor that no other
+   donor shares (`r format(round(wf[["eps"]]), big.mark = ",")`), not the donor's own sites (about 62 thousand, rarefied
+   $n = 1$). Real private sites found per donor: half of 402,200 per haplotype, times the share in our ranges, times chr10's
+   share (26.1 / 367), times $\eta$ = `r sprintf("%.2f-%.2f", eta_lo, eta_hi)`:
+
+   ```{r eps-split}
+   knitr::kable(per_donor[, .(share, real_private, false_share)],
+                col.names = c("Chen's SNPs in our ranges", "real private sites per donor", "share of ε_f that is false (%)"))
+   ```
+
+   This agrees with the QC set: tier-A precision 0.67-0.74 makes a quarter to a third of a donor's ~62 thousand own sites false,
+   16-21 thousand per donor. False alleles are mostly private, so they fill $\varepsilon_f$; real alleles are mostly shared and
+   go into $c + \theta_\eta H_n$. "Most of $\varepsilon_f$ is false" and "a third of own sites is false" are the same fact
+   seen from the union and from the donor.
+4. **Which curve.** Within one population the contraction predicts saturation of real alleles: the Michaelis-Menten shape. What
+   keeps the union growing in Eq. 8 is $\varepsilon_f n$, mostly false alleles, a property of our discovery, not of teosinte.
+   So the gap between the two groups of curves (section 3.7) is mainly a question of how many false alleles each new donor adds.
+   The six-donor run (Mesa Central and Chalco donors, `docs/runs/genotype_union_6donors_races_chr10.md`) measures the step a new
+   race adds in our ranges, which Chen's genome-wide numbers cannot give.
+
+## 5. What to expect from the other taxa
+
+ZEAL's donors are 43 mexicana, 40 parviglumis and 13 from three other taxa. In Chen's panel:
+
+- **Parviglumis is close to mexicana** (F~ST~ 0.068, the lowest between teosinte taxa) but more diverse (41.5 M SNPs against
+  31.3 M; $\pi$ 0.0085 against 0.0080) and with a smaller, later decline (MSMC2: 86 to 49 thousand). It shares much of mexicana's
+  variation, but its 5.97 M taxon-specific SNPs (14 % of its SNPs) are a block the mexicana union does not contain, and its larger
+  recent Ne means more low-frequency variation per donor.
+- **ZEAL's three other taxa** (diploperennis 6 donors, luxurians 5, huehuetenangensis 2) are distant (F~ST~ with mexicana
+  0.25-0.29) and carry 1.13, 0.48 and 0.64 M taxon-specific SNPs; with 2-6 donors each, they add their blocks almost entirely
+  with their first donors.
+- **An upper bound.** All Zea together carry 70.7 M SNPs against mexicana's 31.3 M (2.3x; maize included). The union of all ZEAL
+  donors cannot grow by more than that factor over the mexicana union at the same depth of sampling, and will grow by less,
+  since ZEAL has few donors of the distant taxa and Chen's maize-specific SNPs (1.5 M and 0.9 M, tropical and temperate) do not
+  enter.
+
+These ratios are genome-wide; they carry over to our ranges only if every taxon has the same share of its SNPs there, and
+taxon-specific SNPs may sit more often in repeats, so they likely overstate what other taxa add in our ranges.
+A first-order projection: the mexicana union at 43 donors times a taxon factor between ~1.2 (parviglumis-specific SNPs only)
+and 2.3 (all Zea). Simulation S3 replaces that range with a curve; the union over all samples measures it.
+
+## Caveats
+
+- Four donors, two races, all mexicana: every curve in section 3 fits them; the choice between curves rests on section 4, not
+  on the fit.
+- The rarefaction mean averages over donors; a donor with few lines or low coverage finds fewer sites and adds fewer.
+- Section 4's numbers mix Chen's discovery (individual genomes, 22x, strict filters) with ours (BC1 pools); $\eta$ and the
+  $\varepsilon_f$ split are orders of magnitude.
+
+## Appendix A: other accumulation curves, set aside
+
+All fitted to the same four points (Eq. 4); the table and plot include the three curves of section 3.
+
+| Model | $\bar U_n =$ | Spectrum it corresponds to | Why set aside |
+|---|---|---|---|
+| Logarithmic | $a + b \ln n$ | neutral, large $n$; Eq. 6 at $\alpha \to 0$ | the same as Watterson |
+| Power | $a\, n^{b}$ | $p^{a' - 1}$, $-1 < a' < 0$, $b = -a'$; Eq. 6 at $\alpha < 0$ | $b = 0.71$ needs $g(p) \propto p^{-1.71}$, rapid population growth, which Chen's MSMC2 history contradicts |
+| Square root | $a \sqrt{n}$ | power with $b = 1/2$ | fixes the 4-to-1 donor ratio at 2 against 2.75 observed; worst fit |
+| Negative exponential | $U_\infty (1 - e^{-kn})$ | every site at one frequency; Eq. 6 at $\alpha \to \infty$ | no spread of frequencies |
+
+```{r appendix-a}
+knitr::kable(emp_table, digits = 0, format.args = list(big.mark = ","),
+             col.names = c("model", "fitted parameters", "RMSE (sites)", "predicted at 10 donors"))
+plot_fits(names(emp), "Every accumulation curve fitted")
+```
+
+## Appendix B: pattern-level models, set aside
+
+These fit the 15 sharing patterns (170,729 sites) instead of the four rarefied points, with a discovery sensitivity per donor.
+They are set aside because they have no false-allele or population-private class: the many private patterns (`0010`, `0001`)
+can only come from rare alleles and high $r_d$, so their parameters absorb errors and structure. They are the starting point
+for fitting S1-S3's spectra to the patterns (a likelihood that allows AIC and likelihood-ratio tests, and per-donor
+predictions), once a private class is added.
+
+### Version 2: a sensitivity per donor
+
+$$
+g_2(p) = (1 - \phi)\, \frac{p^{a - 1}}{\sum_{q} q^{a - 1}} + \phi\, \mathbb{1}[p = 1], \qquad
+P(z) = \sum_{p} g_2(p) \prod_{d = 1}^{4} (r_d\, p)^{z_d} (1 - r_d\, p)^{1 - z_d}
+\tag{B1}
+$$
+
+$$
+\log L = \sum_{z \neq 0000} N_z \log \frac{P(z)}{1 - P(0000)}, \qquad \hat S = U_{1234}^{\mathrm{obs}} / (1 - P(0000))
+\tag{B2}
+$$
+
+### Version 3: a shared class
+
+A fraction $\phi$ of sites that every donor carries and finds with the same probability $e$ (the fixed differences $C$ of
+Eq. 1); the rest as B1 without the point mass ($g_3(p) \propto p^{a - 1}$):
+
+$$
+P(z) = (1 - \phi) \sum_{p} g_3(p) \prod_{d = 1}^{4} (r_d\, p)^{z_d} (1 - r_d\, p)^{1 - z_d}
+\; + \; \phi \prod_{d = 1}^{4} e^{z_d} (1 - e)^{1 - z_d}
+\tag{B3}
+$$
+
+```{r pattern-fits}
+p_rare <- function(zz, r, w, grid) {
+  apply(zz, 1, function(zr) {
+    q <- rep(1, length(grid))
+    for (d in seq_along(r)) q <- q * if (zr[d] == 1) grid * r[d] else 1 - grid * r[d]
+    sum(w * q)
+  })
+}
+spectrum <- function(a) g^(a - 1) / sum(g^(a - 1))
+model <- list(
+  v2 = list(start = c(rep(-1, 4), -3, log(0.5)),
+            par = function(th) list(r = plogis(th[1:4]), phi = plogis(th[5]), a = exp(th[6]), e = NA),
+            pz = function(zz, m) p_rare(zz, m$r, c((1 - m$phi) * spectrum(m$a), m$phi), c(g, 1)),
+            miss = function(rs, m) {
+              sum(c((1 - m$phi) * spectrum(m$a), m$phi) * Reduce(`*`, lapply(rs, function(x) 1 - c(g, 1) * x)))
+            }),
+  v3 = list(start = c(rep(-1, 4), -3, log(0.5), 1),
+            par = function(th) list(r = plogis(th[1:4]), phi = plogis(th[5]), a = exp(th[6]), e = plogis(th[7])),
+            pz = function(zz, m) {
+              (1 - m$phi) * p_rare(zz, m$r, spectrum(m$a), g) +
+                m$phi * apply(zz, 1, function(zr) prod(ifelse(zr == 1, m$e, 1 - m$e)))
+            },
+            miss = function(rs, m) {
+              (1 - m$phi) * sum(spectrum(m$a) * Reduce(`*`, lapply(rs, function(x) 1 - g * x))) +
+                m$phi * (1 - m$e)^length(rs)
+            })
+)
+fits <- lapply(model, function(md) {
+  nll <- function(th) {
+    pz <- md$pz(z, md$par(th))
+    -sum(pat$n * log(pz / sum(pz)))
+  }
+  ft <- optim(md$start, nll, method = "BFGS", control = list(maxit = 2000))
+  m <- md$par(ft$par)
+  m$S <- sum(pat$n) / (1 - md$miss(m$r, m))
+  m$union <- function(rs) m$S * (1 - md$miss(rs, m))
+  m$fitted <- sum(pat$n) * md$pz(z, m) / sum(md$pz(z, m))
+  m$loglik <- -ft$value
+  m
+})
+par_table <- rbindlist(lapply(names(fits), function(v) {
+  m <- fits[[v]]
+  data.table(version = sub("v", "", v), r_0540 = m$r[1], r_0570 = m$r[2], r_0550 = m$r[3], r_0580 = m$r[4],
+             a = m$a, phi = m$phi, e = m$e, S = round(m$S), log_lik = round(m$loglik, 1))
+}))
+knitr::kable(par_table, digits = 3, format.args = list(big.mark = ","))
+knitr::kable(data.table(pattern = pat$pattern, observed = pat$n, version_2 = round(fits$v2$fitted),
+                        version_3 = round(fits$v3$fitted))[order(-observed)],
+             format.args = list(big.mark = ","), col.names = c("pattern z", "observed", "Version 2 (B1)", "Version 3 (B3)"))
+```
+
+Version 2 goes to the edge of B1 ($\phi \approx 0$, $a \approx 0$) and predicts about half of the sites found by all four
+donors (`1111`). Version 3 fits the patterns and the observed unions within 1 %, with a log-likelihood gain of
+`r round(fits$v3$loglik - fits$v2$loglik, 1)` for one more parameter.
+
+## References
+
+- Chen L, et al. 2022. Genome sequencing reveals evidence of adaptive variation in the genus *Zea*. *Nat Genet* 54:1736-1745
+  (main text and supplement: `agent/papers/chen2022/`).
+- Sánchez González JJ, et al. 2018. Ecogeography of teosinte. *PLoS ONE* 13:e0192676.
+- Soberón J, Llorente J. 1993. The use of species accumulation functions for the prediction of species richness.
+  *Conserv Biol* 7:480-488.
+- Watterson GA. 1975. On the number of segregating sites in genetical models without recombination. *Theor Popul Biol*
+  7:256-276.
