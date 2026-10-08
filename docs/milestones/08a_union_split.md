@@ -1,5 +1,7 @@
 # Milestone 8a: gap filling split into a per-site summary and one task per donor
 
+Approved by the user, 2026-10-07 ("the 8a spec is approved").
+
 ## Why
 
 User, 2026-10-06, on the union's size at all donors (projected 7-15 M sites genome-wide; four-donor test: chr10 union
