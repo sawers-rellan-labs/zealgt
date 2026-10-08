@@ -41,6 +41,9 @@
                 "CRISP": {
                     "crisp": "1a9027e"
                 },
+                "DONOR_ALLELES_MERGE": {
+                    "bcftools": "1.23.1"
+                },
                 "FILL_DONOR_ALLELES": {
                     "pysam": "0.24.1",
                     "python": "3.12.14"
@@ -57,6 +60,10 @@
                 },
                 "SAMTOOLS_MERGE": {
                     "samtools": 1.24
+                },
+                "UNION_SITE_COUNTS": {
+                    "pysam": "0.24.1",
+                    "python": "3.12.14"
                 },
                 "UNION_TIERS": {
                     "pysam": "0.24.1",
@@ -93,7 +100,7 @@
                 "genotype/union/chrA.union.vcf.gz.tbi"
             ]
         ],
-        "timestamp": "2026-10-05T21:28:16.128461",
+        "timestamp": "2026-10-07T22:04:52.742347",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

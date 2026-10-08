@@ -54,7 +54,9 @@
 %%metro process: biallelic | BIALLELIC_UNION
 %%metro process: count_union | COUNT_UNION
 %%metro process: union_tiers | UNION_TIERS
+%%metro process: site_counts | UNION_SITE_COUNTS
 %%metro process: fill | FILL_DONOR_ALLELES
+%%metro process: merge_alleles | DONOR_ALLELES_MERGE
 %%metro process: count_lines | COUNT_LINES
 %%metro process: rtiger | CALL_ANCESTRY
 %%metro process: grid | ANCESTRY_GRID
@@ -140,7 +142,9 @@ graph LR
         union_out[ ]
         count_union[mpileup union]
         union_tiers[pooled likelihood (union)]
+        site_counts[site counts]
         fill[gap filling]
+        merge_alleles[merge]
         alleles_out[ ]
         count_lines[mpileup lines]
         rtiger[RTIGER]
@@ -172,8 +176,11 @@ graph LR
         biallelic -->|genotype| count_union
         index_pools -->|genotype| count_union
         count_union -->|genotype| union_tiers
+        union_tiers -->|genotype| site_counts
+        site_counts -->|genotype| fill
         union_tiers -->|genotype| fill
-        fill -->|genotype| alleles_out
+        fill -->|genotype| merge_alleles
+        merge_alleles -->|genotype| alleles_out
         tiers -->|genotype| count_lines
         cov_filter -->|genotype| count_lines
         count_lines -->|genotype| rtiger

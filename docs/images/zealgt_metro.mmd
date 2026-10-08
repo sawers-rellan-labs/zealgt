@@ -66,7 +66,9 @@ graph LR
         b73_in[ ]
         tiers[pooled likelihood]
         union[sites union]
+        site_counts[site counts]
         fill[gap filling]
+        merge_alleles[merge]
         alleles_out[donor alleles]
         rtiger[RTIGER]
         grid[0.1 cM grid]
@@ -76,8 +78,11 @@ graph LR
         veto -->|genotype| tiers
         b73_in -->|genotype| tiers
         tiers -->|genotype| union
+        union -->|genotype| site_counts
+        site_counts -->|genotype| fill
         union -->|genotype| fill
-        fill -->|genotype| alleles_out
+        fill -->|genotype| merge_alleles
+        merge_alleles -->|genotype| alleles_out
         tiers -->|genotype| rtiger
         rtiger -->|genotype| grid
         union -->|genotype| grid

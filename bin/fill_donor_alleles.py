@@ -8,7 +8,13 @@ Per donor d and site s, from the donor's site table at the union (score_pooled_l
   GT = 0 at tier 'ref' (gaps only); 1 at PALT >= --alt with reads at s and neither hidepth nor af_gt_half; else missing.
 Own sites (s in d's tier-A set) are re-scored the same way, but never REF: an own site under --alt becomes missing,
 also at tier 'ref' (discovery and the union count disagree; user, 2026-10-05).
-Writes a bgzipped, tabix-indexed VCF with one haploid sample per donor: GT, LLR, PRIOR, PALT, SRC (own or gap), with pysam.
+
+Two modes, so that no step holds all donors at once:
+  counts: per union site, K = donors with s among their own tier-A sites, R = donors with s a gap scored tier 'ref';
+          reads one donor at a time; writes a gzipped TSV (chrom, pos, K, R) in union order.
+  fill:   one donor; k and m are K and R less the donor's own share (k = K - [own], m = k + R - [ref gap]);
+          writes a bgzipped, tabix-indexed VCF with the donor as one haploid sample: GT, LLR, PRIOR, PALT, SRC (own or
+          gap), with pysam. bcftools merge joins the donors into the one-step file.
 """
 import argparse
 import gzip
@@ -29,24 +35,36 @@ FORMAT = [
     ("PALT", 1, "Float", "Posterior probability that the donor allele is ALT (Eq. eb)"),
     ("SRC", 1, "String", "own: among the donor's tier-A sites; gap: discovered in other donors"),
 ]
+DONOR = dict(nargs=3, metavar=("NAME", "TIER_A_VCF", "TABLE"))
 
 
 def parse_args(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--union", required=True, help="union sites VCF (.vcf or .vcf.gz)")
-    ap.add_argument("--donor", nargs=3, action="append", required=True, metavar=("NAME", "TIER_A_VCF", "TABLE"),
-                    help="a donor, its tier-A sites VCF and its site table at the union; once per donor")
-    ap.add_argument("--out", required=True, help="output VCF (.vcf.gz; the .tbi is written next to it)")
-    req = ap.add_argument_group("model settings (values in conf/modules.config)")
+    sub = ap.add_subparsers(dest="mode", required=True)
+    c = sub.add_parser("counts", help="K and R per union site, over all donors")
+    c.add_argument("--union", required=True, help="union sites VCF (.vcf or .vcf.gz)")
+    c.add_argument("--donor", action="append", required=True, **DONOR,
+                   help="a donor, its tier-A sites VCF and its site table at the union; once per donor")
+    c.add_argument("--out", required=True, help="site counts (.tsv.gz)")
+    f = sub.add_parser("fill", help="one donor's allele at every union site")
+    f.add_argument("--union", required=True, help="union sites VCF (.vcf or .vcf.gz)")
+    f.add_argument("--donor", required=True, **DONOR, help="the donor, its tier-A sites VCF and its site table at the union")
+    f.add_argument("--counts", required=True, help="site counts of all donors (counts mode)")
+    f.add_argument("--out", required=True, help="output VCF (.vcf.gz; the .tbi is written next to it)")
+    req = f.add_argument_group("model settings (values in conf/modules.config)")
     req.add_argument("--w", type=float, required=True, help="prior weight of the donor's sharing rate")
     req.add_argument("--alt", type=float, required=True, help="posterior of ALT at which ALT is called")
     a = ap.parse_args(argv)
-    if a.w <= 0 or not 0.5 < a.alt < 1:
-        ap.error("need w > 0 and 0.5 < alt < 1")
-    if not a.out.endswith(".vcf.gz"):
-        ap.error("--out must end in .vcf.gz")
-    if len({d[0] for d in a.donor}) != len(a.donor):
-        ap.error("donor names must differ")
+    if a.mode == "counts":
+        if not a.out.endswith(".tsv.gz"):
+            ap.error("--out must end in .tsv.gz")
+        if len({d[0] for d in a.donor}) != len(a.donor):
+            ap.error("donor names must differ")
+    else:
+        if a.w <= 0 or not 0.5 < a.alt < 1:
+            ap.error("need w > 0 and 0.5 < alt < 1")
+        if not a.out.endswith(".vcf.gz"):
+            ap.error("--out must end in .vcf.gz")
     return a
 
 
@@ -76,6 +94,16 @@ def read_table(path):
     return rows
 
 
+def read_counts(path, sites):
+    """Site counts -> [(K, R)] in union order; the file must list the union's sites in that order."""
+    with open_text(path) as fh:
+        fh.readline()
+        rows = [line.rstrip("\n").split("\t") for line in fh]
+    if [(x[0], int(x[1])) for x in rows] != [(s[0], s[1]) for s in sites]:
+        sys.exit(f"{path}: sites differ from the union's")
+    return [(int(x[2]), int(x[3])) for x in rows]
+
+
 def sigmoid(z):
     return 1 / (1 + math.exp(-z)) if z >= 0 else math.exp(z) / (1 + math.exp(z))
 
@@ -97,28 +125,69 @@ def call(row, pi, alt, own):
     return ".", pp
 
 
-def fill(sites, donors, own, tables, w, alt):
-    """Yield (site, [(GT, LLR, PRIOR, PALT, SRC) per donor]) for every union site."""
-    mu = {d: sharing_rate(sites, own[d], tables[d]) for d in donors}
-    for d in donors:
-        LOG.info("%s: %d own sites, mu = %.4f", d, len(own[d]), mu[d])
+def site_counts(sites, donors):
+    """[K], [R] per union site; donors: (name, own sites, table), one at a time."""
+    K, R = [0] * len(sites), [0] * len(sites)
+    for name, own, table in donors:
+        for i, s in enumerate(sites):
+            if s in own:
+                K[i] += 1
+            elif table.get(s, NO_ROW)[0] == "ref":
+                R[i] += 1
+        LOG.info("%s: %d own sites counted", name, len(own))
+    return K, R
+
+
+def fill(sites, own, table, counts, w, alt):
+    """Yield (site, (GT, LLR, PRIOR, PALT, SRC)) of one donor at every union site; counts: (K, R) per site."""
+    mu = sharing_rate(sites, own, table)
+    LOG.info("%d own sites, mu = %.4f", len(own), mu)
     t0 = last = time.monotonic()
-    for done, s in enumerate(sites, 1):
-        carriers = {d for d in donors if s in own[d]}
-        ref = {d for d in donors if d not in carriers and tables[d].get(s, NO_ROW)[0] == "ref"}
-        cells = []
-        for d in donors:
-            k = len(carriers - {d})
-            m = k + len(ref - {d})
-            pi = min(max((w * mu[d] + k) / (w + m), 1e-6), 1 - 1e-6)
-            row = tables[d].get(s, NO_ROW)
-            gt, pp = call(row, pi, alt, d in carriers)
-            cells.append((gt, row[2], pi, pp, "own" if d in carriers else "gap"))
-        yield s, cells
+    for done, (s, (K, R)) in enumerate(zip(sites, counts), 1):
+        carrier = s in own
+        row = table.get(s, NO_ROW)
+        k = K - carrier
+        m = k + R - (not carrier and row[0] == "ref")
+        pi = min(max((w * mu + k) / (w + m), 1e-6), 1 - 1e-6)
+        gt, pp = call(row, pi, alt, carrier)
+        yield s, (gt, row[2], pi, pp, "own" if carrier else "gap")
         now = time.monotonic()
         if now - last >= 60:
             last = now
             LOG.info("%d/%d sites filled, %.1f min", done, len(sites), (now - t0) / 60)
+
+
+def write_counts(a, sites):
+    # a generator, so one donor's sites and table are in memory at a time
+    K, R = site_counts(sites, ((n, set(read_vcf_sites(v)[1]), read_table(t)) for n, v, t in a.donor))
+    with gzip.open(a.out, "wt") as out:
+        out.write("chrom\tpos\tK\tR\n")
+        for (chrom, pos, _, _), k, r in zip(sites, K, R):
+            out.write(f"{chrom}\t{pos}\t{k}\t{r}\n")
+
+
+def write_alleles(a, contigs, sites):
+    name, vcf, path = a.donor
+    own = set(read_vcf_sites(vcf)[1])
+    table = read_table(path)
+    counts = read_counts(a.counts, sites)
+    header = pysam.VariantHeader()
+    for chrom, length in contigs:
+        header.contigs.add(chrom, length=length)
+    for fid, number, kind, desc in FORMAT:
+        header.formats.add(fid, number, kind, desc)
+    header.add_sample(name)
+    tally = {}
+    with pysam.VariantFile(a.out, "wz", header=header) as out:
+        for (chrom, pos, ref, alt), (gt, llr, pi, pp, src) in fill(sites, own, table, counts, a.w, a.alt):
+            rec = out.new_record(contig=chrom, start=pos - 1, alleles=(ref, alt))
+            cell = rec.samples[name]
+            cell["GT"] = (None,) if gt == "." else (int(gt),)
+            cell["LLR"], cell["PRIOR"], cell["PALT"], cell["SRC"] = llr, pi, pp, src
+            tally[(src, gt)] = tally.get((src, gt), 0) + 1
+            out.write(rec)
+    pysam.tabix_index(a.out, preset="vcf", force=True)
+    LOG.info("%s: %s", name, " ".join(f"{src} {gt} {c}" for (src, gt), c in sorted(tally.items())))
 
 
 def main(argv=None):
@@ -127,29 +196,10 @@ def main(argv=None):
     a = parse_args(argv)
     contigs, sites = read_vcf_sites(a.union)
     LOG.info("%s: %d union sites", a.union, len(sites))
-    donors = [d[0] for d in a.donor]
-    own = {d: set(read_vcf_sites(v)[1]) for d, v, _ in a.donor}
-    tables = {d: read_table(t) for d, _, t in a.donor}
-    header = pysam.VariantHeader()
-    for name, length in contigs:
-        header.contigs.add(name, length=length)
-    for fid, number, kind, desc in FORMAT:
-        header.formats.add(fid, number, kind, desc)
-    for d in donors:
-        header.add_sample(d)
-    counts = {d: {} for d in donors}
-    with pysam.VariantFile(a.out, "wz", header=header) as out:
-        for (chrom, pos, ref, alt), cells in fill(sites, donors, own, tables, a.w, a.alt):
-            rec = out.new_record(contig=chrom, start=pos - 1, alleles=(ref, alt))
-            for d, (gt, llr, pi, pp, src) in zip(donors, cells):
-                call = rec.samples[d]
-                call["GT"] = (None,) if gt == "." else (int(gt),)
-                call["LLR"], call["PRIOR"], call["PALT"], call["SRC"] = llr, pi, pp, src
-                counts[d][(src, gt)] = counts[d].get((src, gt), 0) + 1
-            out.write(rec)
-    pysam.tabix_index(a.out, preset="vcf", force=True)
-    for d in donors:
-        LOG.info("%s: %s", d, " ".join(f"{src} {gt} {c}" for (src, gt), c in sorted(counts[d].items())))
+    if a.mode == "counts":
+        write_counts(a, sites)
+    else:
+        write_alleles(a, contigs, sites)
 
 
 if __name__ == "__main__":

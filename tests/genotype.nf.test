@@ -38,12 +38,13 @@ nextflow_pipeline {
             assertAll(
                 // 2 donors; B73-bulk checks C_1, C_2 (C_3 is a Purple check); pools: 2 witnesses (L_low under 0.05x,
                 // L_excl excluded), the check pool, the B73 control; one mpileup per donor and B73 control;
-                // one union; one union count per BC1 sample (4) and B73 control (the check pool, B73_ctrl);
+                // one union; one union count per BC1 sample (4) and B73 control (the check pool, B73_ctrl); one site count,
+                // one gap filling per donor, one merge;
                 // one count per line (L_1, M_1), one RTIGER call per donor, one grid, one VCF per donor
                 { assert tasks == [CHECK_COUNTS: 2, CHECK_ALT_RATE: 2, SAMTOOLS_MERGE: 4, SAMTOOLS_ADDREPLACERG: 4, SAMTOOLS_INDEX: 4, CRISP: 2,
                                    BED_CLIP: 2, WITNESS_VETO: 2, BCFTOOLS_MPILEUP: 4, POOLED_LIKELIHOOD_TIERS: 2,
                                    BCFTOOLS_MERGE: 1, BCFTOOLS_NORM: 1, BIALLELIC_UNION: 1, COUNT_UNION: 6, UNION_TIERS: 2,
-                                   FILL_DONOR_ALLELES: 1, COUNT_LINES: 2, CALL_ANCESTRY: 2, ANCESTRY_GRID: 1, ANCESTRY_VCF_INDEX: 2] },
+                                   UNION_SITE_COUNTS: 1, FILL_DONOR_ALLELES: 2, DONOR_ALLELES_MERGE: 1, COUNT_LINES: 2, CALL_ANCESTRY: 2, ANCESTRY_GRID: 1, ANCESTRY_VCF_INDEX: 2] },
                 // the stub drops no check, so no dropped_b73_checks.tsv
                 { assert stable_path.sort() == (['Zx.9001_P1', 'Zx.9002_P1'].collectMany { d ->
                     ["genotype/discovery/${d}.chrA.vcf.gz", "genotype/discovery/${d}.chrA.vcf.gz.tbi", "genotype/discovery/${d}.chrA.sites.tsv.gz"]
