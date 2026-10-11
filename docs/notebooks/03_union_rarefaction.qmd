@@ -1,6 +1,6 @@
 ---
 title: "Marker union rarefaction"
-subtitle: "How the union of donor sites grows with donors: a demographic model of teosinte, the simulations that would complete it, and the curves fitted to the four-donor chr10 test (2026-10-07)"
+subtitle: "How the union of donor sites grows with donors: a demographic model of teosinte, the simulations that would complete it, and the curves fitted to the six donors of the eight-donor chr10 test that pass the curve rule (2026-10-11)"
 author: "Fausto Rodríguez-Zapata"
 date: today
 format:
@@ -32,11 +32,17 @@ once the union over all samples exists. The math supplement's Section 5.6 summar
   each new population adds a block of private alleles, and false alleles add a constant number per donor.
 - **Simulations proposed** (section 2): the expected site frequency spectrum of the donors under (S1) mexicana's Ne history,
   (S2) races as demes, (S3) the Zea species tree with ZEAL's donor composition; Eq. 1 turns each into a union curve.
-- **Empirical fits** (four mexicana donors, two races): Michaelis-Menten ($U_\infty \approx 414$ thousand sites on chr10),
-  Watterson, and Watterson with false alleles ($\varepsilon_f \approx 13$ thousand per donor): 263, 253 and 304 thousand sites at 10
-  donors. The false-allele term's linear growth is what sets the last apart (section 3.7).
-- **Reading.** Chen's numbers are genome-wide; scaled to our low-copy ranges (section 4), most of the private term
-  $\varepsilon_f$ is false alleles, as the QC-set precision implies; the discovery sensitivity is not determined from Chen.
+- **Empirical fits** (six mexicana donors, four races, the ones that pass the curve rule; two families off the curve shown
+  apart): Michaelis-Menten ($U_\infty \approx 474$ thousand sites on chr10), Watterson, and Watterson with false alleles
+  ($\varepsilon_f \approx 13$ thousand per donor): 245, 225 and 263 thousand sites at 10 donors. The false-allele term's
+  linear growth is what sets the last apart (section 3.7). The five-donor fits overshot the sixth donor by 5-11 %
+  (section 3.8).
+- **A new race** (Zx.0160_P2, Chalco) adds a larger share of its sites than a race-mate but fewer sites, as its discovery
+  finds fewer tier-A sites (section 3.2).
+- **Reading.** Chen's numbers are genome-wide; scaled to our low-copy ranges (section 4), neither false calls (read-based
+  precision 0.97, supplement Section 5.5) nor Chen's private SNPs account for most of the private term $\varepsilon_f$.
+  It is about the size of the sites where read and assembly alignment disagree; what it holds is untested. The discovery
+  sensitivity is not determined from Chen.
   Other taxa: Zea as a whole carries 2.3x mexicana's SNPs in Chen's panel, an upper bound for the union's growth when ZEAL's
   parviglumis and other donors are added.
 :::
@@ -44,6 +50,7 @@ once the union over all samples exists. The math supplement's Section 5.6 summar
 ```{r setup}
 library(data.table)
 library(ggplot2)
+options(knitr.kable.NA = "")
 theme_set(theme_bw(base_size = 14) + theme(legend.text = element_text(size = 12)))
 ```
 
@@ -79,9 +86,11 @@ chen <- data.table(
   fst_mexicana = c(NA, 0.068, 0.277, 0.277, 0.290, 0.270, 0.248),
   fst_maize = c(0.158, 0.101, 0.356, 0.354, 0.364, 0.342, 0.330)
 )
-knitr::kable(chen, digits = 5, col.names = c("taxon", "accessions", "SNPs (M)", "taxon-specific SNPs (M)",
-                                              "taxon-specific, downsampled (M)", "π per bp", "F_ST with mexicana",
-                                              "F_ST with maize"))
+knitr::kable(chen, digits = 5, col.names = c(
+  "taxon", "accessions", "SNPs (M)", "taxon-specific SNPs (M)",
+  "taxon-specific, downsampled (M)", "π per bp", "F_ST with mexicana",
+  "F_ST with maize"
+))
 ```
 
 F~ST~ with maize is Chen's cultivated panel (507 inbreds; B73's subspecies): parviglumis and mexicana are closest to maize
@@ -150,14 +159,24 @@ $$
 $$
 
 ```{r data}
-donors <- data.table(donor = c("Zx.0540_P3", "Zx.0570_P2", "Zx.0550_P4", "Zx.0580_P2"),
-                     race = c("Durango", "Nobogame", "Durango", "Nobogame"),
-                     own_sites = c(32750, 48251, 85952, 82601))
-unions <- data.table(set = c("pilot pair", "+ Zx.0550_P4", "+ Zx.0580_P2", "all four"),
-                     donors = c(2, 3, 3, 4), members = list(1:2, 1:3, c(1, 2, 4), 1:4),
-                     sites = c(70210, 128964, 125970, 170729))
-pat <- fread("union_rarefaction/patterns.tsv", header = FALSE, col.names = c("pattern", "n"),
-             colClasses = c("character", "numeric"))
+# donors in the column order of patterns_8donors.tsv
+donors <- data.table(
+  donor = c(
+    "Zx.0540_P3", "Zx.0570_P2", "Zx.0550_P4", "Zx.0580_P2", "Zx.0500_P2", "Zx.0090_P2", "Zx.0470_P2", "Zx.0160_P2"
+  ),
+  race = c("Durango", "Nobogame", "Durango", "Nobogame", "Mesa Central", "Chalco", "Mesa Central", "Chalco"),
+  own_sites = c(32750, 48251, 85952, 82601, 9060, 7482, 16283, 19767),
+  status = c(rep("on the curve", 5), rep("off the curve", 2), "on the curve")
+)
+good <- which(donors$status == "on the curve")
+unions <- data.table(
+  set = c("pilot pair", "first four", "attempt 1 six", "all eight"),
+  donors = c(2, 4, 6, 8), sites = c(70210, 170729, 178300, 196645)
+)
+pat <- fread("union_rarefaction/patterns_8donors.tsv",
+  header = FALSE, col.names = c("pattern", "n"),
+  colClasses = c("character", "numeric")
+)
 z <- do.call(rbind, lapply(strsplit(pat$pattern, ""), as.integer))
 ```
 
@@ -165,29 +184,36 @@ z <- do.call(rbind, lapply(strsplit(pat$pattern, ""), as.integer))
 g <- (1:2000) / 2000
 g1 <- head(g, -1)
 spectra <- list(`neutral 1/p` = (1 / g1) / sum(1 / g1), flat = rep(1 / length(g1), length(g1)))
-afs <- rbindlist(lapply(names(spectra), function(k) rbindlist(lapply(c(0.05, 0.1, 0.15, 0.3), function(eta) {
-  eu <- sapply(1:10, function(n) sum(spectra[[k]] * (1 - (1 - eta * g1)^n)))
-  data.table(spectrum = k, eta = sprintf("η = %.2f", eta), donors = 2:10, sites = unions$sites[1] * eu[2:10] / eu[2])
-}))))
+afs <- rbindlist(lapply(names(spectra), function(k) {
+  rbindlist(lapply(c(0.05, 0.1, 0.15, 0.3), function(eta) {
+    eu <- sapply(1:10, function(n) sum(spectra[[k]] * (1 - (1 - eta * g1)^n)))
+    data.table(spectrum = k, eta = sprintf("η = %.2f", eta), donors = 2:10, sites = unions$sites[1] * eu[2:10] / eu[2])
+  }))
+}))
 afs[, spectrum := factor(spectrum, levels = names(spectra))]
 lab <- unions[, .(donors, sites, label = paste0(set, ": ", format(sites, big.mark = ",")), vj = c(1.6, -0.6, 1.6, 1.6))]
+union_of <- function(s) unions[set == s, sites]
 plot_curves <- function(curves, title, colour) {
   ggplot(curves, aes(donors, sites / 1e3, colour = eta)) +
     geom_line(linewidth = 0.9) +
     geom_point(size = 1.5) +
     geom_point(data = lab, aes(donors, sites / 1e3), inherit.aes = FALSE, size = 4, shape = 21, fill = "black") +
-    geom_text(data = lab, aes(donors, sites / 1e3, label = label, vjust = vj), inherit.aes = FALSE, hjust = -0.08,
-              size = 3.5) +
+    geom_text(
+      data = lab, aes(donors, sites / 1e3, label = label, vjust = vj), inherit.aes = FALSE, hjust = -0.08,
+      size = 3.5
+    ) +
     scale_x_continuous(breaks = 1:10) +
     labs(title = title, x = "Donors in the union", y = "Union sites (thousands)", colour = colour)
 }
-plot_curves(afs, "Equilibrium baseline (Eq. 3) and the observed unions", "Discovery sensitivity") + facet_wrap(~spectrum)
+plot_curves(afs, "Equilibrium baseline (Eq. 3) and the observed unions", "Discovery sensitivity") +
+  facet_wrap(~spectrum)
 ```
 
 At 4 donors Eq. 3 gives
 `r paste(round(afs[spectrum == "neutral 1/p" & donors == 4, range(sites)] / unions$sites[1], 2), collapse = "-")`x
-(neutral) the 2-donor union; the test gave `r round(unions$sites[4] / unions$sites[1], 2)`x. The equilibrium baseline has no
-private term: neither the false alleles nor the demes of section 1.3.
+(neutral) the 2-donor union; the first four donors gave `r round(union_of("first four") / union_of("pilot pair"), 2)`x. The
+pipeline unions at 6 and 8 donors include the two donors off the curve (section 3.1). The equilibrium baseline
+has no private term: neither the false alleles nor the demes of section 1.3.
 
 ## 2. Proposed simulations (not run)
 
@@ -213,46 +239,109 @@ not the genome-wide totals of section 1.2: the share of their SNPs in our ranges
 
 ### 3.1 The data
 
-Four mexicana donors from two races, chr10, tier-A sites (step 4 of variant discovery). Own sites from the tier-A VCFs; unions
-from `BIALLELIC_UNION` (2 and 4 donors: GENOTYPE runs, jobs 1111642 and 1134902) and from the same bcftools merge, norm and
-biallelic filter outside the pipeline (3 donors: jobs 1143221, 1143222). The **sharing pattern** of a union site is which
-donors' own sites include it, $z \in \{0, 1\}^4$ (job 1143239, `union_rarefaction/patterns.tsv`). The Durango donors were
-collected about 2 km apart (Nombre de Dios, Durango), the Nobogame donors about 3 km apart (Guadalupe y Calvo, Chihuahua).
+Eight mexicana donors from four races, chr10, tier-A sites (step 4 of variant discovery): the four Durango and Nobogame donors
+of the first test, two Mesa Central and two Chalco donors (union test, `docs/runs/genotype_union_6donors_races_chr10.md`,
+attempts 1 and 3). Own sites from the tier-A VCFs; unions from `BIALLELIC_UNION` (GENOTYPE runs: 2 donors job 1111642, 4
+donors job 1134902, 6 donors attempt 1, 8 donors job 1152382). The **sharing pattern** of a union site is which donors' own
+sites include it, $z \in \{0, 1\}^8$ (job 1152598, `union_rarefaction/patterns_8donors.tsv`; 255 patterns summing to the
+eight-donor union). The Durango donors were collected about 2 km apart (Nombre de Dios, Durango), the Nobogame donors about
+3 km apart (Guadalupe y Calvo, Chihuahua).
+
+A donor enters the curve if its family's lines show what the donor carries (`docs/decisions.md`, 2026-10-11). Checked on
+the lines' RTIGER calls at the union sites gap filling called ALT for the donor:
+
+1. at most 4 donor segments per line;
+2. segment dosage in the bands of good families: reads in REF segments <= 3 % ALT, in HET segments 30-55 %, in ALT
+   segments >= 75 %;
+3. the donor segments of the lines passing 1-2 cover >= 90 % of chr10.
+
+Six donors pass. **Zx.0090_P2** covers 24 % of chr10, below the 5th percentile (46 %) of what its pedigree predicts
+(simulated from `meta/registry.csv`): a problem of the family, not chance. **Zx.0470_P2** covers 73 %, within what its
+small pedigree predicts (4 BC1 and 7 BC2 plants; median 90 %): its lines carry too little of the donor to confirm it. Both
+also lose two thirds of their sites to the witness veto. The curve and the fits below use the **six donors on the curve**;
+the other two are shown separately (section 3.2).
 
 ```{r data-tables}
-knitr::kable(donors, format.args = list(big.mark = ","), col.names = c("donor", "race", "own tier-A sites"))
-knitr::kable(unions[, .(set, donors, sites)], format.args = list(big.mark = ","),
-             col.names = c("union", "donors", "union sites"))
-knitr::kable(pat[order(-n)], format.args = list(big.mark = ","), col.names = c("pattern z", "union sites"))
+knitr::kable(donors, format.args = list(big.mark = ","), col.names = c("donor", "race", "own tier-A sites", "status"))
+knitr::kable(unions, format.args = list(big.mark = ","), col.names = c("union (pipeline)", "donors", "union sites"))
+pat6 <- data.table(pattern = apply(z[, good], 1, paste, collapse = ""), n = pat$n)[pattern != "000000", .(n = sum(n)),
+  by = pattern
+]
+knitr::kable(pat6[order(-n)],
+  format.args = list(big.mark = ","),
+  col.names = c(paste("pattern z,", paste(donors$donor[good], collapse = " ")), "union sites")
+)
 ```
 
 ### 3.2 The rarefaction curve
 
 As in species-richness rarefaction, donors are the samples and sites the species. The rarefaction curve is the mean union over
-every set of $n$ donors, computed exactly from the sharing patterns:
+every set of $n$ of the $N$ donors, computed exactly from the sharing patterns:
 
 $$
-\bar U_n = \binom{4}{n}^{-1} \sum_{|D| = n} \; \sum_{z} N_z \, \mathbb{1}\Big[\max_{d \in D} z_d = 1\Big], \qquad n = 1, \dots, 4
+\bar U_n = \binom{N}{n}^{-1} \sum_{|D| = n} \; \sum_{z} N_z \, \mathbb{1}\Big[\max_{d \in D} z_d = 1\Big], \qquad n = 1, \dots, N
 \tag{4}
 $$
 
 ```{r rarefaction}
-subsets <- unlist(lapply(1:4, function(n) combn(4, n, simplify = FALSE)), recursive = FALSE)
-sub_dt <- rbindlist(lapply(subsets, function(d) {
-  data.table(donors = length(d), set = paste(donors$donor[d], collapse = " + "),
-             sites = sum(pat$n[apply(z[, d, drop = FALSE], 1, max) == 1]))
-}))
+rarefy <- function(members) {
+  subsets <- unlist(lapply(seq_along(members), function(n) combn(members, n, simplify = FALSE)), recursive = FALSE)
+  rbindlist(lapply(subsets, function(d) {
+    data.table(
+      donors = length(d), set = paste(donors$donor[d], collapse = " + "),
+      sites = sum(pat$n[apply(z[, d, drop = FALSE], 1, max) == 1])
+    )
+  }))
+}
+sub_dt <- rarefy(good)
 rare <- sub_dt[, .(sites = mean(sites)), by = donors]
-knitr::kable(rare, format.args = list(big.mark = ","), col.names = c("donors n", "rarefied union (Eq. 4)"))
+sets <- list(`curve six` = good, `curve six + Zx.0470_P2` = c(good, 7), `all eight` = seq_len(8))
+rare_sets <- rbindlist(lapply(sets, function(m) rarefy(m)[, .(sites = mean(sites)), by = donors]), idcol = "donor set")
+knitr::kable(dcast(rare_sets, donors ~ `donor set`, value.var = "sites")[, c("donors", names(sets)), with = FALSE],
+  digits = 0, format.args = list(big.mark = ",")
+)
 ```
+
+```{r rarefaction-plot}
+ggplot(rare_sets, aes(donors, sites / 1e3, colour = `donor set`)) +
+  geom_line(linewidth = 0.9) +
+  geom_point(size = 3) +
+  scale_x_continuous(breaks = 1:8) +
+  labs(
+    title = "Rarefied union (Eq. 4) by donor set", x = "Donors in the union", y = "Union sites (thousands)",
+    colour = NULL
+  )
+```
+
+```{r off-curve}
+union_set <- function(m) sum(pat$n[apply(z[, m, drop = FALSE], 1, max) == 1])
+adds <- data.table(
+  set = c("curve six", "+ Zx.0470_P2", "+ Zx.0090_P2", "+ Zx.0470_P2 and Zx.0090_P2"),
+  sites = c(union_set(good), union_set(c(good, 7)), union_set(c(good, 6)), union_set(c(good, 6, 7)))
+)
+adds[, added := sites - union_set(good)]
+adds[1, added := NA]
+knitr::kable(adds, format.args = list(big.mark = ","), col.names = c("union", "sites", "added to the curve six"))
+```
+
+Each donor off the curve adds `r format(min(adds$added[2:3]), big.mark = ",")`-`r format(max(adds$added[2:3]), big.mark = ",")`
+sites, a few per cent of the union: they find few sites (7-16 thousand tier-A) and share most of them with the six. Zx.0470_P2
+lowers the rarefied curve at every $n$ for the same reason.
+
+**A new race against a race-mate.** Zx.0160_P2 (Chalco) has 10,925 union sites that none of the four Durango and Nobogame
+donors has, 0.56 of its own; each Durango or Nobogame donor against the other three has 10-45 thousand such sites, 0.31-0.53 of
+its own (run plan, attempt 3). The new race adds a larger share but fewer sites, because its discovery finds fewer tier-A sites
+(19,767 against 33-86 thousand): discovery depth, not race, sets most of what a donor adds.
 
 ```{r curve-fits}
 # harmonic number H_n, continuous in n: digamma(n + 1) + Euler's gamma
 harm <- function(n) digamma(n + 1) - digamma(1)
 models <- list(
   `Michaelis-Menten` = list(f = sites ~ um * donors / (k + donors), start = list(um = 3e5, k = 4)),
-  `Watterson + false alleles` = list(f = sites ~ cc + th * harm(donors) + eps * donors,
-                                     start = list(cc = 1e4, th = 5e4, eps = 1e4)),
+  `Watterson + false alleles` = list(
+    f = sites ~ cc + th * harm(donors) + eps * donors,
+    start = list(cc = 1e4, th = 5e4, eps = 1e4)
+  ),
   Watterson = list(f = sites ~ cc + th * harm(donors), start = list(cc = 1e4, th = 5e4)),
   Logarithmic = list(f = sites ~ a + b * log(donors), start = list(a = 5e4, b = 5e4)),
   Power = list(f = sites ~ a * donors^b, start = list(a = 6e4, b = 0.7)),
@@ -263,9 +352,11 @@ sym <- c(cc = "c", th = "θ_η", eps = "ε_f", um = "U_∞", k = "K", a = "a", b
 emp <- lapply(models, function(m) nls(m$f, data = rare, start = m$start, control = nls.control(maxiter = 500)))
 emp_table <- rbindlist(lapply(names(emp), function(k) {
   cf <- coef(emp[[k]])
-  data.table(model = k, parameters = paste(sprintf("%s = %s", sym[names(cf)], signif(cf, 3)), collapse = ", "),
-             rmse = sqrt(mean(residuals(emp[[k]])^2)),
-             at_10 = predict(emp[[k]], data.table(donors = 10)))
+  data.table(
+    model = k, parameters = paste(sprintf("%s = %s", sym[names(cf)], signif(cf, 3)), collapse = ", "),
+    rmse = sqrt(mean(residuals(emp[[k]])^2)),
+    at_10 = predict(emp[[k]], data.table(donors = 10))
+  )
 }))
 plot_fits <- function(keep, title) {
   cv <- rbindlist(lapply(keep, function(k) {
@@ -276,11 +367,17 @@ plot_fits <- function(keep, title) {
     geom_point(data = sub_dt, aes(donors, sites / 1e3), inherit.aes = FALSE, colour = "grey50", size = 2) +
     geom_point(data = rare, aes(donors, sites / 1e3), inherit.aes = FALSE, size = 4, shape = 21, fill = "black") +
     scale_x_continuous(breaks = 1:10) +
-    labs(title = title, subtitle = "black: rarefied union (Eq. 4); grey: each of the 15 donor sets",
-         x = "Donors in the union", y = "Union sites (thousands)", colour = NULL)
+    labs(
+      title = title, subtitle = sprintf("black: rarefied union (Eq. 4); grey: each of the %d donor sets", nrow(sub_dt)),
+      x = "Donors in the union", y = "Union sites (thousands)", colour = NULL
+    )
 }
 mm <- coef(emp$`Michaelis-Menten`)
 wf <- coef(emp$`Watterson + false alleles`)
+# range of the predictions at 10 donors over a group of models, in thousands
+at10 <- function(keep) paste(round(range(emp_table[model %in% keep, at_10]) / 1e3), collapse = "-")
+fading <- c("Logarithmic", "Negative exponential", "Watterson", "Michaelis-Menten")
+lasting <- c("Watterson + false alleles", "Power")
 ```
 
 ### 3.3 Michaelis-Menten
@@ -325,7 +422,7 @@ wa_res <- round(residuals(emp$Watterson))
 Fitted: $c$ = `r format(round(wa[["cc"]]), big.mark = ",")`, $\theta_\eta$ = `r format(round(wa[["th"]]), big.mark = ",")`, RMSE
 `r format(round(emp_table[model == "Watterson", rmse]), big.mark = ",")` sites. $c$ is negative, which Eq. 2 does not allow
 (fixed differences cannot be fewer than none), and the residuals follow a pattern, not noise (`r paste(format(wa_res, big.mark = ","), collapse = ", ")`
-for $n = 1, \dots, 4$: above, below, below, above): the curve bends too early.
+for $n = 1, \dots, 6$: above, below, below, below, above, above): the curve bends too early.
 
 ### 3.5 Watterson with false alleles
 
@@ -344,7 +441,7 @@ wf_se <- summary(emp$`Watterson + false alleles`)$coefficients[, 2]
 Fitted: $c$ = `r format(round(wf[["cc"]]), big.mark = ",")`, $\theta_\eta$ = `r format(round(wf[["th"]]), big.mark = ",")`,
 $\varepsilon_f$ = `r format(round(wf[["eps"]]), big.mark = ",")` per donor, RMSE
 `r format(round(emp_table[model == "Watterson + false alleles", rmse]), big.mark = ",")` sites. $c$ is still negative; three
-parameters on four points leave one degree of freedom, so this is a consistency check.
+parameters on six points leave three degrees of freedom, so this is a consistency check.
 
 ### 3.6 The three curves together
 
@@ -354,36 +451,44 @@ plot_fits(main_models, "Rarefaction curve and the three fitted curves")
 ```
 
 ```{r main-table}
-knitr::kable(emp_table[model %in% main_models], digits = 0, format.args = list(big.mark = ","),
-             col.names = c("model", "fitted parameters", "RMSE (sites)", "predicted at 10 donors"))
-proj <- data.table(donors = c(4, 6, 10, 20, 43))
-proj[, `:=`(mm = predict(emp$`Michaelis-Menten`, proj), watterson = predict(emp$Watterson, proj),
-            wf = predict(emp$`Watterson + false alleles`, proj),
-            wf_real = wf[["cc"]] + wf[["th"]] * harm(donors), wf_false = wf[["eps"]] * donors)]
-knitr::kable(proj, digits = 0, format.args = list(big.mark = ","),
-             col.names = c("donors", "Michaelis-Menten", "Watterson", "Watterson + false alleles",
-                           "of which c + θ_η H_n", "of which ε_f n"))
+knitr::kable(emp_table[model %in% main_models],
+  digits = 0, format.args = list(big.mark = ","),
+  col.names = c("model", "fitted parameters", "RMSE (sites)", "predicted at 10 donors")
+)
+proj <- data.table(donors = c(5, 6, 10, 20, 43))
+proj[, `:=`(
+  mm = predict(emp$`Michaelis-Menten`, proj), watterson = predict(emp$Watterson, proj),
+  wf = predict(emp$`Watterson + false alleles`, proj),
+  wf_real = wf[["cc"]] + wf[["th"]] * harm(donors), wf_false = wf[["eps"]] * donors
+)]
+knitr::kable(proj,
+  digits = 0, format.args = list(big.mark = ","),
+  col.names = c(
+    "donors", "Michaelis-Menten", "Watterson", "Watterson + false alleles",
+    "of which c + θ_η H_n", "of which ε_f n"
+  )
+)
 ```
 
 ### 3.7 Why Watterson with false alleles diverges from the other curves
 
-The curves agree on the four points and part beyond them, and they part into two groups: those whose growth fades
-(logarithmic, negative exponential, Watterson, Michaelis-Menten: 237-263 thousand sites at 10 donors, Appendix A) and those
-with a term that never fades (Watterson with false alleles and the power curve: 304-331 thousand).
+The curves agree on the six points and part beyond them, into two groups: those whose growth fades (logarithmic, negative
+exponential, Watterson, Michaelis-Menten: `r at10(fading)` thousand sites at 10 donors, Appendix A) and those with a term that
+never fades (Watterson with false alleles and the power curve: `r at10(lasting)` thousand).
 
-1. **The data grow faster than a logarithm and slower than a line.** The free power curve puts the exponent at 0.71. Watterson
-   (Eq. 7) can only grow like $\ln n$; its residuals run above, below, below, above (section 3.4), so it bends too early and falls short beyond the
+1. **The data grow faster than a logarithm and slower than a line.** The free power curve puts the exponent at `r round(coef(emp$Power)[["b"]], 2)`. Watterson
+   (Eq. 7) can only grow like $\ln n$; its residuals run above, below, then above (section 3.4), so it bends too early and falls short beyond the
    data. That is also why it needs a negative $c$.
 2. **The $\varepsilon_f n$ term takes the excess growth.** With it, $\theta_\eta$ drops from
    `r format(round(wa[["th"]]), big.mark = ",")` to `r format(round(wf[["th"]]), big.mark = ",")`, $\varepsilon_f$ takes
    `r format(round(wf[["eps"]]), big.mark = ",")` per donor, and the RMSE falls from
    `r format(round(emp_table[model == "Watterson", rmse]), big.mark = ",")` to
    `r format(round(emp_table[model == "Watterson + false alleles", rmse]), big.mark = ",")` sites. Beyond the data the linear
-   term keeps adding $\varepsilon_f$ per donor while $\theta_\eta H_n$ flattens; past about 15 donors $\varepsilon_f n$ is the larger
+   term keeps adding $\varepsilon_f$ per donor while $\theta_\eta H_n$ flattens; from about 10 donors $\varepsilon_f n$ is the larger
    part (table above).
 3. **The split between $\theta_\eta$ and $\varepsilon_f$ is poorly determined.** Their estimates are correlated at
    `r round(wf_cor["th", "eps"], 2)` (standard errors `r format(round(wf_se[["th"]]), big.mark = ",")` and
-   `r format(round(wf_se[["eps"]]), big.mark = ",")`): many combinations fit the four points almost equally and differ widely at
+   `r format(round(wf_se[["eps"]]), big.mark = ",")`): many combinations fit the six points almost equally and differ widely at
    10 donors and beyond, so the projection is less certain than these standard errors suggest.
 
 **Where Michaelis-Menten puts the false alleles.** Eq. 5 has no private term, so a constant $\varepsilon_f$ per donor is absorbed
@@ -392,23 +497,56 @@ $U_\infty$ (for $K \gg n$, Eq. 5 is nearly the line $(U_\infty / K)\, n$). Fitti
 real-allele part only (Eq. 8 without $\varepsilon_f n$) shows the size of the effect:
 
 ```{r mm-split}
-mm_real <- nls(sites ~ um * donors / (k + donors), data = rare[, .(donors, sites = wf[["cc"]] + wf[["th"]] * harm(donors))],
-               start = list(um = 3e5, k = 4))
-mm_split <- rbindlist(lapply(list(`full curve (real + false)` = emp$`Michaelis-Menten`, `real-allele part only` = mm_real),
-  function(m) data.table(um = coef(m)[["um"]], k = coef(m)[["k"]], slope = coef(m)[["um"]] / coef(m)[["k"]])),
-  idcol = "fitted to")
-knitr::kable(mm_split, digits = c(0, 0, 1, 0), format.args = list(big.mark = ","),
-             col.names = c("Eq. 5 fitted to", "U_∞", "K", "initial gain U_∞ / K"))
+mm_real <- nls(sites ~ um * donors / (k + donors),
+  data = rare[, .(donors, sites = wf[["cc"]] + wf[["th"]] * harm(donors))],
+  start = list(um = 3e5, k = 4)
+)
+mm_split <- rbindlist(
+  lapply(
+    list(`full curve (real + false)` = emp$`Michaelis-Menten`, `real-allele part only` = mm_real),
+    function(m) data.table(um = coef(m)[["um"]], k = coef(m)[["k"]], slope = coef(m)[["um"]] / coef(m)[["k"]])
+  ),
+  idcol = "fitted to"
+)
+knitr::kable(mm_split,
+  digits = c(0, 0, 1, 0), format.args = list(big.mark = ","),
+  col.names = c("Eq. 5 fitted to", "U_∞", "K", "initial gain U_∞ / K")
+)
 ```
 
-The private term nearly doubles the asymptote and delays saturation. So $U_\infty$ is not a ceiling on real alleles, and once
+The private term more than doubles the asymptote and delays saturation. So $U_\infty$ is not a ceiling on real alleles, and once
 donors keep adding false or population-private sites at a constant rate Eq. 5 will fall short. The real-allele part comes from
 Eq. 8's split of $\theta_\eta$ and $\varepsilon_f$, which is poorly determined (point 3), so its $U_\infty$ is an illustration, not
 an estimate.
 
-The four donors cannot tell the two groups apart; the next donors can, since the groups already differ at 6 donors
-(table above). Donors from new races (the six-donor run) test whether the private term is real: section 4 reads it as about a
-third population-private variation and two thirds false alleles.
+### 3.8 The five-donor fits against the sixth donor
+
+The five donors of the 2026-10-08 version (all six but Zx.0500_P2), their fits extended to six donors, against the six
+donors' rarefied union:
+
+```{r four-vs-five}
+rare5 <- rarefy(setdiff(good, 5))[, .(sites = mean(sites)), by = donors]
+emp5 <- lapply(models[main_models], function(m) {
+  nls(m$f, data = rare5, start = m$start, control = nls.control(maxiter = 500))
+})
+check <- rbindlist(lapply(names(emp5), function(k) {
+  data.table(
+    model = k, at_6 = predict(emp5[[k]], data.table(donors = 6)), at_10 = predict(emp5[[k]], data.table(donors = 10)),
+    at_10_six = predict(emp[[k]], data.table(donors = 10))
+  )
+}))
+check[, observed_6 := rare[donors == 6, sites]]
+knitr::kable(check[, .(model, at_6, observed_6, at_10, at_10_six)],
+  digits = 0, format.args = list(big.mark = ","),
+  col.names = c(
+    "model", "five-donor fit at 6", "observed at 6 (curve six)", "five-donor fit at 10",
+    "six-donor fit at 10"
+  )
+)
+```
+
+The rarefied means at 1-5 donors are lower with six donors than with five, because Zx.0500_P2 finds few tier-A sites
+(9,060 against 20-86 thousand); the curves are compared at the same $n$, not the same donors.
 
 ## 4. Interpretation in the light of the demographic model
 
@@ -422,17 +560,21 @@ BED would settle it (their VCF is not in `agent/papers/chen2022/`).
 bounds <- c(`17 % (even per base)` = 0.17, `~100 % (unique sequence)` = 1)
 chr10_share <- 26.1 / 367
 a_hap <- sum(1 / (1:161))
-own <- range(donors$own_sites)
+own <- range(donors$own_sites[good])
 til18_diffs <- 444982
 theta_pi <- 0.00903 * 26.1e6
 eta_lo <- own[1] / til18_diffs
 eta_hi <- wf[["th"]] / theta_pi
 singletons_neutral_acc <- 2 * (31316555 / a_hap) / 162
+# largest share of eps_f that false calls (precision 0.97) and Chen's private SNPs (upper bounds) explain together
+explained <- (0.03 * rare[donors == 1, sites] + 402200 / 2 * chr10_share * eta_hi) / wf[["eps"]]
 per_donor <- rbindlist(lapply(names(bounds), function(b) {
   private_real <- 402200 / 2 * bounds[[b]] * chr10_share * c(eta_lo, eta_hi)
-  data.table(share = b, theta_counts = 31316555 * bounds[[b]] * chr10_share / a_hap,
-             real_private = paste(format(round(private_real, -1), big.mark = ","), collapse = "-"),
-             false_share = paste(round(100 * (1 - rev(private_real) / wf[["eps"]])), collapse = "-"))
+  data.table(
+    share = b, theta_counts = 31316555 * bounds[[b]] * chr10_share / a_hap,
+    real_private = paste(format(round(private_real, -1), big.mark = ","), collapse = "-"),
+    real_share = paste(round(100 * private_real / wf[["eps"]]), collapse = "-")
+  )
 }))
 ```
 
@@ -455,25 +597,38 @@ per_donor <- rbindlist(lapply(names(bounds), function(b) {
    `r round(402200 / singletons_neutral_acc)`x more. A contraction would give fewer; isolated populations, mapping errors and
    private insertions in repeats give more. Until Chen's SNPs are placed in our ranges, this excess is not evidence that
    population-private blocks dominate our union.
-3. **Most of the private term $\varepsilon_f$ is false alleles.** $\varepsilon_f$ counts the sites per donor that no other
-   donor shares (`r format(round(wf[["eps"]]), big.mark = ",")`), not the donor's own sites (about 62 thousand, rarefied
-   $n = 1$). Real private sites found per donor: half of 402,200 per haplotype, times the share in our ranges, times chr10's
-   share (26.1 / 367), times $\eta$ = `r sprintf("%.2f-%.2f", eta_lo, eta_hi)`:
+3. **What the private term $\varepsilon_f$ holds is not settled.** $\varepsilon_f$ counts the sites per donor that no other
+   donor shares (`r format(round(wf[["eps"]]), big.mark = ",")`), not the donor's own sites (about
+   `r round(rare[donors == 1, sites] / 1e3)` thousand, rarefied $n = 1$). Two sources can be sized:
+
+   - **False calls** (reads do not show the allele): tier-A precision against the founder's own minibwa-aligned reads is
+     $\approx 0.97$ on the simulated QC set (math supplement, Section 5.5), so about
+     `r format(round(0.03 * rare[donors == 1, sites], -1), big.mark = ",")` false sites per donor, at most
+     `r round(100 * 0.03 * rare[donors == 1, sites] / wf[["eps"]])` % of $\varepsilon_f$ even if every one is private.
+   - **Real private SNPs as Chen counts them**: half of 402,200 accession-specific SNPs per haplotype, times the share in our
+     ranges, times chr10's share (26.1 / 367), times $\eta$ = `r sprintf("%.2f-%.2f", eta_lo, eta_hi)`:
 
    ```{r eps-split}
-   knitr::kable(per_donor[, .(share, real_private, false_share)],
-                col.names = c("Chen's SNPs in our ranges", "real private sites per donor", "share of ε_f that is false (%)"))
+knitr::kable(per_donor[, .(share, real_private, real_share)],
+  col.names = c("Chen's SNPs in our ranges", "real private sites per donor", "share of ε_f (%)")
+)
    ```
 
-   This agrees with the QC set: tier-A precision 0.67-0.74 makes a quarter to a third of a donor's ~62 thousand own sites false,
-   16-21 thousand per donor. False alleles are mostly private, so they fill $\varepsilon_f$; real alleles are mostly shared and
-   go into $c + \theta_\eta H_n$. "Most of $\varepsilon_f$ is false" and "a third of own sites is false" are the same fact
-   seen from the union and from the donor.
+   Together they account for at most `r round(100 * explained)` % of $\varepsilon_f$. The QC set's precision against the founder assembly
+   (0.68-0.74) is not a false-call rate: Section 5.5 finds the non-B73 base in the reads at normal depth at most of the sites
+   it scores as false, where the assembly alignment places that sequence elsewhere or not at all. It measures the
+   disagreement between assembly alignment and read alignment, which is about the size of $\varepsilon_f$
+   (`r paste(round(rare[donors == 1, sites] * c(0.26, 0.32) / 1e3), collapse = "-")` thousand of a donor's own sites at
+   0.68-0.74). This fits private sites that the reads carry but that are not orthologous SNPs, such as donor-only sequence
+   aligned to B73. That has not been tested. The split between $\theta_\eta$ and $\varepsilon_f$ is itself poorly
+   determined (section 3.7, point 3).
 4. **Which curve.** Within one population the contraction predicts saturation of real alleles: the Michaelis-Menten shape. What
-   keeps the union growing in Eq. 8 is $\varepsilon_f n$, mostly false alleles, a property of our discovery, not of teosinte.
-   So the gap between the two groups of curves (section 3.7) is mainly a question of how many false alleles each new donor adds.
-   The six-donor run (Mesa Central and Chalco donors, `docs/runs/genotype_union_6donors_races_chr10.md`) measures the step a new
-   race adds in our ranges, which Chen's genome-wide numbers cannot give.
+   keeps the union growing in Eq. 8 is $\varepsilon_f n$. False calls are too few to make it. So the union keeps growing
+   through sites each donor carries alone in its reads, whatever their origin, and not through calls the reads do not
+   support. Removing more false calls will not stop that growth. The gap between the two groups of curves (section 3.7) turns on
+   whether a new donor keeps adding such sites at the same rate. The union test measured the step a new race adds in our
+   ranges, which Chen's genome-wide numbers cannot give: the one good Chalco donor adds 10,925 sites the four Durango and
+   Nobogame donors lack, fewer than a deep race-mate (section 3.2).
 
 ## 5. What to expect from the other taxa
 
@@ -498,32 +653,38 @@ and 2.3 (all Zea). Simulation S3 replaces that range with a curve; the union ove
 
 ## Caveats
 
-- Four donors, two races, all mexicana: every curve in section 3 fits them; the choice between curves rests on section 4, not
-  on the fit.
+- Six donors, four races, all mexicana: every curve in section 3 fits them; the choice between curves rests on section 4,
+  not on the fit. Discovery depth differs ninefold between them (9,060-85,952 tier-A sites), and two of the eight donors
+  are off the curve.
+- Zx.0500_P2 passes the curve rule on its lines' calls at union sites, but its own tier-A sites read a median 4.5 % ALT inside
+  its lines' REF segments, against 1-2 % for the other five (artifacts present in all lines), so some of its sites in the sharing patterns are likely false.
 - The rarefaction mean averages over donors; a donor with few lines or low coverage finds fewer sites and adds fewer.
 - Section 4's numbers mix Chen's discovery (individual genomes, 22x, strict filters) with ours (BC1 pools); $\eta$ and the
   $\varepsilon_f$ split are orders of magnitude.
 
 ## Appendix A: other accumulation curves, set aside
 
-All fitted to the same four points (Eq. 4); the table and plot include the three curves of section 3.
+All fitted to the same six points (Eq. 4); the table and plot include the three curves of section 3.
 
 | Model | $\bar U_n =$ | Spectrum it corresponds to | Why set aside |
 |---|---|---|---|
 | Logarithmic | $a + b \ln n$ | neutral, large $n$; Eq. 6 at $\alpha \to 0$ | the same as Watterson |
-| Power | $a\, n^{b}$ | $p^{a' - 1}$, $-1 < a' < 0$, $b = -a'$; Eq. 6 at $\alpha < 0$ | $b = 0.71$ needs $g(p) \propto p^{-1.71}$, rapid population growth, which Chen's MSMC2 history contradicts |
-| Square root | $a \sqrt{n}$ | power with $b = 1/2$ | fixes the 4-to-1 donor ratio at 2 against 2.75 observed; worst fit |
+| Power | $a\, n^{b}$ | $p^{a' - 1}$, $-1 < a' < 0$, $b = -a'$; Eq. 6 at $\alpha < 0$ | $b$ = `r round(coef(emp$Power)[["b"]], 2)` needs $g(p) \propto p^{-1 - b}$, rapid population growth, which Chen's MSMC2 history contradicts |
+| Square root | $a \sqrt{n}$ | power with $b = 1/2$ | fixes the 6-to-1 donor ratio at 2.45, against `r round(rare[donors == 6, sites] / rare[donors == 1, sites], 2)` observed |
 | Negative exponential | $U_\infty (1 - e^{-kn})$ | every site at one frequency; Eq. 6 at $\alpha \to \infty$ | no spread of frequencies |
 
 ```{r appendix-a}
-knitr::kable(emp_table, digits = 0, format.args = list(big.mark = ","),
-             col.names = c("model", "fitted parameters", "RMSE (sites)", "predicted at 10 donors"))
+knitr::kable(emp_table,
+  digits = 0, format.args = list(big.mark = ","),
+  col.names = c("model", "fitted parameters", "RMSE (sites)", "predicted at 10 donors")
+)
 plot_fits(names(emp), "Every accumulation curve fitted")
 ```
 
 ## Appendix B: pattern-level models, set aside
 
-These fit the 15 sharing patterns (170,729 sites) instead of the four rarefied points, with a discovery sensitivity per donor.
+These fit the 15 sharing patterns of the four first-set donors (`union_rarefaction/patterns.tsv`, their own union of
+170,729 sites) instead of the rarefied points, with a discovery sensitivity per donor.
 They are set aside because they have no false-allele or population-private class: the many private patterns (`0010`, `0001`)
 can only come from rare alleles and high $r_d$, so their parameters absorb errors and structure. They are the starting point
 for fitting S1-S3's spectra to the patterns (a likelihood that allows AIC and likelihood-ratio tests, and per-donor
@@ -554,6 +715,12 @@ P(z) = (1 - \phi) \sum_{p} g_3(p) \prod_{d = 1}^{4} (r_d\, p)^{z_d} (1 - r_d\, p
 $$
 
 ```{r pattern-fits}
+# the four first-set donors, from their own union (job 1143239)
+pat <- fread("union_rarefaction/patterns.tsv",
+  header = FALSE, col.names = c("pattern", "n"),
+  colClasses = c("character", "numeric")
+)
+z <- do.call(rbind, lapply(strsplit(pat$pattern, ""), as.integer))
 p_rare <- function(zz, r, w, grid) {
   apply(zz, 1, function(zr) {
     q <- rep(1, length(grid))
@@ -563,22 +730,26 @@ p_rare <- function(zz, r, w, grid) {
 }
 spectrum <- function(a) g^(a - 1) / sum(g^(a - 1))
 model <- list(
-  v2 = list(start = c(rep(-1, 4), -3, log(0.5)),
-            par = function(th) list(r = plogis(th[1:4]), phi = plogis(th[5]), a = exp(th[6]), e = NA),
-            pz = function(zz, m) p_rare(zz, m$r, c((1 - m$phi) * spectrum(m$a), m$phi), c(g, 1)),
-            miss = function(rs, m) {
-              sum(c((1 - m$phi) * spectrum(m$a), m$phi) * Reduce(`*`, lapply(rs, function(x) 1 - c(g, 1) * x)))
-            }),
-  v3 = list(start = c(rep(-1, 4), -3, log(0.5), 1),
-            par = function(th) list(r = plogis(th[1:4]), phi = plogis(th[5]), a = exp(th[6]), e = plogis(th[7])),
-            pz = function(zz, m) {
-              (1 - m$phi) * p_rare(zz, m$r, spectrum(m$a), g) +
-                m$phi * apply(zz, 1, function(zr) prod(ifelse(zr == 1, m$e, 1 - m$e)))
-            },
-            miss = function(rs, m) {
-              (1 - m$phi) * sum(spectrum(m$a) * Reduce(`*`, lapply(rs, function(x) 1 - g * x))) +
-                m$phi * (1 - m$e)^length(rs)
-            })
+  v2 = list(
+    start = c(rep(-1, 4), -3, log(0.5)),
+    par = function(th) list(r = plogis(th[1:4]), phi = plogis(th[5]), a = exp(th[6]), e = NA),
+    pz = function(zz, m) p_rare(zz, m$r, c((1 - m$phi) * spectrum(m$a), m$phi), c(g, 1)),
+    miss = function(rs, m) {
+      sum(c((1 - m$phi) * spectrum(m$a), m$phi) * Reduce(`*`, lapply(rs, function(x) 1 - c(g, 1) * x)))
+    }
+  ),
+  v3 = list(
+    start = c(rep(-1, 4), -3, log(0.5), 1),
+    par = function(th) list(r = plogis(th[1:4]), phi = plogis(th[5]), a = exp(th[6]), e = plogis(th[7])),
+    pz = function(zz, m) {
+      (1 - m$phi) * p_rare(zz, m$r, spectrum(m$a), g) +
+        m$phi * apply(zz, 1, function(zr) prod(ifelse(zr == 1, m$e, 1 - m$e)))
+    },
+    miss = function(rs, m) {
+      (1 - m$phi) * sum(spectrum(m$a) * Reduce(`*`, lapply(rs, function(x) 1 - g * x))) +
+        m$phi * (1 - m$e)^length(rs)
+    }
+  )
 )
 fits <- lapply(model, function(md) {
   nll <- function(th) {
@@ -595,13 +766,19 @@ fits <- lapply(model, function(md) {
 })
 par_table <- rbindlist(lapply(names(fits), function(v) {
   m <- fits[[v]]
-  data.table(version = sub("v", "", v), r_0540 = m$r[1], r_0570 = m$r[2], r_0550 = m$r[3], r_0580 = m$r[4],
-             a = m$a, phi = m$phi, e = m$e, S = round(m$S), log_lik = round(m$loglik, 1))
+  data.table(
+    version = sub("v", "", v), r_0540 = m$r[1], r_0570 = m$r[2], r_0550 = m$r[3], r_0580 = m$r[4],
+    a = m$a, phi = m$phi, e = m$e, S = round(m$S), log_lik = round(m$loglik, 1)
+  )
 }))
 knitr::kable(par_table, digits = 3, format.args = list(big.mark = ","))
-knitr::kable(data.table(pattern = pat$pattern, observed = pat$n, version_2 = round(fits$v2$fitted),
-                        version_3 = round(fits$v3$fitted))[order(-observed)],
-             format.args = list(big.mark = ","), col.names = c("pattern z", "observed", "Version 2 (B1)", "Version 3 (B3)"))
+knitr::kable(
+  data.table(
+    pattern = pat$pattern, observed = pat$n, version_2 = round(fits$v2$fitted),
+    version_3 = round(fits$v3$fitted)
+  )[order(-observed)],
+  format.args = list(big.mark = ","), col.names = c("pattern z", "observed", "Version 2 (B1)", "Version 3 (B3)")
+)
 ```
 
 Version 2 goes to the edge of B1 ($\phi \approx 0$, $a \approx 0$) and predicts about half of the sites found by all four

@@ -261,3 +261,15 @@ Confirmed by the user from the Milestone 7 report; item 11 for now, open to chan
 - Every biallelic SNP gets a site row; tier none is written ".".
 - `--step genotype` requires `--region`, `--lowcopy_bed`, `--check_sites`, `--b73_controls`; `--minibwa_index` only for
   alignment.
+
+## 2026-10-11 Which donors enter the union rarefaction curve
+
+User's rule (2026-10-09), thresholds confirmed 2026-10-11 on the eight chr10 donors' union-ALT calls.
+
+- A donor/chromosome enters the curve if its lines pass (1) few introgressions and (2) segment dosage, and (3) the lines
+  passing 1-2 cover the chromosome. Contamination can fake full coverage, so failing lines don't count toward it.
+- (1) at most 4 donor (HET/ALT) segments per line.
+- (2) per line, reads in REF segments <= 3 % ALT, in HET segments 30-55 % ALT, in ALT segments >= 75 % ALT.
+- (3) donor segments of the passing lines cover >= 90 % of the chromosome (user's proposal; per-family expectation
+  under the registry pedigree checked first).
+- Uninformative families stay off the curve; their lines are still called at union-ALT markers.
