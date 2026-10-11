@@ -72,7 +72,7 @@ sites <- unique(truth[, .(pos)])[, `:=`(ref = "A", alt = "G")]
 lines <- sort(unique(truth$name))
 # a line with reads at 10 markers only, under the cut 2r = 2 x round(0.005 x sites)
 obs[name == lines[1] & !pos %in% sites$pos[seq(1, by = 7, length.out = 10)], `:=`(n_ref = 0L, n_alt = 0L)]
-write_sites_vcf(sites, file.path(dir, "tier_a.vcf"))
+write_sites_vcf(sites, file.path(dir, "markers.vcf"))
 counts <- vapply(lines, function(l) {
   p <- file.path(dir, paste0(l, ".vcf"))
   write_counts_vcf(obs, sites, l, p)
@@ -81,8 +81,9 @@ counts <- vapply(lines, function(l) {
 }, "")
 rigidity <- max(1L, round(0.005 * nrow(sites)))
 res <- run_tool("call_ancestry.R", c(
-  "--tier-a", file.path(dir, "tier_a.vcf"), "--counts", counts, "--rigidity-fraction", "0.005",
-  "--segments", file.path(dir, "D.bed"), "--dropped", file.path(dir, "D.dropped.tsv")
+  "--markers", file.path(dir, "markers.vcf"), "--counts", counts, "--rigidity-fraction", "0.005",
+  "--segments", file.path(dir, "D.bed"), "--dropped", file.path(dir, "D.dropped.tsv"),
+  "--line-checks", file.path(dir, "D.line_checks.tsv")
 ), dir)
 
 test_that("call_ancestry.R runs and logs with timestamps", {
@@ -93,9 +94,9 @@ test_that("call_ancestry.R runs and logs with timestamps", {
 test_that("each line's REF and donor-ALT counts are read back exactly, whatever the record's FORMAT", {
   tool <- new.env()
   sys.source(file.path(root, "bin", "call_ancestry.R"), envir = tool)
-  tier <- tool$read_vcf(file.path(dir, "tier_a.vcf"))[, .(CHROM, POS, REF, ALT)]
+  markers <- tool$read_vcf(file.path(dir, "markers.vcf"))[, .(CHROM, POS, REF, ALT)]
   for (l in lines[2:4]) {
-    got <- tool$read_line_counts(counts[[l]], tier)
+    got <- tool$read_line_counts(counts[[l]], markers)
     want <- obs[name == l][order(pos)]
     expect_equal(got[order(pos)]$n_ref, want$n_ref)
     expect_equal(got[order(pos)]$n_alt, want$n_alt)
@@ -117,6 +118,71 @@ test_that("the mosaic matches the simulated truth", {
   called <- truth[name != lines[1]][, .(called = state_at(seg[line == .BY$name], pos), state), by = name]
   expect_gt(mean(called$called == called$state, na.rm = TRUE), 0.97)
   expect_lt(mean(is.na(called$called)), 0.05)
+})
+
+test_that("the line checks list every called line, and their reads are the counts inside its segments", {
+  checks <- fread(file.path(dir, "D.line_checks.tsv"), na.strings = ".")
+  expect_setequal(checks$line, lines[-1])
+  total <- obs[name != lines[1], .(reads = sum(n_ref + n_alt)), by = name]
+  inside <- checks[, .(line, reads = ref_reads + het_reads + alt_reads)][total, on = .(line = name)]
+  # segments run from each line's first marker to its last, so every read falls inside one
+  expect_equal(inside$reads, inside$i.reads)
+})
+
+test_that("line checks on a hand-made pair of lines", {
+  tool <- new.env()
+  sys.source(file.path(root, "bin", "call_ancestry.R"), envir = tool)
+  # L1: REF 0-100, HET 100-200, ALT 200-300, REF 300-400, HET 400-500: two donor segments, 300 bp
+  # L2: REF over all: no donor segment
+  bed <- data.table(
+    chrom = "chr10", start = c(0L, 100L, 200L, 300L, 400L, 0L), end = c(100L, 200L, 300L, 400L, 500L, 500L),
+    line = c(rep("L1", 5), "L2"), state = c(0L, 1L, 2L, 0L, 1L, 0L)
+  )
+  # markers at 50 (REF), 150 (HET), 250 (ALT), 450 (HET) and 100 (the REF segment's end, BED start < pos <= end)
+  counts <- data.table(
+    name = c(rep("L1", 5), rep("L2", 2)), pos = c(50L, 100L, 150L, 250L, 450L, 50L, 450L),
+    n_ref = c(9L, 1L, 3L, 1L, 1L, 10L, 4L), n_alt = c(1L, 0L, 3L, 9L, 3L, 0L, 0L)
+  )
+  got <- tool$check_lines(bed, counts)
+  expect_equal(got$line, c("L1", "L2"))
+  expect_equal(got$n_donor_segments, c(2L, 0L))
+  expect_equal(got$donor_bp, c(300L, 0L))
+  expect_equal(got$ref_reads, c(11L, 14L))
+  expect_equal(got$ref_alt_pct, c(9.1, 0))
+  expect_equal(got$het_reads, c(10L, 0L))
+  expect_equal(got$het_alt_pct, c(60, NA))
+  expect_equal(got$alt_reads, c(10L, 0L))
+  expect_equal(got$alt_alt_pct, c(90, NA))
+})
+
+test_that("the two donor views keep exactly the sites called ALT for the donor", {
+  bcf_image <- sub(".*: '([^']+)'.*", "\\1", grep("community.wave", readLines(
+    file.path(root, "modules", "nf-core", "bcftools", "view", "main.nf")
+  ), value = TRUE))
+  v <- file.path(dir, "donor_alleles.vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2", "##contig=<ID=chr10,length=152435371>",
+    "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tX\tY\tZ",
+    "chr10\t100\t.\tA\tG\t.\t.\t.\tGT\t1\t0\t.",
+    "chr10\t200\t.\tC\tT\t.\t.\t.\tGT\t0\t1\t1",
+    "chr10\t300\t.\tG\tA\t.\t.\t.\tGT\t.\t1\t0",
+    "chr10\t400\t.\tT\tC\t.\t.\t.\tGT\t1\t1\t1"
+  ), v)
+  # the commands DONOR_SUBSET and DONOR_ALT_SITES run (conf/modules.config)
+  sites_of <- function(donor) {
+    out <- system2("docker", c(
+      "run", "--rm", "--platform", "linux/amd64", "-v", paste0(dir, ":", dir), "-w", dir, bcf_image, "bash", "-c",
+      shQuote(sprintf(
+        "bcftools view -s %s -Oz -o %s.col.vcf.gz %s && bcftools view -i 'GT=\"1\"' -G -Ov %s.col.vcf.gz",
+        donor, donor, v, donor
+      ))
+    ), stdout = TRUE, stderr = TRUE)
+    as.integer(sapply(strsplit(grep("^chr10", out, value = TRUE), "\t"), `[`, 2))
+  }
+  expect_equal(sites_of("X"), c(100L, 400L))
+  expect_equal(sites_of("Y"), c(200L, 300L, 400L))
+  expect_equal(sites_of("Z"), c(200L, 400L))
 })
 
 test_that("nilHMM's RTIGER stops on a line under 2r covered markers", {

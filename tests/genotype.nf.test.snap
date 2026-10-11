@@ -44,6 +44,12 @@
                 "DONOR_ALLELES_MERGE": {
                     "bcftools": "1.23.1"
                 },
+                "DONOR_ALT_SITES": {
+                    "bcftools": "1.23.1"
+                },
+                "DONOR_SUBSET": {
+                    "bcftools": "1.23.1"
+                },
                 "FILL_DONOR_ALLELES": {
                     "pysam": "0.24.1",
                     "python": "3.12.14"
@@ -80,11 +86,13 @@
                 "genotype/ancestry/Zx.9001_P1.chrA.ancestry.vcf.gz",
                 "genotype/ancestry/Zx.9001_P1.chrA.ancestry.vcf.gz.tbi",
                 "genotype/ancestry/Zx.9001_P1.chrA.dropped_lines.tsv",
+                "genotype/ancestry/Zx.9001_P1.chrA.line_checks.tsv",
                 "genotype/ancestry/Zx.9001_P1.chrA.rqtl.csv",
                 "genotype/ancestry/Zx.9001_P1.chrA.segments.bed",
                 "genotype/ancestry/Zx.9002_P1.chrA.ancestry.vcf.gz",
                 "genotype/ancestry/Zx.9002_P1.chrA.ancestry.vcf.gz.tbi",
                 "genotype/ancestry/Zx.9002_P1.chrA.dropped_lines.tsv",
+                "genotype/ancestry/Zx.9002_P1.chrA.line_checks.tsv",
                 "genotype/ancestry/Zx.9002_P1.chrA.rqtl.csv",
                 "genotype/ancestry/Zx.9002_P1.chrA.segments.bed",
                 "genotype/ancestry/chrA.grid.tsv",
@@ -100,7 +108,7 @@
                 "genotype/union/chrA.union.vcf.gz.tbi"
             ]
         ],
-        "timestamp": "2026-10-07T22:04:52.742347",
+        "timestamp": "2026-10-11T17:42:08.961011",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
