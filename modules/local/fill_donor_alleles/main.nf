@@ -8,7 +8,7 @@ process FILL_DONOR_ALLELES {
         : 'community.wave.seqera.io/library/python_pysam:3717afc71d152b3b'}"
 
     input:
-    tuple val(meta), path(union), path(union_tbi), val(donors), path(tier_a, stageAs: 'tier_a/*'), path(tables, stageAs: 'tables/*')
+    tuple val(meta), path(union), path(union_tbi), path(tier_a), path(table), path(counts)
     path tool
 
     output:
@@ -22,17 +22,15 @@ process FILL_DONOR_ALLELES {
     script:
     def args = task.ext.args ?: ''
     prefix = task.ext.prefix ?: "${meta.id}"
-    // donors, their tier-A VCFs and their union tables come in the same order
-    def donor_args = [donors, [tier_a].flatten(), [tables].flatten()].transpose().collect { d, a, t -> "--donor ${d} ${a} ${t}" }.join(' ')
     // the tool is a path input, so an edit to it reruns the task (docs/running.md)
     """
-    python3 ${tool} --union ${union} ${donor_args} --out ${prefix}.vcf.gz ${args}
+    python3 ${tool} fill --union ${union} --donor ${meta.id} ${tier_a} ${table} --counts ${counts} --out ${prefix}.vcf.gz ${args}
     """
 
     stub:
     prefix = task.ext.prefix ?: "${meta.id}"
     """
-    echo '' | gzip > ${prefix}.vcf.gz
+    python3 -c "import gzip; gzip.open('${prefix}.vcf.gz', 'wt').close()"
     touch ${prefix}.vcf.gz.tbi
     """
 }

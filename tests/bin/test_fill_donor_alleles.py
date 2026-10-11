@@ -1,9 +1,13 @@
-"""Unit tests for bin/fill_donor_alleles.py: hand-computed priors and posteriors, and zealbc1's gap calls.
+"""Unit tests for bin/fill_donor_alleles.py: hand-computed site counts, priors and posteriors, zealbc1's gap calls, and
+Milestone 8's one-step output.
 
 The zealbc1 reference (fixtures/genotype/fill/zealbc1_dhd_bayes.tsv) is the output of zealbc1's PHG/bin/dhd_bayes.py
 (w 2, alt 0.999) on 300 sites of its chr10 pilot union (Zx.0540_P3, Zx.0570_P2; agent script build_fill_fixture.py):
 the union, each donor's tier-A sites and its step-4 table at the union, as in this folder.
+The Milestone 8 reference (fixtures/genotype/fill/m8_donor_alleles.vcf) is the one-step tool (dev ef72df1) on the same
+files with three donors: Zx.0540_P3, its files again as Zx.0540_twin, and Zx.0570_P2.
 """
+import gzip
 import csv
 import importlib.util
 import math
@@ -22,6 +26,26 @@ spec.loader.exec_module(fill)
 S1, S2, S3 = ("c", 1, "A", "G"), ("c", 2, "C", "T"), ("c", 3, "G", "A")
 
 
+def two_step(sites, donors, own, tables, w=2.0, alt=0.999):
+    """Cells of all donors per site: the site counts over all donors, then each donor alone."""
+    K, R = fill.site_counts(sites, ((d, own[d], tables[d]) for d in donors))
+    cols = [[c for _, c in fill.fill(sites, own[d], tables[d], list(zip(K, R)), w, alt)] for d in donors]
+    return list(zip(*cols))
+
+
+def test_site_counts_by_hand():
+    # S1 own in Y, ref in Z; S2 own in X and Y, ref in Z; S3 own in X (scored ref: own, so not in R), ref in Y, no row in Z
+    own = {"X": {S2, S3}, "Y": {S1, S2}, "Z": set()}
+    tables = {"X": {S1: ("B", 10, 5.0, "."), S2: ("A", 10, 9.0, "."), S3: ("ref", 20, -6.0, ".")},
+              "Y": {S1: ("A", 10, 9.0, "."), S2: ("A", 10, 9.0, "."), S3: ("ref", 20, -6.0, ".")},
+              "Z": {S1: ("ref", 20, -6.0, "."), S2: ("ref", 20, -6.0, ".")}}
+    K, R = fill.site_counts([S1, S2, S3], ((d, own[d], tables[d]) for d in "XYZ"))
+    assert (K, R) == ([1, 2, 1], [1, 1, 1])
+    # leave-one-out at S3: X own (k 0, m 1), Y ref gap (k 1, m 1), Z no row (k 1, m 2); mu: X 0.5/1, Y 0.5/2, Z 0.5/3
+    priors = [c[2] for c in two_step([S1, S2, S3], "XYZ", own, tables)[2]]
+    assert priors == pytest.approx([(2 * 0.5 + 0) / 3, (2 * 0.25 + 1) / 3, (2 * 0.5 / 3 + 1) / 4])
+
+
 def test_sharing_rate_counts_gaps_only():
     table = {S1: ("A", 10, 9.0, "."), S2: ("ref", 20, -6.0, "."), S3: ("A", 10, 8.0, ".")}
     # S3 is own: gaps S1 (A) and S2 (ref) -> (1 + 0.5) / (2 + 1)
@@ -32,7 +56,7 @@ def test_prior_and_posterior_by_hand():
     # donors X, Y, Z; S1 own in Y, tier ref in Z: for X, k = 1, m = 2
     tables = {"X": {S1: ("B", 10, 5.0, ".")}, "Y": {S1: ("A", 10, 9.0, ".")}, "Z": {S1: ("ref", 20, -6.0, ".")}}
     own = {"X": set(), "Y": {S1}, "Z": set()}
-    (_, cells), = fill.fill([S1], ["X", "Y", "Z"], own, tables, 2.0, 0.999)
+    cells, = two_step([S1], ["X", "Y", "Z"], own, tables)
     mu_x = 0.5 / 1   # X has one gap, tier B: (0 + 0.5) / (0 + 0 + 1)
     pi = (2 * mu_x + 1) / (2 + 2)
     pp = 1 / (1 + math.exp(-(5.0 + math.log(pi / (1 - pi)))))
@@ -69,27 +93,51 @@ def test_call_own_site(row, gt):
 def test_own_site_without_support_is_missing():
     # an own site whose reads at the union give LLR 1: posterior well under 0.999 -> missing, not REF
     tables = {"X": {S1: ("C", 15, 1.0, ".")}, "Y": {S1: (".", 3, 0.0, ".")}}
-    (_, cells), = fill.fill([S1], ["X", "Y"], {"X": {S1}, "Y": set()}, tables, 2.0, 0.999)
+    cells, = two_step([S1], ["X", "Y"], {"X": {S1}, "Y": set()}, tables)
     assert cells[0][0] == "." and cells[0][4] == "own"
+
+
+def run_two_step(tmp, donors):
+    """The command line, both modes: donors as (name, tier-A VCF, table); returns each donor's VCF."""
+    union = ["--union", str(FIX / "union.vcf")]
+    args = [a for d in donors for a in ["--donor", *map(str, d)]]
+    fill.main(["counts", *union, *args, "--out", str(tmp / "site_counts.tsv.gz")])
+    out = {}
+    for d in donors:
+        out[d[0]] = tmp / f"{d[0]}.vcf.gz"
+        fill.main(["fill", *union, "--donor", *map(str, d), "--counts", str(tmp / "site_counts.tsv.gz"),
+                   "--out", str(out[d[0]]), "--w", "2", "--alt", "0.999"])
+    return out
 
 
 @pytest.fixture(scope="module")
 def ours(tmp_path_factory):
-    out = tmp_path_factory.mktemp("fill") / "donor_alleles.vcf.gz"
-    argv = ["--union", str(FIX / "union.vcf"), "--out", str(out), "--w", "2", "--alt", "0.999"]
-    for d in DONORS:
-        argv += ["--donor", d, str(FIX / f"{d}.tier_a.vcf"), str(FIX / f"{d}.sites.tsv")]
-    fill.main(argv)
+    vcfs = run_two_step(tmp_path_factory.mktemp("fill"), [(d, FIX / f"{d}.tier_a.vcf", FIX / f"{d}.sites.tsv") for d in DONORS])
     rows = {}
     gt = {(1,): "1", (0,): "0", (None,): "."}
-    with pysam.VariantFile(str(out)) as vcf:
-        assert list(vcf.header.samples) == DONORS
-        assert vcf.fetch("chr10")  # the .tbi is there
-        for rec in vcf:
-            assert list(rec.format) == ["GT", "LLR", "PRIOR", "PALT", "SRC"]
-            rows[str(rec.pos)] = [dict(GT=gt[c["GT"]], LLR=c["LLR"], PRIOR=c["PRIOR"], PALT=c["PALT"], SRC=c["SRC"])
-                                  for c in rec.samples.values()]
+    for d in DONORS:
+        with pysam.VariantFile(str(vcfs[d])) as vcf:
+            assert list(vcf.header.samples) == [d]
+            assert vcf.fetch("chr10")  # the .tbi is there
+            for rec in vcf:
+                assert list(rec.format) == ["GT", "LLR", "PRIOR", "PALT", "SRC"]
+                c = rec.samples[d]
+                rows.setdefault(str(rec.pos), []).append(dict(GT=gt[c["GT"]], LLR=c["LLR"], PRIOR=c["PRIOR"], PALT=c["PALT"],
+                                                              SRC=c["SRC"]))
     return rows
+
+
+def test_equals_milestone_8(tmp_path):
+    # three donors (a twin of Zx.0540_P3), so k and m count two other donors; each donor's records as text
+    twin = [("Zx.0540_P3", "Zx.0540_P3"), ("Zx.0540_twin", "Zx.0540_P3"), ("Zx.0570_P2", "Zx.0570_P2")]
+    vcfs = run_two_step(tmp_path, [(d, FIX / f"{f}.tier_a.vcf", FIX / f"{f}.sites.tsv") for d, f in twin])
+    with open(FIX / "m8_donor_alleles.vcf") as fh:
+        m8 = [line.rstrip("\n").split("\t") for line in fh if not line.startswith("##")]
+    for i, (d, _) in enumerate(twin):
+        with gzip.open(vcfs[d], "rt") as fh:
+            ours = [line.rstrip("\n").split("\t") for line in fh if not line.startswith("##")]
+        assert len(ours) == len(m8) == 301
+        assert [r[:9] + [r[9 + i]] for r in m8] == ours, d
 
 
 @pytest.fixture(scope="module")
