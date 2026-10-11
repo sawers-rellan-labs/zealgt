@@ -12,8 +12,8 @@ FIRST="${1:?first wave number, e.g. 01}"; shift
 REPO=$(cd "$(dirname "$0")/.." && pwd)
 OUTDIR=${OUTDIR:-/rsstu/users/r/rrellan/BZea/ZEAL/$STEP}
 WAVES=$(cd "${WAVES:-$REPO/meta/waves}" && pwd)
+[ -f "$WAVES/${STEP}_$FIRST.csv" ] || { echo "no wave sheet ${STEP}_$FIRST.csv in $WAVES" >&2; exit 2; }
 sheets=$(ls "$WAVES"/"$STEP"_*.csv | awk -v first="$WAVES/${STEP}_$FIRST.csv" '$0 >= first')
-[ -n "$sheets" ] || { echo "no wave sheet from ${STEP}_$FIRST.csv on" >&2; exit 2; }
 prev=""
 for sheet in $sheets; do
     resume=(); [ -z "$prev" ] && [ -n "$RESUME" ] && resume=(-resume "$RESUME")
