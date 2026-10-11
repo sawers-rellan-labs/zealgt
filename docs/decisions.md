@@ -261,3 +261,16 @@ Confirmed by the user from the Milestone 7 report; item 11 for now, open to chan
 - Every biallelic SNP gets a site row; tier none is written ".".
 - `--step genotype` requires `--region`, `--lowcopy_bed`, `--check_sites`, `--b73_controls`; `--minibwa_index` only for
   alignment.
+
+## 2026-10-11 RTIGER markers: the donor's union-ALT sites (Milestone 9a)
+
+Spec approved by the user, 2026-10-11 (`docs/milestones/09a_union_alt_markers.md`).
+
+- Each donor's RTIGER markers are the union sites gap filling called ALT for it, own or gap (was: its own tier-A sites).
+  Reason (user, 2026-10-08): own tier-A markers can't be believed where no line carries an introgression.
+- Rigidity stays 0.5 % of the markers.
+- Two nf-core `bcftools/view` calls per donor (`-s`, then `-i 'GT="1"' -G`), not a script.
+- `CALL_ANCESTRY` writes per-line checks (donor segments, bp, reads and ALT % per state) as values; the curve rule's
+  thresholds and coverage are applied downstream.
+- Filter 1 (drop markers reading ALT in 2 or more REF lines) retired: on the eight chr10 donors it changed neither the
+  ALT ceiling, the class shares nor the curve set, and its fixed cut drops more markers in large families.
