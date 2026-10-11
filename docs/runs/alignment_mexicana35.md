@@ -1,6 +1,6 @@
 # Run plan: alignment of the remaining 35 mexicana donors
 
-DRAFT (2026-10-11), for the user's choices below; nothing submitted.
+Approved by the user, 2026-10-11 ("ok, go ahead with the four choices"); nothing submitted yet.
 
 ## Why
 
@@ -38,14 +38,18 @@ Estimates scale attempt 3's 140 GB in 2 h 45 min; the bc1 pools dominate raw siz
   gained GENOTYPE, and the alignment `SAMTOOLS_MERGE` selector became `.*FASTQ_ALIGN_MINIBWA:SAMTOOLS_MERGE` (same
   resources).
 - One head job per wave, chained with `--dependency=afterok`, normal QOS, `--time=1-00:00:00`, `--no-requeue`: as the
-  production demultiplexing (`scripts/submit_demultiplex_waves.sh`). `--no-requeue` because Slurm requeues a head job
+  production demultiplexing (`scripts/submit_waves.sh`, was `submit_demultiplex_waves.sh`). `--no-requeue` because Slurm requeues a head job
   after a node failure (`JobRequeue = 1`) without `-resume`, so the wave would restart from zero and orphan its `work/`.
 - Head job memory 16 GB, `NXF_OPTS="-Xms1g -Xmx12g"`, as attempt 3 (its MaxRSS equalled the request because the JVM
   grows into what it is given, not because it needed more). The chain script passes them; the stub checks `ReqMem`.
 - MultiQC per wave: `multiqc/alignment/<input basename>/`, as the demultiplexing's read-QC report; now every run writes
   `multiqc/multiqc_report.html` and a wave would replace the last one's (and attempt 3's) report.
-- Wave sheets in `docs/runs/alignment_mexicana35/alignment_<NN>.csv`, copied to `/share/maize/frodrig4/nf_work/
-alignment_mexicana35/` for the run.
+- Wave sheets `docs/runs/alignment_mexicana35/alignment_01.csv` to `_09.csv` (12-270 samples; written by
+  `agent/align35/write_wave_sheets.py`), read from the frozen worktree:
+  `MEM=16G NXF_OPTS="-Xms1g -Xmx12g" WAVES=docs/runs/alignment_mexicana35 bash scripts/submit_waves.sh alignment 01`.
+- Stub: `docs/runs/alignment_mexicana35_stub/alignment_01.csv` (one BC1 pool, one line), the same command with
+  `WAVES=docs/runs/alignment_mexicana35_stub OUTDIR=/rsstu/users/r/rrellan/BZea/ZEAL/alignment_stub` and `-stub`,
+  never the real outdir.
 
 ## Choices for the user
 

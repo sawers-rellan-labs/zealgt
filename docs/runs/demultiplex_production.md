@@ -68,7 +68,7 @@ Per wave about 1.5-3 h; 8 waves about 12-24 h plus queue waits.
   run's `work/` only after it succeeded and published every output (publishing finishes before cleanup; a failed copy
   fails the run). Rejected: one run (~13.8 TB peak in the group's quota); `buffer`/barriers inside one run (nothing
   deletes a finished batch's files before the run ends); nf-boost (experimental); deleting `work/` by hand or script.
-- **The chain is Slurm dependencies**: `scripts/submit_demultiplex_waves.sh <first wave>` submits one head job per wave
+- **The chain is Slurm dependencies**: `scripts/submit_waves.sh demultiplex <first wave>` (was `submit_demultiplex_waves.sh`) submits one head job per wave
   from `<first wave>` on, each `--dependency=afterok:<previous>`, on the normal QOS with `--time=1-00:00:00`. Rejected:
   a loop inside one long head job (one time limit for all waves); a Slurm array `%1` (failed waves would pile up
   `work/`).
@@ -103,7 +103,7 @@ Per wave about 1.5-3 h; 8 waves about 12-24 h plus queue waits.
 
 1. `afterok` never releases the later waves: they stay pending (`DependencyNeverSatisfied`); `scancel` them.
 2. Read the failed task's `.command.err` (`docs/running.md`); fix on the laptop; merge; move the production tag.
-3. Resubmit from the failed wave: `RESUME=<session id> bash scripts/submit_demultiplex_waves.sh <NN>` (resumes that wave only).
+3. Resubmit from the failed wave: `RESUME=<session id> bash scripts/submit_waves.sh demultiplex <NN>` (resumes that wave only).
 4. **The failed attempt's task folders stay in `work/` after the recovery succeeds** (`cleanup` deletes only what the
    successful run made; shown on Nextflow 26.04.6 by the adversarial review). They go on the user's removal list
    (`nextflow clean -f <failed run name>`, run by the user) before the next wave can add another 2 TB.
@@ -116,7 +116,7 @@ Per wave about 1.5-3 h; 8 waves about 12-24 h plus queue waits.
 2. `conf/hpc_prod.config`: `CAT_FASTQ` array 20; `FQTK` time 2 h kept (48 min measured; GPFS contention); `EXTRACT_LANE`
    30 min; the measured numbers in `docs/RESOURCES.md`, config comments without numbers.
 3. `scripts/submit_head_job.sbatch`: `REPO=${ZEALGT_REPO:-/rsstu/users/r/rrellan/BZea/ZEAL/zealgt}`.
-4. `scripts/submit_demultiplex_waves.sh` (the chain) and `meta/waves/demultiplex_<NN>.csv` from
+4. `scripts/submit_waves.sh` (the chain; was `submit_demultiplex_waves.sh`) and `meta/waves/demultiplex_<NN>.csv` from
    `meta/write_wave_sheets.py 2.0` (the wave sheets together are `meta/samples.csv`, byte for byte).
 5. The lane-join delay of 1067407 (BZea5's joins waited 50 min for 1C's lanes) is the job arrays, not the wiring: in a
    laptop stub with one library's fqtk held 30 s, the other library's joins ran at once. Nextflow submits a partial array

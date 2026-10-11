@@ -114,7 +114,7 @@ nextflow_pipeline {
 
         then {
             // samples MultiQC parsed, per module and section
-            def sources = path("$outputDir/multiqc/multiqc_data/multiqc_sources.txt").readLines().drop(1)*.tokenize('\t')
+            def sources = path("$outputDir/multiqc/alignment/samplesheet/multiqc_data/multiqc_sources.txt").readLines().drop(1)*.tokenize('\t')
                 .groupBy { r -> "${r[0]} ${r[1]}".toString() }.collectEntries { k, rs -> [k, rs*.getAt(2).sort()] }
             def kept = ['LX_1', 'PB1_SID1']
             assertAll(

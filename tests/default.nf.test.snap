@@ -70,11 +70,13 @@
                 "cram/LX_2.stats",
                 "cram/LX_2.summary.txt",
                 "multiqc",
-                "multiqc/multiqc_data",
-                "multiqc/multiqc_data/.stub",
-                "multiqc/multiqc_plots",
-                "multiqc/multiqc_plots/.stub",
-                "multiqc/multiqc_report.html",
+                "multiqc/alignment",
+                "multiqc/alignment/samplesheet",
+                "multiqc/alignment/samplesheet/multiqc_data",
+                "multiqc/alignment/samplesheet/multiqc_data/.stub",
+                "multiqc/alignment/samplesheet/multiqc_plots",
+                "multiqc/alignment/samplesheet/multiqc_plots/.stub",
+                "multiqc/alignment/samplesheet/multiqc_report.html",
                 "multiqc/reads_alignment",
                 "multiqc/reads_alignment/multiqc_data",
                 "multiqc/reads_alignment/multiqc_data/.stub",
@@ -92,7 +94,7 @@
                 "samplesheet.csv"
             ]
         ],
-        "timestamp": "2026-10-05T14:00:48.796837",
+        "timestamp": "2026-10-11T19:34:40.125431",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
