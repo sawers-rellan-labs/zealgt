@@ -210,3 +210,24 @@ one thread (nilhmm#31).
 | `CALL_ANCESTRY`      | 2     | 49 s         | 393 MB       |
 | `ANCESTRY_GRID`      | 1     | 1.9 s        | 51.9 MB      |
 | `ANCESTRY_VCF_INDEX` | 2     | < 1 s        | 4.2 MB       |
+
+### Ancestry at union-ALT markers (Milestone 9a), agent test, whole chr10
+
+Eight donors, 48-104 k markers each, as sbatch jobs (`agent/union8/union_markers/`; Slurm elapsed and MaxRSS, jobs
+1164010-1164011, 1199470-1199471, 1199567): line counts <= 12 min and 479 MB per line, RTIGER <= 2 min 24 s and
+1.07 GiB per donor (Zx.0580_P2). So `CALL_ANCESTRY` gets 2 GB in `hpc_dev` and `hpc_prod`; the two donor views get 1
+cpu, 1 GB, 1 h until test 4 measures them.
+
+Test 4 (`hpc_dev`, chr10, eight donors, job 1200045 resuming attempt 3; gap filling rerun in job 1199964): the pipeline's
+line counts stay under 6 s of task realtime each (the agent test's sbatch elapsed, 3-12 min, also held container
+start-up; the gap was not examined), RTIGER under
+2 min and 856 MB, the views under 2 s and 20 MB. The limits above hold.
+
+| process              | tasks | max realtime | max peak RSS |
+| -------------------- | ----- | ------------ | ------------ |
+| `DONOR_SUBSET`       | 8     | 1.6 s        | 16.1 MB      |
+| `DONOR_ALT_SITES`    | 8     | 0.7 s        | 14.4 MB      |
+| `COUNT_LINES`        | 248   | 5.2 s        | 251 MB       |
+| `CALL_ANCESTRY`      | 8     | 1 min 52 s   | 856 MB       |
+| `ANCESTRY_GRID`      | 1     | 5.3 s        | 183 MB       |
+| `ANCESTRY_VCF_INDEX` | 8     | 0.6 s        | 13.9 MB      |

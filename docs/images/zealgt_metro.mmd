@@ -83,7 +83,7 @@ graph LR
         union -->|genotype| fill
         fill -->|genotype| merge_alleles
         merge_alleles -->|genotype| alleles_out
-        tiers -->|genotype| rtiger
+        merge_alleles -->|genotype| rtiger
         rtiger -->|genotype| grid
         union -->|genotype| grid
         grid -->|genotype| ancestry_out

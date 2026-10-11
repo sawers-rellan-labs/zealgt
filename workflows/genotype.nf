@@ -43,7 +43,8 @@ workflow GENOTYPE {
     )
 
     CRAM_ANCESTRY_RTIGER(
-        CRAM_VARIANT_DISCOVERY_CRISP.out.tier_a,
+        CRAM_VARIANT_DISCOVERY_CRISP.out.tier_a.map { meta, _vcf -> meta.id },
+        SITES_UNION_GAPFILL.out.donor_alleles,
         SITES_UNION_GAPFILL.out.union,
         ch_cram,
         ch_fasta,
@@ -59,6 +60,6 @@ workflow GENOTYPE {
     union              = SITES_UNION_GAPFILL.out.union                       // channel: [ meta, vcf.gz, tbi ]
     donor_alleles      = SITES_UNION_GAPFILL.out.donor_alleles               // channel: [ meta, vcf.gz, tbi ]
     ancestry           = CRAM_ANCESTRY_RTIGER.out.segments.mix(             // channel: [ meta, files ], the grid and each donor's outputs
-        CRAM_ANCESTRY_RTIGER.out.dropped, CRAM_ANCESTRY_RTIGER.out.grid, CRAM_ANCESTRY_RTIGER.out.rqtl, CRAM_ANCESTRY_RTIGER.out.vcf
+        CRAM_ANCESTRY_RTIGER.out.dropped, CRAM_ANCESTRY_RTIGER.out.checks, CRAM_ANCESTRY_RTIGER.out.grid, CRAM_ANCESTRY_RTIGER.out.rqtl, CRAM_ANCESTRY_RTIGER.out.vcf
     )
 }
