@@ -1,0 +1,3 @@
+"sample_id","fastq_1","fastq_2","source","library","lanes","kit"
+"S_1A_1","/rsstu/users/r/rrellan/BZea/ZEAL/demultiplex/bc1/S_1A_1_R1.fastq.gz","/rsstu/users/r/rrellan/BZea/ZEAL/demultiplex/bc1/S_1A_1_R2.fastq.gz","bc1","1A","BC1_1Ar_WKDL260013245-1A_255FKVLT4_L5,BC1_1Ar_WKDL260013245-1A_255FKVLT4_L6,BC1_1Ar_WKDL260013245-1A_255FKVLT4_L7","twist_flexprep"
+"P4209","/rsstu/users/r/rrellan/BZea/ZEAL/demultiplex/bc2s3_batch2/P4209_R1.fastq.gz","/rsstu/users/r/rrellan/BZea/ZEAL/demultiplex/bc2s3_batch2/P4209_R2.fastq.gz","bc2s3_batch2","V23A","V23A_WKDL260015056-1A_237VF5LT4_L6","twist_flexprep"
