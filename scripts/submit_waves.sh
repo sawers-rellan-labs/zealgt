@@ -6,6 +6,7 @@
 #   OUTDIR=<dir> (default /rsstu/users/r/rrellan/BZea/ZEAL/<step>); RESUME=<session id> resumes the first wave only
 #   WAVES=<dir> of wave sheets (default meta/waves); MEM=<head job memory> (default 8G); NXF_OPTS reaches the head jobs
 #   ZEALGT_LAUNCH=<launch directory> for a second chain running beside another (default nf_work/zealgt_prod)
+#   AFTER=<job id>: the first wave starts only after that job succeeded (a chain run after another)
 # --no-requeue: a head job requeued after a node failure would restart its wave without -resume
 set -eo pipefail
 STEP="${1:?step: demultiplex or alignment}"; shift
@@ -15,9 +16,9 @@ OUTDIR=${OUTDIR:-/rsstu/users/r/rrellan/BZea/ZEAL/$STEP}
 WAVES=$(cd "${WAVES:-$REPO/meta/waves}" && pwd)
 [ -f "$WAVES/${STEP}_$FIRST.csv" ] || { echo "no wave sheet ${STEP}_$FIRST.csv in $WAVES" >&2; exit 2; }
 sheets=$(ls "$WAVES"/"$STEP"_*.csv | awk -v first="$WAVES/${STEP}_$FIRST.csv" '$0 >= first')
-prev=""
+prev="${AFTER:-}"
 for sheet in $sheets; do
-    resume=(); [ -z "$prev" ] && [ -n "$RESUME" ] && resume=(-resume "$RESUME")
+    resume=(); [ "$sheet" = "$WAVES/${STEP}_$FIRST.csv" ] && [ -n "$RESUME" ] && resume=(-resume "$RESUME")
     prev=$(sbatch --parsable --partition=compute --qos=normal --time=1-00:00:00 --mem="${MEM:-8G}" --no-requeue \
         --export=ALL,ZEALGT_REPO="$REPO" ${prev:+--dependency=afterok:$prev} "$REPO/scripts/submit_head_job.sbatch" hpc_prod \
         --step "$STEP" --input "$sheet" --outdir "$OUTDIR" "${resume[@]}" "$@")
