@@ -1,6 +1,6 @@
 # Run plan: alignment of the parviglumis donors, after the mexicana waves
 
-Draft, 2026-10-12; nothing submitted yet.
+Approved 2026-10-12; submitted after mexicana's resubmitted wave 09.
 
 ## Why
 
@@ -43,7 +43,7 @@ the chain ends ~05:30 Wednesday 10-14 (range ~03:00-10:00).
 
 - As `alignment_mexicana35.md` (`hpc_prod`, `cleanup = true`, chain with `afterok`, normal QOS, `--no-requeue`, head job
   16 GB, `NXF_OPTS="-Xms1g -Xmx12g"`), except:
-- The first wave waits for mexicana's last wave (`AFTER=1200748`, `afterok`); if a mexicana wave fails, this chain stays
+- The first wave waits for mexicana's last wave (`AFTER=1214147`, the resubmitted wave 09; `afterok`); if a mexicana wave fails, this chain stays
   pending and is resubmitted with it.
 - Own checkout `ZEAL/zealgt_prod_parv` at its tag: the pending waves of the other chains read `ZEAL/zealgt_prod` and
   `ZEAL/zealgt_prod_dip`, which stay at their tags.
@@ -52,7 +52,7 @@ the chain ends ~05:30 Wednesday 10-14 (range ~03:00-10:00).
 - Sheets `docs/runs/alignment_parviglumis/alignment_13.csv` to `_22.csv` (`agent/alignparv/write_wave_sheets.py`),
   submitted from `ZEAL/zealgt_prod_parv`:
   ```
-  AFTER=1200748 MEM=16G NXF_OPTS="-Xms1g -Xmx12g" WAVES=docs/runs/alignment_parviglumis bash scripts/submit_waves.sh alignment 13
+  AFTER=1214147 MEM=16G NXF_OPTS="-Xms1g -Xmx12g" WAVES=docs/runs/alignment_parviglumis bash scripts/submit_waves.sh alignment 13
   ```
 - Stub: `docs/runs/alignment_parviglumis_stub/alignment_13.csv` (one line), from the same checkout with
   `WAVES=docs/runs/alignment_parviglumis_stub OUTDIR=/rsstu/users/r/rrellan/BZea/ZEAL/alignment_stub`, `-stub`, no
@@ -65,8 +65,8 @@ the chain ends ~05:30 Wednesday 10-14 (range ~03:00-10:00).
   wave: `scancel` the pending ones, read `.command.err`, resubmit from that wave with `RESUME=<session id>`.
 - `/share`: the session stops and asks if `frodrig4`'s usage passes 6 TB (all chains together), or if the group's
   headroom falls below 2 TB. Beside diploperennis's last waves (until ~00:30) both chains peak at ~4 TB.
-- Known: `MINIBWA_MAP` memory, 12.9 of 16 GB scaled to mexicana's 34 GB sample, is ~14 GB scaled to `S_4E_6` (37 GB,
-  wave 19), under the 95 % kill line (15.2 GB). Lines of 2.4-9.2 MB (waves 21-22) are the smallest yet.
+- `MINIBWA_MAP` runs at 20 GB (PR #47, after an OOM kill at 16 GB in mexicana wave 07); mapping is per 50 M-pair
+  chunk, so `S_4E_6` (37 GB, wave 19) needs no more per task. Lines of 2.4-9.2 MB (waves 21-22) are the smallest yet.
 
 ## Done when
 
