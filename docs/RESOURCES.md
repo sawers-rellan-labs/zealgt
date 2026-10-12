@@ -72,7 +72,7 @@ sample (whole-sample map ~3.4 h; 9.8 GB = index 4.9 GB + batches). Picard measur
 | process                    | estimate at S_1A_6                               | `hpc_prod`                      |
 | -------------------------- | ------------------------------------------------ | ------------------------------- |
 | `SEQKIT_SPLIT2`            | not measured                                     | 4 cpus, 2 GB, 2 h (placeholder) |
-| `MINIBWA_MAP`              | ~39 min per chunk at 12 cpus; 9.8 GB             | 16 cpus, 16 GB, 2 h per chunk   |
+| `MINIBWA_MAP`              | ~39 min per chunk at 12 cpus; 9.8 GB             | 16 cpus, 20 GB, 2 h per chunk   |
 | `FGUMI_CLIP`               | ~51 min, streams                                 | 2 cpus, 4 GB, 2 h               |
 | `SAMTOOLS_FIXMATE`         | ~71 min, streams                                 | 4 cpus, 1 GB, 2 h               |
 | `SAMTOOLS_SORT`            | ~20 min; 768 MB per thread x 6                   | 6 cpus, 6 GB, 1 h               |
@@ -112,6 +112,10 @@ request, 1 h 01 min).
 - The head job (1 cpu, 8 GB, `scripts/submit_head_job.sbatch`) peaked at its 8 GB (sacct MaxRSS 8.0 GB): larger runs
   give it more with `sbatch --mem=...`.
 - `SAMTOOLS_SORT` peaked at 5.0 of 6 GB per chunk.
+- `MINIBWA_MAP` 20 GB (was 16): mexicana wave 07's S_4H_10 chunk 1 was OOM-killed at 16 GB (task job 1211942,
+  2026-10-12); minibwa's death cut a record and `samtools view` exited 1, outside the retry codes. Trace `peak_rss` up
+  to 15.9 GB (diploperennis wave 10, S_1B_10); the same chunk rerun peaked at 10.9 GB (14.7 GB with cache). 20 GB is
+  that maximum plus ~20 %.
 
 ## Production demultiplexing, measured (2026-10-03/04, `hpc_prod`)
 
