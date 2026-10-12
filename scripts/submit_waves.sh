@@ -5,6 +5,7 @@
 #   bash scripts/submit_waves.sh <step> <first wave NN> [nextflow args for every wave, e.g. -stub]
 #   OUTDIR=<dir> (default /rsstu/users/r/rrellan/BZea/ZEAL/<step>); RESUME=<session id> resumes the first wave only
 #   WAVES=<dir> of wave sheets (default meta/waves); MEM=<head job memory> (default 8G); NXF_OPTS reaches the head jobs
+#   ZEALGT_LAUNCH=<launch directory> for a second chain running beside another (default nf_work/zealgt_prod)
 # --no-requeue: a head job requeued after a node failure would restart its wave without -resume
 set -eo pipefail
 STEP="${1:?step: demultiplex or alignment}"; shift

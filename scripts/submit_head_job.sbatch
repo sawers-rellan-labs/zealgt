@@ -1,6 +1,7 @@
 #!/bin/bash
 # Nextflow head job: sbatch scripts/submit_head_job.sbatch <hpc_dev|hpc_prod> <nextflow run args...>
 # One fixed launch directory per profile (nf_work/zealgt_dev, nf_work/zealgt_prod), so -resume always finds the cache.
+# A second production chain at the same time sets its own launch directory: ZEALGT_LAUNCH=<dir> (hpc_prod only).
 # Production outlives the short QOS: sbatch --partition=compute --qos=normal --time=3-00:00:00 scripts/submit_head_job.sbatch hpc_prod ...
 # The checkout run is $ZEALGT_REPO (default: the development checkout); production waves pass their frozen worktree.
 # Pulling missing images needs internet: sbatch --partition=xfer --export=ALL,NXF_OFFLINE=false ...
@@ -16,7 +17,7 @@ set -eo pipefail
 PROFILE="$1"; shift
 case "$PROFILE" in
     hpc_dev)  LAUNCH=/share/maize/frodrig4/nf_work/zealgt_dev ;;
-    hpc_prod) LAUNCH=/share/maize/frodrig4/nf_work/zealgt_prod
+    hpc_prod) LAUNCH=${ZEALGT_LAUNCH:-/share/maize/frodrig4/nf_work/zealgt_prod}
               [ "$SLURM_JOB_QOS" != short ] || { echo "hpc_prod needs a head job on the normal QOS (see line 4)" >&2; exit 2; } ;;
     *)        echo "first argument: hpc_dev or hpc_prod" >&2; exit 2 ;;
 esac
@@ -32,7 +33,7 @@ BINDS=$BINDS,/share/maize/frodrig4,/rsstu/users/r/rrellan,$APPTAINER
 export NXF_OFFLINE="${NXF_OFFLINE:-true}" APPTAINERENV_PREPEND_PATH="$APPTAINER/bin"
 mkdir -p "$LAUNCH"
 cd "$LAUNCH"
-echo "$(date '+%F %T') job=$SLURM_JOB_ID profile=$PROFILE qos=$SLURM_JOB_QOS commit=$(git -C "$REPO" rev-parse --short HEAD) offline=$NXF_OFFLINE args: $*"
+echo "$(date '+%F %T') job=$SLURM_JOB_ID profile=$PROFILE launch=$LAUNCH qos=$SLURM_JOB_QOS commit=$(git -C "$REPO" rev-parse --short HEAD) offline=$NXF_OFFLINE args: $*"
 set +e -m
 # Nextflow in the background (job control on, so INT is not ignored there) while this shell waits for signals
 "$APPTAINER/bin/apptainer" exec -B "$BINDS" "$SIF" env NXF_OFFLINE="$NXF_OFFLINE" \

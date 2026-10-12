@@ -8,8 +8,9 @@ Nextflow 26.04.6 (laptop, or hazel GPFS with tasks on Slurm compute nodes).
 
 - `hpc_dev`: development on heads of one library; launch directory always `/share/maize/frodrig4/nf_work/zealgt_dev`;
   `work/` kept; outputs published as hard links.
-- `hpc_prod`: whole libraries; launch directory always `/share/maize/frodrig4/nf_work/zealgt_prod`; outputs (the FASTQs
-  of `demultiplex`, the CRAMs and QC of `alignment`) copied; `cleanup = true`; head job on the normal QOS.
+- `hpc_prod`: whole libraries; launch directory `/share/maize/frodrig4/nf_work/zealgt_prod` (a second chain at the same
+  time: its own, `ZEALGT_LAUNCH=<dir>`); outputs (the FASTQs of `demultiplex`, the CRAMs and QC of `alignment`) copied;
+  `cleanup = true`; head job on the normal QOS.
 - Start: `sbatch scripts/submit_head_job.sbatch hpc_dev --step <demultiplex|alignment> <nextflow run args>` (production:
   see the script's header). `alignment` reads the `samplesheets/<input name>.csv` a `demultiplex` run published, or some of its
   rows; the two runs share the launch directory and its cache.
