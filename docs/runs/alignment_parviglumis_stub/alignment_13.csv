@@ -1,0 +1,2 @@
+"sample_id","fastq_1","fastq_2","source","library","lanes","kit"
+"P4097","/rsstu/users/r/rrellan/BZea/ZEAL/demultiplex/bc2s3_batch2/P4097_R1.fastq.gz","/rsstu/users/r/rrellan/BZea/ZEAL/demultiplex/bc2s3_batch2/P4097_R2.fastq.gz","bc2s3_batch2","V22A","V22A_WKDL260015048-1A_237VF5LT4_L6","twist_flexprep"
