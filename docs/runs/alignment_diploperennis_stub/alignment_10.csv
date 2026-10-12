@@ -1,0 +1,2 @@
+"sample_id","fastq_1","fastq_2","source","library","lanes","kit"
+"PN6_SID523","/rsstu/users/r/rrellan/BZea/ZEAL/demultiplex/bc2s3_batch1/PN6_SID523_R1.fastq.gz","/rsstu/users/r/rrellan/BZea/ZEAL/demultiplex/bc2s3_batch1/PN6_SID523_R2.fastq.gz","bc2s3_batch1","BZea6","BZea6_S6_L001,BZea6_S6_L002","twist_96plex"
