@@ -17925,10 +17925,13 @@
             </ol>
             <p>
               Six donors pass. <strong>Zx.0090_P2</strong> covers 24 % of chr10, below the 5th percentile (46 %) of what
-              its pedigree predicts (simulated from <code>meta/registry.csv</code>): a problem of the family, not
-              chance. <strong>Zx.0470_P2</strong> covers 73 %, within what its small pedigree predicts (4 BC1 and 7 BC2
-              plants; median 90 %): its lines carry too little of the donor to confirm it. Both also lose two thirds of
-              their sites to the witness veto. The curve and the fits below use the
+              its pedigree predicts (1000 families simulated on its <code>meta/registry.csv</code> tree; the tail
+              probability not computed): unusually low, worth a check of the family against the registry. The simulation
+              counts a position covered when any of a line’s six plants carries a donor allele, which RTIGER may call
+              REF at 1/12 dosage, so observed coverage runs low against it for every family; the six families on the
+              curve still reach 93-100 %. <strong>Zx.0470_P2</strong> covers 73 %, within what its small pedigree
+              predicts (4 BC1 and 7 BC2 plants; median 90 %): its lines carry too little of the donor to confirm it.
+              Both also lose two thirds of their sites to the witness veto. The curve and the fits below use the
               <strong>six donors on the curve</strong>; the other two are shown separately (section 3.2).
             </p>
             <div class="cell">

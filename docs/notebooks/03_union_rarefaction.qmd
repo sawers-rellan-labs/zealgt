@@ -256,7 +256,10 @@ the lines' RTIGER calls at the union sites gap filling called ALT for the donor:
 3. the donor segments of the lines passing 1-2 cover >= 90 % of chr10.
 
 Six donors pass. **Zx.0090_P2** covers 24 % of chr10, below the 5th percentile (46 %) of what its pedigree predicts
-(simulated from `meta/registry.csv`): a problem of the family, not chance. **Zx.0470_P2** covers 73 %, within what its
+(1000 families simulated on its `meta/registry.csv` tree; the tail probability not computed): unusually low, worth a check
+of the family against the registry. The simulation counts a position covered when any of a line's six plants carries a
+donor allele, which RTIGER may call REF at 1/12 dosage, so observed coverage runs low against it for every family; the
+six families on the curve still reach 93-100 %. **Zx.0470_P2** covers 73 %, within what its
 small pedigree predicts (4 BC1 and 7 BC2 plants; median 90 %): its lines carry too little of the donor to confirm it. Both
 also lose two thirds of their sites to the witness veto. The curve and the fits below use the **six donors on the curve**;
 the other two are shown separately (section 3.2).
