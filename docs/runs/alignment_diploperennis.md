@@ -38,8 +38,8 @@ see below.
   16 GB, `NXF_OPTS="-Xms1g -Xmx12g"`), except:
 - Own checkout `ZEAL/zealgt_prod_dip` at tag `align-dip-20261012`; the mexicana chain's pending waves read
   `ZEAL/zealgt_prod`, which stays at its tag.
-- Own launch directory `nf_work/zealgt_prod_dip` (`ZEALGT_LAUNCH`), so each run has its own `.nextflow.log`, cache and
-  `work/`.
+- Own launch folder `nf_work/zealgt_prod_dip` (`ZEALGT_LAUNCH`) with its `work/` inside (user, 2026-10-12): its own
+  `.nextflow.log`, cache and `work/`; nothing of the mexicana run's `nf_work/zealgt_prod` is shared.
 - Both runs write `pipeline_info/zealgt_software_mqc_versions.yml` in the same outdir (same tools, same content);
   traces and reports carry a start timestamp.
 - Sheets `docs/runs/alignment_diploperennis/alignment_10.csv` to `_12.csv` (`agent/aligndip/write_wave_sheets.py`),
