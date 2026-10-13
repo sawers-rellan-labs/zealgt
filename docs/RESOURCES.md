@@ -116,6 +116,13 @@ request, 1 h 01 min).
   2026-10-12); minibwa's death cut a record and `samtools view` exited 1, outside the retry codes. Trace `peak_rss` up
   to 15.9 GB (diploperennis wave 10, S_1B_10); the same chunk rerun peaked at 10.9 GB (14.7 GB with cache). 20 GB is
   that maximum plus ~20 %.
+- `hpc_prod` `queueSize` 80 (was 40, `hpc_shared`), user 2026-10-12: waves of many small samples are capped by the
+  number of tasks in flight (~10 short jobs per sample; mexicana wave 08 started ~25 samples/h at 129-656 cpus), not by
+  cpus. One chain at 80 loads the Slurm controller as two chains at 40 did. `MINIBWA_MAP` stays capped by the per-user
+  cpu limit on short.
+- `executor.retry` 10 attempts, 30 s to 5 min apart (default 3, 500 ms to 30 s): on 2026-10-12 ~20:05 hazel's controller
+  timed out on `sbatch` ("Socket timed out on send/recv operation") past the default retries and aborted mexicana wave 08
+  and diploperennis wave 11 (jobs 1214146, 1211542; resubmitted with `-resume`).
 
 ## Production demultiplexing, measured (2026-10-03/04, `hpc_prod`)
 
