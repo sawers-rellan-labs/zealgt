@@ -13,6 +13,7 @@ Two modes, so that no step holds all donors at once:
   counts: per union site, K = donors with s among their own tier-A sites, R = donors with s a gap scored tier 'ref';
           reads one donor at a time; writes a gzipped TSV (chrom, pos, K, R) in union order.
   fill:   one donor; k and m are K and R less the donor's own share (k = K - [own], m = k + R - [ref gap]);
+          with --outside-counts (a donor kept out of the union) K and R hold no share of it: k = K, m = K + R;
           writes a bgzipped, tabix-indexed VCF with the donor as one haploid sample: GT, LLR, PRIOR, PALT, SRC (own or
           gap), with pysam. bcftools merge joins the donors into the one-step file.
 """
@@ -51,6 +52,8 @@ def parse_args(argv=None):
     f.add_argument("--donor", required=True, **DONOR, help="the donor, its tier-A sites VCF and its site table at the union")
     f.add_argument("--counts", required=True, help="site counts of all donors (counts mode)")
     f.add_argument("--out", required=True, help="output VCF (.vcf.gz; the .tbi is written next to it)")
+    f.add_argument("--outside-counts", action="store_true",
+                   help="the donor is not among the donors the counts were summed over (--union_exclude)")
     req = f.add_argument_group("model settings (values in conf/modules.config)")
     req.add_argument("--w", type=float, required=True, help="prior weight of the donor's sharing rate")
     req.add_argument("--alt", type=float, required=True, help="posterior of ALT at which ALT is called")
@@ -138,16 +141,17 @@ def site_counts(sites, donors):
     return K, R
 
 
-def fill(sites, own, table, counts, w, alt):
-    """Yield (site, (GT, LLR, PRIOR, PALT, SRC)) of one donor at every union site; counts: (K, R) per site."""
+def fill(sites, own, table, counts, w, alt, in_counts=True):
+    """Yield (site, (GT, LLR, PRIOR, PALT, SRC)) of one donor at every union site; counts: (K, R) per site, the donor
+    among them unless in_counts is False."""
     mu = sharing_rate(sites, own, table)
     LOG.info("%d own sites, mu = %.4f", len(own), mu)
     t0 = last = time.monotonic()
     for done, (s, (K, R)) in enumerate(zip(sites, counts), 1):
         carrier = s in own
         row = table.get(s, NO_ROW)
-        k = K - carrier
-        m = k + R - (not carrier and row[0] == "ref")
+        k = K - (in_counts and carrier)
+        m = k + R - (in_counts and not carrier and row[0] == "ref")
         pi = min(max((w * mu + k) / (w + m), 1e-6), 1 - 1e-6)
         gt, pp = call(row, pi, alt, carrier)
         yield s, (gt, row[2], pi, pp, "own" if carrier else "gap")
@@ -179,7 +183,7 @@ def write_alleles(a, contigs, sites):
     header.add_sample(name)
     tally = {}
     with pysam.VariantFile(a.out, "wz", header=header) as out:
-        for (chrom, pos, ref, alt), (gt, llr, pi, pp, src) in fill(sites, own, table, counts, a.w, a.alt):
+        for (chrom, pos, ref, alt), (gt, llr, pi, pp, src) in fill(sites, own, table, counts, a.w, a.alt, not a.outside_counts):
             rec = out.new_record(contig=chrom, start=pos - 1, alleles=(ref, alt))
             cell = rec.samples[name]
             cell["GT"] = (None,) if gt == "." else (int(gt),)

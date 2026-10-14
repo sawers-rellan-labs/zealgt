@@ -46,6 +46,24 @@ def test_site_counts_by_hand():
     assert priors == pytest.approx([(2 * 0.5 + 0) / 3, (2 * 0.25 + 1) / 3, (2 * 0.5 / 3 + 1) / 4])
 
 
+def test_donor_outside_counts_by_hand():
+    # Z kept out of the union: K and R over X and Y only, and Z's own share is not taken off them
+    own = {"X": {S2, S3}, "Y": {S1, S2}, "Z": {S1}}
+    tables = {"X": {S1: ("B", 10, 5.0, "."), S2: ("A", 10, 9.0, "."), S3: ("ref", 20, -6.0, ".")},
+              "Y": {S1: ("A", 10, 9.0, "."), S2: ("A", 10, 9.0, "."), S3: ("ref", 20, -6.0, ".")},
+              "Z": {S1: ("A", 10, 9.0, "."), S2: ("ref", 20, -6.0, ".")}}
+    sites = [S1, S2, S3]
+    K, R = fill.site_counts(sites, ((d, own[d], tables[d]) for d in "XY"))
+    assert (K, R) == ([1, 2, 1], [0, 0, 1])
+    # mu_Z: gaps S2 (ref) and S3 (no row) -> 0.5 / 2; S1 own (k 1, m 1), S2 ref gap (k 2, m 2), S3 no row (k 1, m 2)
+    cells = [c for _, c in fill.fill(sites, own["Z"], tables["Z"], list(zip(K, R)), 2.0, 0.999, in_counts=False)]
+    assert [c[2] for c in cells] == pytest.approx([(0.5 + 1) / 3, (0.5 + 2) / 4, (0.5 + 1) / 4])
+    assert [(c[0], c[4]) for c in cells] == [("1", "own"), ("0", "gap"), (".", "gap")]
+    # at S1 alone (mu 0.5, K 1): the default takes Z's own share off K (k 0, m 0); outside the counts it does not (k 1, m 1)
+    priors = [next(fill.fill([S1], own["Z"], tables["Z"], [(1, 0)], 2.0, 0.999, in_counts=x))[1][2] for x in (True, False)]
+    assert priors == pytest.approx([1 / 2, 2 / 3])
+
+
 def test_sharing_rate_counts_gaps_only():
     table = {S1: ("A", 10, 9.0, "."), S2: ("ref", 20, -6.0, "."), S3: ("A", 10, 8.0, ".")}
     # S3 is own: gaps S1 (A) and S2 (ref) -> (1 + 0.5) / (2 + 1)
