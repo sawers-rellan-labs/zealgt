@@ -47,7 +47,7 @@ Head job normal QOS, 12 h, 16 GB, heap 12 GB:
 ```
 cd /rsstu/users/r/rrellan/BZea/ZEAL/zealgt
 B=/rsstu/users/r/rrellan/BZea
-S=docs/runs/genotype_mexicana_chr10
+S=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt/docs/runs/genotype_mexicana_chr10
 sbatch --parsable --partition=compute --qos=normal --time=12:00:00 --mem=16G \
   --export=ALL,NXF_OPTS="-Xms1g -Xmx12g" \
   scripts/submit_head_job.sbatch hpc_dev --step genotype \

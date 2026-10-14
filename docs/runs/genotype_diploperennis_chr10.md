@@ -35,7 +35,7 @@ A new run from the same hazel checkout, beside the mexicana run, in its own laun
 ```
 cd /rsstu/users/r/rrellan/BZea/ZEAL/zealgt
 B=/rsstu/users/r/rrellan/BZea
-S=docs/runs/genotype_diploperennis_chr10
+S=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt/docs/runs/genotype_diploperennis_chr10
 sbatch --parsable --partition=compute --qos=normal --time=12:00:00 --mem=16G \
   --export=ALL,ZEALGT_LAUNCH=/share/maize/frodrig4/nf_work/zealgt_dev_dip,NXF_OPTS="-Xms1g -Xmx12g" \
   scripts/submit_head_job.sbatch hpc_dev --step genotype \
