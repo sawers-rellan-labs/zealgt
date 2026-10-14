@@ -6,7 +6,7 @@ process CRISP {
     container 'ghcr.io/sawers-rellan-labs/zealgt-crisp:1a9027e'
 
     input:
-    tuple val(meta), path(crams, stageAs: 'bc1/*'), path(crais, stageAs: 'bc1/*'), path(witness, stageAs: 'witness/*'), path(witness_index, stageAs: 'witness/*')
+    tuple val(meta), path(crams, arity: '1..*', stageAs: 'bc1/*'), path(crais, arity: '1..*', stageAs: 'bc1/*'), path(witness, stageAs: 'witness/*'), path(witness_index, stageAs: 'witness/*')
     tuple val(meta2), path(fasta), path(fai)
     path bed
 
