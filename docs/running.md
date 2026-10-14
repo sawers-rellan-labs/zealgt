@@ -6,7 +6,8 @@ Nextflow 26.04.6 (laptop, or hazel GPFS with tasks on Slurm compute nodes).
 
 ## Profiles and launch directories
 
-- `hpc_dev`: development on heads of one library; launch directory always `/share/maize/frodrig4/nf_work/zealgt_dev`;
+- `hpc_dev`: development on heads of one library; launch directory `/share/maize/frodrig4/nf_work/zealgt_dev` (a second
+  run at the same time: its own, `ZEALGT_LAUNCH=<dir>`);
   `work/` kept; outputs published as hard links.
 - `hpc_prod`: whole libraries; launch directory `/share/maize/frodrig4/nf_work/zealgt_prod` (a second chain at the same
   time: its own, `ZEALGT_LAUNCH=<dir>`; a chain after another: `AFTER=<job id>` of its last wave); outputs (the FASTQs

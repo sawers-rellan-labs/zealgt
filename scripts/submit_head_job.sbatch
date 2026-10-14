@@ -1,7 +1,7 @@
 #!/bin/bash
 # Nextflow head job: sbatch scripts/submit_head_job.sbatch <hpc_dev|hpc_prod> <nextflow run args...>
 # One fixed launch directory per profile (nf_work/zealgt_dev, nf_work/zealgt_prod), so -resume always finds the cache.
-# A second production chain at the same time sets its own launch directory: ZEALGT_LAUNCH=<dir> (hpc_prod only).
+# A second run at the same time sets its own launch directory: ZEALGT_LAUNCH=<dir>.
 # Production outlives the short QOS: sbatch --partition=compute --qos=normal --time=3-00:00:00 scripts/submit_head_job.sbatch hpc_prod ...
 # The checkout run is $ZEALGT_REPO (default: the development checkout); production waves pass their frozen worktree.
 # Pulling missing images needs internet: sbatch --partition=xfer --export=ALL,NXF_OFFLINE=false ...
@@ -16,7 +16,7 @@
 set -eo pipefail
 PROFILE="$1"; shift
 case "$PROFILE" in
-    hpc_dev)  LAUNCH=/share/maize/frodrig4/nf_work/zealgt_dev ;;
+    hpc_dev)  LAUNCH=${ZEALGT_LAUNCH:-/share/maize/frodrig4/nf_work/zealgt_dev} ;;
     hpc_prod) LAUNCH=${ZEALGT_LAUNCH:-/share/maize/frodrig4/nf_work/zealgt_prod}
               [ "$SLURM_JOB_QOS" != short ] || { echo "hpc_prod needs a head job on the normal QOS (see line 4)" >&2; exit 2; } ;;
     *)        echo "first argument: hpc_dev or hpc_prod" >&2; exit 2 ;;
