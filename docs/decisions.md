@@ -286,3 +286,14 @@ Spec approved by the user, 2026-10-11 (`docs/milestones/09a_union_alt_markers.md
   thresholds and coverage are applied downstream.
 - Filter 1 (drop markers reading ALT in 2 or more REF lines) retired: on the eight chr10 donors it changed neither the
   ALT ceiling, the class shares nor the curve set, and its fixed cut drops more markers in large families.
+
+## 2026-10-14 Problem families out of the union, still genotyped (Milestone 9b)
+
+Spec approved by the user, 2026-10-14 (`docs/milestones/09b_union_exclude.md`).
+
+- Donors named in `--union_exclude` give no tier-A sites to the union and no share of its per-site totals (K, R); every
+  donor, named or not, is still scored, gap-filled and genotyped at the union. User: "Leave problematic families out of
+  the union use only for genotyping"; option A after the diploperennis run.
+- A parameter, not a samplesheet column (a new column changes every sample's meta and reruns every task).
+- K and R over the kept donors only; an excluded donor's own tier-A sites inside the union still count as its own.
+- The problem-family screen stays outside the pipeline (it needs SNP50K calls); the list per run is written in its run plan.
