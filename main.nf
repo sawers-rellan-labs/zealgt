@@ -90,6 +90,7 @@ workflow SAWERSRELLANLABS_ZEALGT {
             params.max_check_alt_rate,
             params.min_mean_coverage,
             params.genetic_map,
+            params.union_exclude,
         )
         ch_discovery_vcf = GENOTYPE.out.discovery_vcf
         ch_discovery_sites = GENOTYPE.out.discovery_sites

@@ -15,10 +15,11 @@ workflow SITES_UNION_GAPFILL {
     ch_fasta    // channel: [ meta, fasta, fai ]
     score_tool  // file: bin/score_pooled_likelihood.py
     fill_tool   // file: bin/fill_donor_alleles.py
+    excluded    // list: donors kept out of the union and its site counts, still scored and filled
 
     main:
-    // MARKER_UNION: the donors' tier-A sites in one VCF; a position with two ALT alleles becomes one record, then dropped
-    BCFTOOLS_MERGE(ch_tier_a.map { _meta, vcf -> vcf }.collect().map { vcfs -> [[id: 'union'], vcfs, [], []] }, ch_fasta)
+    // MARKER_UNION: the kept donors' tier-A sites in one VCF; a position with two ALT alleles becomes one record, then dropped
+    BCFTOOLS_MERGE(ch_tier_a.filter { meta, _vcf -> !(meta.id in excluded) }.map { _meta, vcf -> vcf }.collect().map { vcfs -> [[id: 'union'], vcfs, [], []] }, ch_fasta)
     BCFTOOLS_NORM(BCFTOOLS_MERGE.out.vcf.map { meta, vcf -> [meta, vcf, []] }, ch_fasta.map { meta, fasta, _fai -> [meta, fasta] })
     BIALLELIC_UNION(BCFTOOLS_NORM.out.vcf.map { meta, vcf -> [meta, vcf, []] }, [], [], [])
     def ch_union = BIALLELIC_UNION.out.vcf.join(BIALLELIC_UNION.out.index, failOnMismatch: true)
@@ -50,16 +51,16 @@ workflow SITES_UNION_GAPFILL {
     def ch_donors = ch_tier_a.map { meta, vcf -> [meta.id, vcf] }
         .join(UNION_TIERS.out.sites.map { meta, tsv -> [meta.id, tsv] }, failOnMismatch: true)
 
-    // the per-site totals over all donors that Eq. eb needs (K own tier-A, R ref gaps), donors in name order
+    // the per-site totals over the kept donors that Eq. eb needs (K own tier-A, R ref gaps), donors in name order
     UNION_SITE_COUNTS(
-        ch_union.combine(ch_donors.toSortedList { x, y -> x[0] <=> y[0] }.map { rows -> rows.transpose() }),
+        ch_union.combine(ch_donors.filter { row -> !(row[0] in excluded) }.toSortedList { x, y -> x[0] <=> y[0] }.map { rows -> rows.transpose() }),
         fill_tool
     )
 
-    // each donor's allele at every union site (Eq. eb), one task per donor
+    // each donor's allele at every union site (Eq. eb), one task per donor; an excluded donor is not among the totals
     FILL_DONOR_ALLELES(
         ch_donors.combine(ch_union).combine(UNION_SITE_COUNTS.out.tsv)
-            .map { donor, tier_a, table, _umeta, union, tbi, _cmeta, counts -> [[id: donor], union, tbi, tier_a, table, counts] },
+            .map { donor, tier_a, table, _umeta, union, tbi, _cmeta, counts -> [[id: donor] + (donor in excluded ? [outside_counts: true] : [:]), union, tbi, tier_a, table, counts] },
         fill_tool
     )
 

@@ -13,6 +13,7 @@ workflow GENOTYPE {
     max_check_alt_rate // number: B73 checks with a larger share of ALT reads are dropped
     min_mean_coverage  // number: samples under this CollectWgsMetrics MEAN_COVERAGE are dropped
     genetic_map        // string or null: TSV chr, bp, cm for the ancestry grid; null = nilHMM's bundled v5 map
+    union_exclude      // string: comma-separated donors kept out of the union, still genotyped at it
 
     main:
     // excluded rows and samples under the coverage floor dropped first; MEAN_COVERAGE is in the metrics table's first row
@@ -40,6 +41,7 @@ workflow GENOTYPE {
         ch_fasta,
         file("${projectDir}/bin/score_pooled_likelihood.py", checkIfExists: true),
         file("${projectDir}/bin/fill_donor_alleles.py", checkIfExists: true),
+        union_exclude.tokenize(','),
     )
 
     CRAM_ANCESTRY_RTIGER(

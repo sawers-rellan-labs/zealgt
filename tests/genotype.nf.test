@@ -114,4 +114,42 @@ nextflow_pipeline {
             )
         }
     }
+
+    test("--step genotype - union_exclude") {
+
+        when {
+            // nf-test launches in its own directory: the fixture sheets' relative paths are made absolute
+            def (cram_sheet, controls_sheet) = ['samplesheet_cram.csv', 'b73_controls.csv'].collect { name ->
+                def sheet = new File("$outputDir/$name")
+                sheet.parentFile.mkdirs()
+                sheet.text = new File("$baseDir/tests/fixtures/genotype/$name").text.replace('tests/fixtures/', "$baseDir/tests/fixtures/")
+                sheet.path
+            }.toList() // a bare closing brace here ends nf-core lint's scan of the when block before params
+            params {
+                outdir = "$outputDir"
+                input         = cram_sheet
+                step          = 'genotype'
+                b73_controls  = controls_sheet
+                lowcopy_bed   = "$baseDir/tests/fixtures/genotype/lowcopy.bed"
+                check_sites   = "$baseDir/tests/fixtures/genotype/check_sites.vcf.gz"
+                genetic_map   = "$baseDir/tests/fixtures/genotype/chrA_map.tsv"
+                region        = 'chrA:1-5000'
+                union_exclude = 'Zx.9002_P1'
+            }
+        }
+
+        then {
+            def tasks = workflow.trace.tasks().countBy { t -> t.name.tokenize(':')[-1].tokenize(' ')[0] }
+            def u = "$outputDir/genotype/union"
+            def alleles = path("$u/chrA_1-5000.donor_alleles.vcf.gz").linesGzip.findAll { l -> !l.startsWith('#') }*.tokenize('\t')
+            assert workflow.success
+            assertAll(
+                // the union from Zx.9001_P1 alone: the same two sites; both donors still scored, filled and called
+                { assert path("$u/chrA_1-5000.union.vcf.gz").linesGzip.findAll { l -> !l.startsWith('#') }*.tokenize('\t')*.getAt(1) == ['2000', '4000'] },
+                { assert [tasks.UNION_TIERS, tasks.FILL_DONOR_ALLELES, tasks.CALL_ANCESTRY] == [2, 2, 2] },
+                // K counts Zx.9001_P1 only: its own prior (2 x 0.5 + 0) / (2 + 0); Zx.9002_P1 outside the counts, (2 x 0.5 + 1) / (2 + 1)
+                { assert alleles.every { r -> r[9] ==~ /[.1]:[0-9.e-]+:0\.5:[0-9.e-]+:own/ && r[10] ==~ /1:[0-9.]+:0\.66666?7:1:own/ } }
+            )
+        }
+    }
 }

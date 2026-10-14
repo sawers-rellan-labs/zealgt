@@ -159,6 +159,13 @@
                     "pattern": "^\\S+\\.tsv$",
                     "description": "Genetic map (TSV: chr, bp, cm; chr without 'chr') for the ancestry grid; unset: nilHMM's bundled B73 v5 map.",
                     "fa_icon": "fas fa-map"
+                },
+                "union_exclude": {
+                    "type": "string",
+                    "default": "",
+                    "pattern": "^([^,\\s]+(,[^,\\s]+)*)?$",
+                    "description": "Comma-separated donors kept out of the union (problem families); they are still genotyped at it.",
+                    "fa_icon": "fas fa-user-slash"
                 }
             }
         },

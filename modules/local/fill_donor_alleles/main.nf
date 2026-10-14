@@ -24,7 +24,7 @@ process FILL_DONOR_ALLELES {
     prefix = task.ext.prefix ?: "${meta.id}"
     // the tool is a path input, so an edit to it reruns the task (docs/running.md)
     """
-    python3 ${tool} fill --union ${union} --donor ${meta.id} ${tier_a} ${table} --counts ${counts} --out ${prefix}.vcf.gz ${args}
+    python3 ${tool} fill --union ${union} --donor ${meta.id} ${tier_a} ${table} --counts ${counts} --out ${prefix}.vcf.gz ${meta.outside_counts ? '--outside-counts' : ''} ${args}
     """
 
     stub:
