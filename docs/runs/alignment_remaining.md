@@ -69,6 +69,27 @@ Estimates: parviglumis BC1 waves 14-19 (12-35 samples, ~245 GB) ran 1 h 52 to 3 
 - `/share`: the session stops and asks if `frodrig4`'s usage passes 6 TB, or if the group's headroom falls below 2 TB.
 - Genotype debugging runs on the same short QOS beside it (768 running CPUs per user); its tasks queue, they do not fail.
 
+## Results (2026-10-16)
+
+Run from tag `align-rest-arrays-20261016` instead of `align-rest-20261014`: job arrays of 20 on `SAMTOOLS_FIXMATE`,
+`SAMTOOLS_SORT`, the per-sample `SAMTOOLS_MERGE`, `SAMTOOLS_INDEX`, `SAMTOOLS_STATS` and `MOSDEPTH` (user, 2026-10-16;
+#48). No `AFTER`: parviglumis had ended. Before the submission: the stub with arrays (job 1317206, 9 min) and the hazel
+process stub tests (26 of 26, job 1317802).
+
+| wave | job     | time (10-16)         | task jobs | cpu h | `/share` peak | `work/` peak | running cpus peak |
+| ---- | ------- | -------------------- | --------- | ----- | ------------- | ------------ | ----------------- |
+| 23   | 1317749 | 2 h 44 (01:14-03:58) | 419       | 512   | 2.61 TB       | 1.82 TB      | 754               |
+| 24   | 1317750 | 2 h 23 (04:02-06:25) | 2,324     | 749   | 2.41 TB       | 1.62 TB      | 769               |
+
+- `/share` is `frodrig4`'s usage (baseline 0.79 TB before and after: `cleanup` emptied both waves' `work/`); `work/`
+  peak = peak minus baseline, 7.4 and 7.8 x raw, against the 8.0 x of the estimate.
+- All 231 samples have CRAM, index and CollectWgsMetrics in `ZEAL/alignment/cram/`; MultiQC in
+  `multiqc/alignment/alignment_23` and `_24`. No task failed.
+- MEAN_COVERAGE, median (range): wave 23 BC1 4.27x (1.99-7.81); wave 24 BC1 2.97x (2.24-3.49), lines and checks 0.32x
+  (0.001-0.84). Under GENOTYPE's 0.05x floor: PN10_SID907 (0.001x) and PN11_SID979 (0.031x).
+- Wave 24 took 2 h 23 against the ~4.5 h estimate from parviglumis wave 21 (260 lines, ~5 h, no arrays on these
+  steps); the arrays are a likely part of it, not measured apart.
+
 ## Done when
 
 - Both waves succeeded and `cleanup` emptied its `work/`; 231 CRAMs with index and CollectWgsMetrics in

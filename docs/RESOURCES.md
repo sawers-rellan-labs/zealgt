@@ -124,6 +124,19 @@ request, 1 h 01 min).
   timed out on `sbatch` ("Socket timed out on send/recv operation") past the default retries and aborted mexicana wave 08
   and diploperennis wave 11 (jobs 1214146, 1211542; resubmitted with `-resume`).
 
+## Production alignment with job arrays, measured (2026-10-16, waves 23-24, jobs 1317749-50)
+
+`hpc_prod` with arrays of 20 on `SAMTOOLS_FIXMATE`, `SAMTOOLS_SORT`, the per-sample `SAMTOOLS_MERGE`, `SAMTOOLS_INDEX`,
+`SAMTOOLS_STATS` and `MOSDEPTH`; numbers and context in `docs/runs/alignment_remaining.md`, "Results".
+
+| wave | samples                     | raw    | time   | task jobs | cpu h | `work/` peak    | running cpus peak |
+| ---- | --------------------------- | ------ | ------ | --------- | ----- | --------------- | ----------------- |
+| 23   | 22 BC1                      | 245 GB | 2 h 44 | 419       | 512   | 1.82 TB (7.4 x) | 754               |
+| 24   | 6 BC1, 182 lines, 21 checks | 208 GB | 2 h 23 | 2,324     | 749   | 1.62 TB (7.8 x) | 769               |
+
+- Wave 24 (many small samples) took 2 h 23; parviglumis wave 21 (260 lines, 250 GB, no arrays on these steps) ~5 h.
+  Not a controlled comparison.
+
 ## Production alignment efficiency, measured (2026-10-12, mexicana wave 06, job 1200745)
 
 16 BC1 pools, 218 GB raw, `hpc_prod`. Per process from `sacct` over the wave's completed tasks: CPU = TotalCPU /
