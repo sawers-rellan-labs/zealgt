@@ -33,7 +33,7 @@ for chr in chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9; do
     --b73_controls /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/docs/runs/genotype_pilot_chr10/b73_controls.csv \
     --lowcopy_bed /rsstu/users/r/rrellan/BZea/ZEAL/reference/lowcopy_chr1-10.bed \
     --check_sites /rsstu/users/r/rrellan/BZea/bzeaseq/nilhmm/vcf/HQ_BZEA.vcf.gz \
-    --region $chr --outdir /share/maize/frodrig4/nf_work/zealgt_dev/genotype_genome/$chr/results)
+    --regions $chr --outdir /share/maize/frodrig4/nf_work/zealgt_dev/genotype_genome/$chr/results)
   echo "$chr $prev"
 done
 ```

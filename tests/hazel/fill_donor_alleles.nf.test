@@ -11,12 +11,9 @@ nextflow_process {
         options "-stub"
 
         when {
-            params {
-                region = 'chrA'
-            }
             process {
                 """
-                input[0] = [[id: 'Zx.0540_P3', donor: 'Zx.0540_P3'], file("${projectDir}/tests/fixtures/genotype/fill/union.vcf", checkIfExists: true), file("${projectDir}/tests/fixtures/genotype/check_sites.vcf.gz.tbi", checkIfExists: true), file("${projectDir}/tests/fixtures/genotype/fill/Zx.0540_P3.tier_a.vcf", checkIfExists: true), file("${projectDir}/tests/fixtures/genotype/fill/Zx.0540_P3.sites.tsv", checkIfExists: true), file("${projectDir}/tests/fixtures/genotype/score/zealbc1_Zx.0540_P3.sites.tsv", checkIfExists: true)]
+                input[0] = [[id: 'Zx.0540_P3', donor: 'Zx.0540_P3', region: 'chrA'], file("${projectDir}/tests/fixtures/genotype/fill/union.vcf", checkIfExists: true), file("${projectDir}/tests/fixtures/genotype/check_sites.vcf.gz.tbi", checkIfExists: true), file("${projectDir}/tests/fixtures/genotype/fill/Zx.0540_P3.tier_a.vcf", checkIfExists: true), file("${projectDir}/tests/fixtures/genotype/fill/Zx.0540_P3.sites.tsv", checkIfExists: true), file("${projectDir}/tests/fixtures/genotype/score/zealbc1_Zx.0540_P3.sites.tsv", checkIfExists: true)]
                 input[1] = file("${projectDir}/bin/fill_donor_alleles.py", checkIfExists: true)
                 """
             }

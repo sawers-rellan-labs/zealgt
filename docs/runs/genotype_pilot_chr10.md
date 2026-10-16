@@ -17,7 +17,7 @@ whole chromosome zealbc1 ran (handover 2026-10-05).
 - `--b73_controls docs/runs/genotype_pilot_chr10/b73_controls.csv`: `B73_ERR3288215`.
 - `--lowcopy_bed ZEAL/reference/lowcopy_chr10.bed` (8,084 ranges, sha256 `25b5a8e9…` in the `.sha256` next to it;
   recipe `agent/panel_test/compare_lowcopy_bed.sbatch`, decision 2026-10-04).
-- `--check_sites /rsstu/users/r/rrellan/BZea/bzeaseq/nilhmm/vcf/HQ_BZEA.vcf.gz`, `--region chr10`; the other
+- `--check_sites /rsstu/users/r/rrellan/BZea/bzeaseq/nilhmm/vcf/HQ_BZEA.vcf.gz`, `--regions chr10`; the other
   parameters at their defaults (`--max_check_alt_rate 0.01`, `--min_mean_coverage 0.05`).
 - Outputs, `--outdir /share/maize/frodrig4/nf_work/zealgt_dev/genotype_pilot_chr10/results`:
   `genotype/discovery/` with per donor `<donor>.chr10.vcf.gz` + `.tbi` and `<donor>.chr10.sites.tsv.gz`, and
@@ -39,7 +39,7 @@ sbatch scripts/submit_head_job.sbatch hpc_dev --step genotype \
   --b73_controls /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/docs/runs/genotype_pilot_chr10/b73_controls.csv \
   --lowcopy_bed /rsstu/users/r/rrellan/BZea/ZEAL/reference/lowcopy_chr10.bed \
   --check_sites /rsstu/users/r/rrellan/BZea/bzeaseq/nilhmm/vcf/HQ_BZEA.vcf.gz \
-  --region chr10 --outdir /share/maize/frodrig4/nf_work/zealgt_dev/genotype_pilot_chr10/results
+  --regions chr10 --outdir /share/maize/frodrig4/nf_work/zealgt_dev/genotype_pilot_chr10/results
 ```
 
 ## Size

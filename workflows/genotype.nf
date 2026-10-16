@@ -13,6 +13,7 @@ workflow GENOTYPE {
     max_check_alt_rate // number: B73 checks with a larger share of ALT reads are dropped
     min_mean_coverage  // number: samples under this CollectWgsMetrics MEAN_COVERAGE are dropped
     genetic_map        // string or null: TSV chr, bp, cm for the ancestry grid; null = nilHMM's bundled v5 map
+    regions            // string: comma-separated regions, each called on its own (chr9,chr10 or chr10:1-20000000)
 
     main:
     // excluded rows and samples under the coverage floor dropped first; MEAN_COVERAGE is in the metrics table's first row
@@ -25,6 +26,7 @@ workflow GENOTYPE {
     def ch_fasta = channel.value([[id: file(fasta).name], file(fasta, checkIfExists: true), file("${fasta}.fai", checkIfExists: true)])
     CRAM_VARIANT_DISCOVERY_CRISP(
         ch_cram,
+        channel.fromList(regions.tokenize(',')),
         channel.fromList(samplesheetToList(b73_controls, "${projectDir}/assets/schema_b73_controls.json")),
         ch_fasta,
         file(lowcopy_bed, checkIfExists: true),
@@ -43,7 +45,7 @@ workflow GENOTYPE {
     )
 
     CRAM_ANCESTRY_RTIGER(
-        CRAM_VARIANT_DISCOVERY_CRISP.out.tier_a.map { meta, _vcf -> meta.id },
+        CRAM_VARIANT_DISCOVERY_CRISP.out.tier_a.map { meta, _vcf -> [meta.region, meta.id] },
         SITES_UNION_GAPFILL.out.donor_alleles,
         SITES_UNION_GAPFILL.out.union,
         ch_cram,
@@ -54,11 +56,11 @@ workflow GENOTYPE {
     )
 
     emit:
-    discovery_vcf      = CRAM_VARIANT_DISCOVERY_CRISP.out.vcf                // channel: [ meta, vcf.gz, tbi ], one per donor
-    discovery_sites    = CRAM_VARIANT_DISCOVERY_CRISP.out.sites              // channel: [ meta, sites.tsv.gz ], one per donor
+    discovery_vcf      = CRAM_VARIANT_DISCOVERY_CRISP.out.vcf                // channel: [ meta, vcf.gz, tbi ], one per donor x region
+    discovery_sites    = CRAM_VARIANT_DISCOVERY_CRISP.out.sites              // channel: [ meta, sites.tsv.gz ], one per donor x region
     dropped_b73_checks = CRAM_VARIANT_DISCOVERY_CRISP.out.dropped_b73_checks // channel: dropped_b73_checks.tsv
-    union              = SITES_UNION_GAPFILL.out.union                       // channel: [ meta, vcf.gz, tbi ]
-    donor_alleles      = SITES_UNION_GAPFILL.out.donor_alleles               // channel: [ meta, vcf.gz, tbi ]
+    union              = SITES_UNION_GAPFILL.out.union                       // channel: [ meta, vcf.gz, tbi ], one per region
+    donor_alleles      = SITES_UNION_GAPFILL.out.donor_alleles               // channel: [ meta, vcf.gz, tbi ], one per region
     ancestry           = CRAM_ANCESTRY_RTIGER.out.segments.mix(             // channel: [ meta, files ], the grid and each donor's outputs
         CRAM_ANCESTRY_RTIGER.out.dropped, CRAM_ANCESTRY_RTIGER.out.checks, CRAM_ANCESTRY_RTIGER.out.grid, CRAM_ANCESTRY_RTIGER.out.rqtl, CRAM_ANCESTRY_RTIGER.out.vcf
     )

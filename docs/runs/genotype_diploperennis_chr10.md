@@ -42,7 +42,7 @@ sbatch --parsable --partition=compute --qos=normal --time=12:00:00 --mem=16G \
   --input $S/samplesheet.csv --b73_controls $S/b73_controls.csv \
   --lowcopy_bed $B/ZEAL/reference/lowcopy_chr10.bed \
   --check_sites $B/bzeaseq/nilhmm/vcf/HQ_BZEA.vcf.gz \
-  --region chr10 --outdir /share/maize/frodrig4/nf_work/zealgt_dev_dip/genotype_diploperennis_chr10/results
+  --regions chr10 --outdir /share/maize/frodrig4/nf_work/zealgt_dev_dip/genotype_diploperennis_chr10/results
 ```
 
 Estimate: six donors and 304 samples, about as attempt 1 of the union test (six donors); ~1-2 h. The two runs together

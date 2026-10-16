@@ -10,7 +10,9 @@
 %%metro file: b73_in | CRAM | B73 checks
 %%metro file: alleles_out | VCF | donor alleles
 %%metro file: ancestry_out | VCF | ancestry
+%%metro file: regions_in | LIST | --regions
 %%metro off_track: b73_in
+%%metro off_track: regions_in
 %%metro legend: bl
 %%metro grid: demux | 0,0
 %%metro grid: align | 0,1
@@ -64,6 +66,7 @@ graph LR
         crisp[CRISP]
         veto[witness veto]
         b73_in[ ]
+        regions_in[ ]
         tiers[pooled likelihood]
         union[sites union]
         site_counts[site counts]
@@ -74,6 +77,7 @@ graph LR
         grid[0.1 cM grid]
         ancestry_out[ancestry]
 
+        regions_in -->|genotype| crisp
         crisp -->|genotype| veto
         veto -->|genotype| tiers
         b73_in -->|genotype| tiers

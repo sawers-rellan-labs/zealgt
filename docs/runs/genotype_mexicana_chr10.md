@@ -54,7 +54,7 @@ sbatch --parsable --partition=compute --qos=normal --time=12:00:00 --mem=16G \
   --input $S/samplesheet.csv --b73_controls $S/b73_controls.csv \
   --lowcopy_bed $B/ZEAL/reference/lowcopy_chr10.bed \
   --check_sites $B/bzeaseq/nilhmm/vcf/HQ_BZEA.vcf.gz \
-  --region chr10 --outdir /share/maize/frodrig4/nf_work/zealgt_dev/genotype_mexicana_chr10/results \
+  --regions chr10 --outdir /share/maize/frodrig4/nf_work/zealgt_dev/genotype_mexicana_chr10/results \
   -resume 05f75070-d26e-4647-943a-e7e45a898bae
 ```
 

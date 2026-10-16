@@ -27,7 +27,7 @@ nextflow_pipeline {
                 lowcopy_bed  = "$baseDir/tests/fixtures/genotype/lowcopy.bed"
                 check_sites  = "$baseDir/tests/fixtures/genotype/check_sites.vcf.gz"
                 genetic_map  = "$baseDir/tests/fixtures/genotype/chrA_map.tsv"
-                region       = 'chrA'
+                regions      = 'chrA'
             }
         }
 
@@ -60,6 +60,53 @@ nextflow_pipeline {
         }
     }
 
+    test("--step genotype - stub, two regions") {
+
+        options "-stub"
+
+        when {
+            // nf-test launches in its own directory: the fixture sheets' relative paths are made absolute
+            def (cram_sheet, controls_sheet) = ['samplesheet_cram.csv', 'b73_controls.csv'].collect { name ->
+                def sheet = new File("$outputDir/$name")
+                sheet.parentFile.mkdirs()
+                sheet.text = new File("$baseDir/tests/fixtures/genotype/$name").text.replace('tests/fixtures/', "$baseDir/tests/fixtures/")
+                sheet.path
+            }.toList() // a bare closing brace here ends nf-core lint's scan of the when block before params
+            params {
+                outdir = "$outputDir"
+                input        = cram_sheet
+                step         = 'genotype'
+                b73_controls = controls_sheet
+                lowcopy_bed  = "$baseDir/tests/fixtures/genotype/lowcopy.bed"
+                check_sites  = "$baseDir/tests/fixtures/genotype/check_sites.vcf.gz"
+                genetic_map  = "$baseDir/tests/fixtures/genotype/chrA_map.tsv"
+                regions      = 'chrA:1-2500,chrA:2501-5000'
+            }
+        }
+
+        then {
+            def tasks = workflow.trace.tasks().countBy { t -> t.name.tokenize(':')[-1].tokenize(' ')[0] }
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: false, ignore: ['pipeline_info/**', '*.csv'])*.toString()
+            assert workflow.success
+            assertAll(
+                // the B73 check filter once per check; every other step once per region, so twice the one-region counts
+                { assert tasks == [CHECK_COUNTS: 2, CHECK_ALT_RATE: 2, SAMTOOLS_MERGE: 8, SAMTOOLS_ADDREPLACERG: 8, SAMTOOLS_INDEX: 8, CRISP: 4,
+                                   BED_CLIP: 4, WITNESS_VETO: 4, BCFTOOLS_MPILEUP: 8, POOLED_LIKELIHOOD_TIERS: 4,
+                                   BCFTOOLS_MERGE: 2, BCFTOOLS_NORM: 2, BIALLELIC_UNION: 2, COUNT_UNION: 12, UNION_TIERS: 4,
+                                   UNION_SITE_COUNTS: 2, FILL_DONOR_ALLELES: 4, DONOR_ALLELES_MERGE: 2, DONOR_SUBSET: 4, DONOR_ALT_SITES: 4, COUNT_LINES: 4, CALL_ANCESTRY: 4, ANCESTRY_GRID: 2, ANCESTRY_VCF_INDEX: 4] },
+                // every per-region output once per region, the region in its name
+                { assert stable_path.sort() == ['chrA_1-2500', 'chrA_2501-5000'].collectMany { r ->
+                    (['Zx.9001_P1', 'Zx.9002_P1'].collectMany { d ->
+                        ["genotype/discovery/${d}.${r}.vcf.gz", "genotype/discovery/${d}.${r}.vcf.gz.tbi", "genotype/discovery/${d}.${r}.sites.tsv.gz"]
+                    } + ['union', 'donor_alleles'].collectMany { f -> ["genotype/union/${r}.${f}.vcf.gz", "genotype/union/${r}.${f}.vcf.gz.tbi"] }
+                      + ['Zx.9001_P1', 'Zx.9002_P1'].collectMany { d ->
+                        ['segments.bed', 'dropped_lines.tsv', 'line_checks.tsv', 'rqtl.csv', 'ancestry.vcf.gz', 'ancestry.vcf.gz.tbi'].collect { f -> "genotype/ancestry/${d}.${r}.${f}" }
+                    } + ["genotype/ancestry/${r}.grid.tsv"])
+                }*.toString().sort() }
+            )
+        }
+    }
+
     test("--step genotype - fixtures") {
 
         when {
@@ -78,7 +125,7 @@ nextflow_pipeline {
                 lowcopy_bed  = "$baseDir/tests/fixtures/genotype/lowcopy.bed"
                 check_sites  = "$baseDir/tests/fixtures/genotype/check_sites.vcf.gz"
                 genetic_map  = "$baseDir/tests/fixtures/genotype/chrA_map.tsv"
-                region       = 'chrA:1-5000'
+                regions      = 'chrA:1-5000'
             }
         }
 
