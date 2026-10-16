@@ -26,7 +26,7 @@ workflow GENOTYPE {
     def ch_fasta = channel.value([[id: file(fasta).name], file(fasta, checkIfExists: true), file("${fasta}.fai", checkIfExists: true)])
     CRAM_VARIANT_DISCOVERY_CRISP(
         ch_cram,
-        channel.fromList(regions.tokenize(',')),
+        channel.fromList(regions.tokenize(',')).unique(), // a region given twice runs once
         channel.fromList(samplesheetToList(b73_controls, "${projectDir}/assets/schema_b73_controls.json")),
         ch_fasta,
         file(lowcopy_bed, checkIfExists: true),

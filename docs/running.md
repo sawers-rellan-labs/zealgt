@@ -118,7 +118,9 @@ scheduling pass (`SchedulerParameters=defer`, ~50 s), so the GENOTYPE stub (~20 
   under the Nextflow image's java and `conf/stub_hazel.config`. 26 tests in 6 min (job 1317802). Parallel tasks cannot
   race: each task writes only in its own work directory. A process test applies settings under the module's own name
   only, not under its aliases (`COUNT_LINES`, `.*FASTQ_ALIGN_MINIBWA:SAMTOOLS_MERGE`).
-- **`-preview`**: config, parameters and the DAG, no tasks. Not checked yet: on the laptop it wrote no DAG.
+- **`-preview`**: config, parameters and the DAG, no tasks. On the laptop it wrote no DAG. On hazel (head job 1322964)
+  it checked the parameters against the schema and logged success after 23 s, then did not exit until the job's time
+  limit; so a preview job gets `--time=00:10:00` and its head log is read for the parameters and the success line.
 - **A pipeline stub** only after changes to the launch scripts or the profiles, as below.
 
 1. **Check the sheet first** (seconds, no Nextflow):
