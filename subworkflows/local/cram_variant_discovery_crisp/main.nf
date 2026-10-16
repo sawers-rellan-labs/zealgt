@@ -12,6 +12,7 @@ include { POOLED_LIKELIHOOD_TIERS          } from '../../../modules/local/pooled
 workflow CRAM_VARIANT_DISCOVERY_CRISP {
     take:
     ch_cram            // channel: [ meta, cram, crai ], meta.role, meta.donor, meta.pedigree
+    ch_regions         // channel: region, one per region
     ch_b73_controls    // channel: [ meta, cram, crai ], the B73 reference controls
     ch_fasta           // channel: [ meta, fasta, fai ]
     lowcopy_bed        // file: low-copy BED
@@ -39,7 +40,7 @@ workflow CRAM_VARIANT_DISCOVERY_CRISP {
         .map { _meta, tsv, _cram, _crai, _rate -> tsv }
         .collectFile(name: 'dropped_b73_checks.tsv', seed: "sample_id\treads\talt_reads\talt_rate\n", sort: true)
 
-    // one pool per donor's lines (the witness), one of the kept B73 checks, one per B73 control
+    // one pool per donor's lines (the witness), one of the kept B73 checks, one per B73 control; each per region
     def ch_pool = ch_role.nil
         .map { meta, cram, crai -> [meta.donor, cram, crai] }
         .groupTuple()
@@ -49,6 +50,8 @@ workflow CRAM_VARIANT_DISCOVERY_CRISP {
                 .map { id, crams, crais -> [[id: id], crams, crais] },
             ch_b73_controls.map { meta, cram, crai -> [[id: meta.id], [cram], [crai]] }
         )
+        .combine(ch_regions)
+        .map { meta, crams, crais, region -> [meta + [region: region], crams, crais] }
     def ch_fasta_gzi = ch_fasta.map { meta, fasta, fai -> [meta, fasta, fai, []] }
     SAMTOOLS_MERGE(ch_pool, ch_fasta_gzi, '')
     // one read group per pool: CRISP and mpileup see one sample
@@ -62,33 +65,36 @@ workflow CRAM_VARIANT_DISCOVERY_CRISP {
         control: true
     }
 
-    // CRISP per donor: its BC1 pools and its witness
+    // CRISP per donor x region: its BC1 pools and its witness over the region
     def ch_crisp = ch_role.bc1
         .map { meta, cram, crai -> [meta.donor, cram, crai] }
         .groupTuple()
-        .join(ch_pool_rg.witness.map { meta, cram, crai -> [meta.donor, meta.id, cram, crai] })
-        .map { donor, crams, crais, witness, wcram, wcrai -> [[id: donor, witness: witness], crams, crais, wcram, wcrai] }
+        .combine(ch_regions)
+        .map { donor, crams, crais, region -> [donor, region, crams, crais] }
+        .join(ch_pool_rg.witness.map { meta, cram, crai -> [meta.donor, meta.region, meta.id, cram, crai] }, by: [0, 1])
+        .map { donor, region, crams, crais, witness, wcram, wcrai -> [[id: donor, witness: witness, region: region], crams, crais, wcram, wcrai] }
     CRISP(ch_crisp, ch_fasta, lowcopy_bed)
     // records inside the low-copy ranges (CRISP also calls the base past each range end), then the witness veto
     BED_CLIP(CRISP.out.vcf.map { meta, vcf -> [meta, vcf, []] }, [], lowcopy_bed, [])
     WITNESS_VETO(BED_CLIP.out.vcf.map { meta, vcf -> [meta, vcf, []] }, [], [], [])
 
-    // the B73 controls counted at each donor's kept sites
+    // the B73 controls counted at each donor's kept sites in the same region
     BCFTOOLS_MPILEUP(
-        ch_pool_rg.control.combine(WITNESS_VETO.out.vcf)
-            .map { meta, cram, crai, donor_meta, vcf -> [meta + [donor: donor_meta.id], cram, crai, vcf, []] },
+        ch_pool_rg.control.map { meta, cram, crai -> [meta.region, meta, cram, crai] }
+            .combine(WITNESS_VETO.out.vcf.map { meta, vcf -> [meta.region, meta, vcf] }, by: 0)
+            .map { _region, meta, cram, crai, donor_meta, vcf -> [meta + [donor: donor_meta.id], cram, crai, vcf, []] },
         ch_fasta,
         false
     )
-    def ch_score = WITNESS_VETO.out.vcf.map { meta, vcf -> [meta.id, meta, vcf] }
-        .join(BCFTOOLS_MPILEUP.out.vcf.map { meta, vcf -> [meta.donor, vcf] }.groupTuple())
-        .map { _donor, meta, vcf, controls -> [meta, vcf, controls, []] }
+    def ch_score = WITNESS_VETO.out.vcf.map { meta, vcf -> [meta.id, meta.region, meta, vcf] }
+        .join(BCFTOOLS_MPILEUP.out.vcf.map { meta, vcf -> [meta.donor, meta.region, vcf] }.groupTuple(by: [0, 1]), by: [0, 1])
+        .map { _donor, _region, meta, vcf, controls -> [meta, vcf, controls, []] }
     POOLED_LIKELIHOOD_TIERS(ch_score, score_tool)
 
     emit:
-    vcf                = WITNESS_VETO.out.vcf.join(WITNESS_VETO.out.index) // channel: [ meta, vcf.gz, tbi ], one per donor
-    sites              = POOLED_LIKELIHOOD_TIERS.out.sites                 // channel: [ meta, sites.tsv.gz ], one per donor
-    tier_a             = POOLED_LIKELIHOOD_TIERS.out.tier_a                // channel: [ meta, tier_a.vcf ], one per donor
-    controls           = ch_pool_rg.control                                // channel: [ meta, cram, crai ], the B73 controls
+    vcf                = WITNESS_VETO.out.vcf.join(WITNESS_VETO.out.index) // channel: [ meta, vcf.gz, tbi ], one per donor x region
+    sites              = POOLED_LIKELIHOOD_TIERS.out.sites                 // channel: [ meta, sites.tsv.gz ], one per donor x region
+    tier_a             = POOLED_LIKELIHOOD_TIERS.out.tier_a                // channel: [ meta, tier_a.vcf ], one per donor x region
+    controls           = ch_pool_rg.control                                // channel: [ meta, cram, crai ], the B73 controls, per region
     dropped_b73_checks = ch_dropped_b73_checks                             // channel: dropped_b73_checks.tsv
 }
