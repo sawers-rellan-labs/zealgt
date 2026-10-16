@@ -1,0 +1,26 @@
+nextflow_process {
+
+    name "FGUMI_CLIP stub (hazel setup check)"
+    script "../../modules/nf-core/fgumi/clip/main.nf"
+    process "FGUMI_CLIP"
+    tag "hazel"
+    tag "alignment"
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [[id: 't', single_end: false, library: 'L', lanes: '1'], file("${projectDir}/tests/fixtures/genotype/cram/L_1.cram", checkIfExists: true)]
+                input[1] = [[id: 'tiny'], file("${projectDir}/tests/fixtures/ref/tiny.fa", checkIfExists: true)]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}

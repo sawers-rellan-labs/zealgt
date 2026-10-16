@@ -1,0 +1,28 @@
+nextflow_process {
+
+    name "MULTIQC stub (hazel setup check)"
+    script "../../modules/nf-core/multiqc/main.nf"
+    process "MULTIQC"
+    tag "hazel"
+    tag "alignment"
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                input = "${projectDir}/tests/fixtures/samplesheet.csv"
+            }
+            process {
+                """
+                input[0] = [[id: 'zealgt'], [file("${projectDir}/tests/fixtures/genotype/cram/low.CollectWgsMetrics.coverage_metrics", checkIfExists: true)], file("${projectDir}/assets/multiqc_config.yml", checkIfExists: true), [], [], []]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}

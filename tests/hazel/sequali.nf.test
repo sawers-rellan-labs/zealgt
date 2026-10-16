@@ -1,0 +1,25 @@
+nextflow_process {
+
+    name "SEQUALI stub (hazel setup check)"
+    script "../../modules/nf-core/sequali/main.nf"
+    process "SEQUALI"
+    tag "hazel"
+    tag "alignment"
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [[id: 't', single_end: false, library: 'L', lanes: '1'], [file("${projectDir}/tests/fixtures/reads/SI_1_1.fq.gz", checkIfExists: true), file("${projectDir}/tests/fixtures/reads/SI_1_2.fq.gz", checkIfExists: true)]]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}
