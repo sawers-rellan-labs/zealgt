@@ -97,13 +97,13 @@ test_that("call_ancestry.R runs and logs with timestamps", {
   expect_match(res$log[1], "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9:]{8} INFO call_ancestry: ")
 })
 
-test_that("each line's REF and donor-ALT counts are read back exactly, whatever the record's FORMAT", {
+test_that("each line's REF and donor-ALT counts at its records are read back exactly, whatever the record's FORMAT", {
   tool <- new.env()
   sys.source(file.path(root, "bin", "call_ancestry.R"), envir = tool)
   markers <- tool$read_vcf(file.path(dir, "markers.vcf"))[, .(CHROM, POS, REF, ALT)]
   for (l in lines[2:4]) {
-    got <- tool$read_line_counts(counts[[l]], markers)
-    want <- obs[name == l][order(pos)]
+    got <- tool$read_line_counts(counts[[l]], markers)$counts
+    want <- obs[name == l & n_ref + n_alt > 0L][order(pos)]
     expect_equal(got[order(pos)]$n_ref, want$n_ref)
     expect_equal(got[order(pos)]$n_alt, want$n_alt)
   }

@@ -42,18 +42,20 @@ read_vcf <- function(path) {
   v[, POS := as.integer(POS)]
 }
 
-# one line's REF and donor-ALT read counts at the markers (0 where mpileup wrote no record)
+# one line's name and its REF and donor-ALT read counts at the markers it has records for
 read_line_counts <- function(path, sites) {
   v <- read_vcf(path)
   name <- tail(names(v), 1L)
   if (!nrow(v)) {
-    return(sites[, .(name = name, chrom = CHROM, pos = POS, n_ref = 0L, n_alt = 0L)])
+    return(list(name = name, counts = data.table(
+      name = character(), chrom = character(), pos = integer(), n_ref = integer(), n_alt = integer()
+    )))
   }
   # AD's place in FORMAT per record: bcftools call writes GT:AD where no ALT read is seen, GT:PL:AD elsewhere
   ad_at <- vapply(strsplit(v$FORMAT, ":", fixed = TRUE), function(f) match("AD", f), 0L)
   cells <- strsplit(v[[name]], ":", fixed = TRUE)
   v[, ad := vapply(seq_along(cells), function(i) cells[[i]][ad_at[i]], "")]
-  m <- v[sites, on = .(CHROM, POS), nomatch = NA]
+  m <- v[sites, on = .(CHROM, POS), nomatch = NULL]
   alleles <- strsplit(paste(m$REF, m$ALT, sep = ","), ",", fixed = TRUE)
   depths <- lapply(strsplit(m$ad, ",", fixed = TRUE), function(x) suppressWarnings(as.integer(x)))
   count_of <- function(allele, i) {
@@ -61,11 +63,11 @@ read_line_counts <- function(path, sites) {
     d <- if (is.na(k)) NA_integer_ else depths[[i]][k]
     if (is.na(d)) 0L else d
   }
-  data.table(
+  list(name = name, counts = data.table(
     name = name, chrom = m$CHROM, pos = m$POS,
     n_ref = vapply(seq_len(nrow(m)), function(i) count_of(m$i.REF[i], i), 0L),
     n_alt = vapply(seq_len(nrow(m)), function(i) count_of(m$i.ALT[i], i), 0L)
-  )
+  ))
 }
 
 main <- function(argv = commandArgs(trailingOnly = TRUE)) {
@@ -75,15 +77,27 @@ main <- function(argv = commandArgs(trailingOnly = TRUE)) {
   sites <- rbindlist(lapply(a$markers, function(f) read_vcf(f)[, .(CHROM, POS, REF, ALT)]))
   chroms <- unique(sites$CHROM)
 
-  # a count file holds one region's records; the others' sites are 0 in it, so a line's files sum to its counts
-  counts <- rbindlist(lapply(a$counts, read_line_counts, sites = sites))
-  counts <- counts[, .(n_ref = sum(n_ref), n_alt = sum(n_alt)), by = .(name, chrom, pos)]
+  # each count file's records (one region each), then every line at every marker once, 0 where no file has a record
+  files <- lapply(a$counts, read_line_counts, sites = sites)
+  seen <- rbindlist(lapply(files, `[[`, "counts"))
+  seen <- seen[, .(n_ref = sum(n_ref), n_alt = sum(n_alt)), by = .(name, chrom, pos)]
+  grid <- CJ(name = unique(vapply(files, `[[`, "", "name")), k = seq_len(nrow(sites)), sorted = FALSE)
+  counts <- seen[grid[, .(name, chrom = sites$CHROM[k], pos = sites$POS[k])], on = .(name, chrom, pos)]
+  counts[, `:=`(n_ref = nafill(n_ref, fill = 0L), n_alt = nafill(n_alt, fill = 0L))]
   by_chrom <- counts[, .(covered = sum(n_ref + n_alt >= 1L)), by = .(name, chrom)]
 
   # rigidity from a window in Mb: the median line's covered markers per Mb of the markers' span, summed over chromosomes
   span_mb <- sites[, .(span = max(POS) - min(POS)), by = CHROM][, sum(span)] / 1e6
   per_mb <- if (nrow(by_chrom) && span_mb > 0) median(by_chrom[, .(n = sum(covered)), by = name]$n) / span_mb else 0
   rigidity <- max(1L, as.integer(round(as.numeric(a$`rigidity-mb`) * per_mb)))
+  short <- sites[, .(span = (max(POS) - min(POS)) / 1e6), by = CHROM][span < 2 * as.numeric(a$`rigidity-mb`)]
+  if (nrow(short)) {
+    # lines need 2r covered markers on each chromosome: a span under two windows drops the median line
+    log_info(
+      "WARNING: %s span under 2 x %s Mb; most lines may fall under the cut", paste(short$CHROM, collapse = ","),
+      a$`rigidity-mb`
+    )
+  }
   log_info(
     paste(
       "%d markers on %d chromosome(s), %.2f Mb; median line %.1f covered markers per Mb;",
