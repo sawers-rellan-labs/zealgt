@@ -24,3 +24,7 @@ docs/*.synctex.gz
 
 # per-notebook lintr settings stay local (user, 2026-10-07)
 docs/notebooks/.lintr
+# notebook inputs: small tables extracted from runs, kept next to the runs on /rsstu (ZEAL/genotype/notebook_inputs/)
+docs/notebooks/huehue_union/
+docs/notebooks/tissue_pool_dilution/
+docs/notebooks/union_rarefaction/mexicana42_*.tsv

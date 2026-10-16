@@ -40,6 +40,9 @@ deficit is one-sided: no family reads too much ALT. Random unequal plant contrib
 something lowers the donor reads systematically. Candidates: dilution (other tissue or B73 DNA in the pool), selection
 against carriers during line development, mapping bias.
 
+Input (not in git): `tissue_pool_dilution/dilution_factor_mex42.tsv` (`agent/genochr10/mex_rule/compute_dilution.R`);
+master copy in `/rsstu/users/r/rrellan/BZea/ZEAL/genotype/notebook_inputs/``tissue_pool_dilution/`.
+
 ## The dilution factor
 
 For each sample and donor-segment state, the dilution factor is the observed ALT read frequency divided by the expected

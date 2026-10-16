@@ -1,5 +1,0 @@
-line	n_donor_segments	donor_bp	ref_reads	ref_alt_pct	het_reads	het_alt_pct	alt_reads	alt_alt_pct
-PN3_SID215	0	0	97711	0.7	0	.	0	.
-PN3_SID216	1	12474479	120146	0.4	0	.	14526	81.7
-PN3_SID218	0	0	86354	0.3	0	.	0	.
-PN3_SID219	5	143454705	4093	4.3	93819	27.8	2267	59.4

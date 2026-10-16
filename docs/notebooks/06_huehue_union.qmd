@@ -19,15 +19,13 @@ execute:
 library(data.table)
 library(ggplot2)
 theme_set(theme_bw(base_size = 13))
+# inputs (not tracked): agent/huehue_chr10/collect.sh, then combine_inputs.R; master copy on /rsstu, see "Why"
 d <- "huehue_union"
 runs <- c(A = "alone", B = "+ parviglumis", C = "+ mexicana")
 hue <- c("Zh.0020_P3", "Zh.0030_P4")
 markers <- fread(file.path(d, "markers.tsv"))[, union := runs[run]]
-checks <- rbindlist(lapply(names(runs), function(r) {
-  rbindlist(lapply(list.files(file.path(d, r), "line_checks.tsv$", full.names = TRUE), function(f) {
-    fread(f, na.strings = ".")[, `:=`(run = r, donor = sub("\\.chr10.*", "", basename(f)))]
-  }))
-}))
+lc_all <- fread(file.path(d, "line_checks.tsv"), na.strings = ".")
+checks <- lc_all[run %in% names(runs)]
 # sample introgression dosage check on per-donor medians (docs/decisions.md 2026-10-11, criteria 1-2)
 dose <- checks[, .(
   samples = .N, segs_median = median(n_donor_segments), segs_max = max(n_donor_segments),
@@ -35,10 +33,7 @@ dose <- checks[, .(
 ), by = .(run, donor)]
 dose[, balanced := segs_median <= 4 & (is.na(ref) | ref <= 3) & (is.na(het) | (het >= 30 & het <= 55)) &
   (is.na(alt) | alt >= 75)]
-seg <- rbindlist(lapply(names(runs), function(r) {
-  rbindlist(lapply(hue, function(h) fread(file.path(d, r, paste0(h, ".segments.bed")))[, `:=`(run = r, donor = h)]))
-}))
-setnames(seg, "#chrom", "chrom", skip_absent = TRUE)
+seg <- fread(file.path(d, "segments.tsv"))
 shares <- seg[, .(bp = sum(end - start)), by = .(run, donor, line, state)][
   , .(het = sum(bp[state == 1]) / sum(bp), alt = sum(bp[state == 2]) / sum(bp)),
   by = .(run, donor, line)
@@ -55,8 +50,8 @@ snp_shares <- snp[, .(bp = sum(end_bp - start_bp)), by = .(line = name, state)][
 User, 2026-10-16: whether *Z. mays* ssp. *huehuetenangensis* (2 donors, 9 BC1 pools, 61 BC2S3 samples) gets its own
 union or joins another taxon's ("we need data to have a decision"). Chen et al. (2022) Fig. 2a source data:
 F~ST~ huehuetenangensis–parviglumis 0.200, –mexicana 0.248, –maize 0.330; mexicana–parviglumis 0.068. Run plan:
-`docs/runs/genotype_huehue_chr10.md`. Collected by `agent/huehue_chr10/collect.sh` (log there); this notebook reads only
-the extracted tables in `huehue_union/`.
+`docs/runs/genotype_huehue_chr10.md`. Inputs (not in git): four small tables in `huehue_union/`, made by `agent/huehue_chr10/collect.sh` and
+`combine_inputs.R`; master copy in `/rsstu/users/r/rrellan/BZea/ZEAL/genotype/notebook_inputs/``huehue_union/`; copy it next to this notebook to re-render.
 
 ## 1. Markers per donor
 
@@ -106,9 +101,7 @@ knitr::kable(cls[order(donor, source), .(donor, source, samples, het = 100 * het
 ## 4. What adding huehuetenangensis does to the partner taxon
 
 ```{r partner}
-mex_old <- rbindlist(lapply(list.files("huehue_union/mexicana_1273053", "line_checks.tsv$", full.names = TRUE), function(f) {
-  fread(f, na.strings = ".")[, donor := sub("\\.chr10.*", "", basename(f))]
-}))[, .(segs_old = median(n_donor_segments), het_old = median(het_alt_pct, na.rm = TRUE),
+mex_old <- lc_all[run == "mexicana_1273053", .(segs_old = median(n_donor_segments), het_old = median(het_alt_pct, na.rm = TRUE),
        alt_old = median(alt_alt_pct, na.rm = TRUE)), by = donor]
 mex_new <- dose[run == "C" & !donor %in% hue, .(donor, segs_new = segs_median, het_new = het, alt_new = alt)]
 cmp <- mex_old[mex_new, on = "donor", nomatch = NULL]
