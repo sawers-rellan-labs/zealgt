@@ -116,10 +116,12 @@ steps) took 24 min for seconds of work.
    - every file exists;
    - every donor keeps a BC1 pool and a line at or above `min_mean_coverage`. A donor without lines over the floor has
      no witness, and the union's join stops the run (stub 1269329).
-2. **Run the stub's tasks inside the head job**: add `-process.executor local` to the stub command, so no task goes
-   through Slurm. Same containers and paths. Not tested yet. The local executor refuses a task that asks for more CPUs
-   or memory than the head job has (expected; the test confirms). So the head job needs the largest request of the stubbed step
-   (GENOTYPE: `CRISP` 16 GB), or a `-c` config that lowers the requests for the stub.
+2. **Run the stub's tasks inside the head job**: add `-stub -c <checkout>/conf/stub_local.config` to the head job's
+   arguments (an absolute path: the head job runs in the launch directory), so no task goes through Slurm. Same
+   containers and paths. The config also turns job arrays off and gives the local executor the profiles' resource
+   limits. `-process.executor local` alone fails, `Executor 'local' does not support job arrays` (hpc_dev
+   `COUNT_UNION|COUNT_LINES`, hpc_prod `CAT_FASTQ`), and `-process.array 0` does not override a `withName` selector.
+   Laptop: the GENOTYPE stub with hpc_dev's settings ran 54 tasks in 32 s.
 
 ## Laptop runs
 
