@@ -10,7 +10,7 @@ User, 2026-10-05: run the union and gap filling (Milestone 8) on the whole chrom
 
 - The pilot's inputs, unchanged (`genotype_pilot_chr10.md`): `docs/runs/genotype_pilot_chr10/samplesheet.csv` (106
   rows; Zx.0540_P3 and Zx.0570_P2, 5 BC1 samples each, their lines, the 12 batch-1 B73 checks), `b73_controls.csv`
-  (`B73_ERR3288215`), `ZEAL/reference/lowcopy_chr10.bed`, `HQ_BZEA.vcf.gz`, `--region chr10`. Only these two donors'
+  (`B73_ERR3288215`), `ZEAL/reference/lowcopy_chr10.bed`, `HQ_BZEA.vcf.gz`, `--regions chr10`. Only these two donors'
   BC1 samples are aligned; the full population waits for their alignment.
 - Outputs, `--outdir /share/maize/frodrig4/nf_work/zealgt_dev/genotype_union_chr10/results`: `genotype/discovery/` as
   in the pilot, and `genotype/union/chr10.union.vcf.gz` and `chr10.donor_alleles.vcf.gz` (each with `.tbi`).
@@ -30,7 +30,7 @@ sbatch scripts/submit_head_job.sbatch hpc_dev --step genotype \
   --b73_controls /rsstu/users/r/rrellan/BZea/ZEAL/zealgt/docs/runs/genotype_pilot_chr10/b73_controls.csv \
   --lowcopy_bed /rsstu/users/r/rrellan/BZea/ZEAL/reference/lowcopy_chr10.bed \
   --check_sites /rsstu/users/r/rrellan/BZea/bzeaseq/nilhmm/vcf/HQ_BZEA.vcf.gz \
-  --region chr10 --outdir /share/maize/frodrig4/nf_work/zealgt_dev/genotype_union_chr10/results \
+  --regions chr10 --outdir /share/maize/frodrig4/nf_work/zealgt_dev/genotype_union_chr10/results \
   -resume aa121700-7d24-4221-9259-d477dd4f82df
 ```
 

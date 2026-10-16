@@ -102,7 +102,7 @@
                 "required": ["step"]
             },
             "then": {
-                "required": ["lowcopy_bed", "region", "check_sites", "b73_controls"]
+                "required": ["lowcopy_bed", "regions", "check_sites", "b73_controls"]
             },
             "properties": {
                 "lowcopy_bed": {
@@ -113,10 +113,10 @@
                     "description": "Low-copy BED (genes and non-TE ranges), built once outside the pipeline (docs/decisions.md).",
                     "fa_icon": "fas fa-file"
                 },
-                "region": {
+                "regions": {
                     "type": "string",
-                    "pattern": "^[^:\\s]+(:\\d+-\\d+)?$",
-                    "description": "The chromosome, or a window of it, to call: chr10 or chr10:1-20000000.",
+                    "pattern": "^[^:,\\s]+(:\\d+-\\d+)?(,[^:,\\s]+(:\\d+-\\d+)?)*$",
+                    "description": "Comma-separated chromosomes or windows, each called on its own: chr10, chr9,chr10 or chr10:1-20000000.",
                     "fa_icon": "fas fa-map-marker-alt"
                 },
                 "check_sites": {

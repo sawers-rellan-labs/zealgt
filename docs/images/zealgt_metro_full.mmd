@@ -17,6 +17,8 @@
 %%metro file: line_checks_out | TSV
 %%metro file: rqtl_out | CSV
 %%metro file: ancestry_out | VCF
+%%metro file: regions_in | LIST | --regions
+%%metro off_track: regions_in
 %%metro legend: bl
 %%metro grid: demux | 0,0
 %%metro grid: align | 0,1
@@ -129,6 +131,7 @@ graph LR
         check_counts[mpileup checks]
         check_rate[ALT rate]
         checks_out[ ]
+        regions_in[ ]
         merge_pools[samtools merge]
         addrg[addreplacerg]
         index_pools[index]
@@ -165,6 +168,8 @@ graph LR
         check_rate -->|genotype| checks_out
         check_rate -->|genotype| merge_pools
         cov_filter -->|genotype| merge_pools
+        regions_in -->|genotype| merge_pools
+        regions_in -->|genotype| crisp
         merge_pools -->|genotype| addrg
         addrg -->|genotype| index_pools
         index_pools -->|genotype| crisp
