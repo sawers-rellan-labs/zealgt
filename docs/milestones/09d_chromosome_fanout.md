@@ -66,3 +66,9 @@ No new process and no Groovy function: `combine`, `map`, `groupTuple` and `join`
 - `structure.md` GENOTYPE rows say "per region", both metro maps show the regions channel, `docs/running.md` and the
   genotype run plans use `--regions`.
 - The genome-wide run is a run plan in `docs/runs/` (per taxon, head job on normal QOS), not part of this milestone.
+
+## Result (2026-10-16)
+
+Regression 1323153 against 1270808 accepted by the user ("yes", 2026-10-16): union and every ancestry output
+identical for the 6 donors; veto read counts, site LLRs and donor-allele LLR/PALT differ slightly, as CRISP itself does
+when the same task reruns on the same inputs (array 1325687). Head job 58 min (1270808: 2 h 02 min).
