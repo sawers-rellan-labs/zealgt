@@ -262,17 +262,20 @@ Confirmed by the user from the Milestone 7 report; item 11 for now, open to chan
 - `--step genotype` requires `--region`, `--lowcopy_bed`, `--check_sites`, `--b73_controls`; `--minibwa_index` only for
   alignment.
 
-## 2026-10-11 Which donors enter the union rarefaction curve
+## 2026-10-11 Sample introgression dosage check: families with balanced tissue pools for the marker-union estimate
 
-User's rule (2026-10-09), thresholds confirmed 2026-10-11 on the eight chr10 donors' union-ALT calls.
+User's rule (2026-10-09), thresholds confirmed 2026-10-11 on the eight chr10 donors' union-ALT calls; named the sample
+introgression dosage check (ALT read frequency check) on 2026-10-16 (was "curve rule"). Families that pass have
+balanced tissue pools, the others unbalanced tissue pools (`docs/TERMINOLOGY.md`). Only families with balanced tissue
+pools enter the rarefaction (accumulation) curves that estimate the total marker union.
 
-- A donor/chromosome enters the curve if its lines pass (1) few introgressions and (2) segment dosage, and (3) the lines
+- A donor/chromosome enters the union curves if its lines pass (1) few introgressions and (2) segment dosage, and (3) the lines
   passing 1-2 cover the chromosome. Contamination can fake full coverage, so failing lines don't count toward it.
 - (1) at most 4 donor (HET/ALT) segments per line.
 - (2) per line, reads in REF segments <= 3 % ALT, in HET segments 30-55 % ALT, in ALT segments >= 75 % ALT.
 - (3) donor segments of the passing lines cover >= 90 % of the chromosome (user's proposal; per-family expectation
   under the registry pedigree checked first).
-- Uninformative families stay off the curve; their lines are still called at union-ALT markers.
+- Families with unbalanced tissue pools stay off the union curves; their lines are still called at union-ALT markers.
 
 ## 2026-10-11 RTIGER markers: the donor's union-ALT sites (Milestone 9a)
 
@@ -282,7 +285,18 @@ Spec approved by the user, 2026-10-11 (`docs/milestones/09a_union_alt_markers.md
   Reason (user, 2026-10-08): own tier-A markers can't be believed where no line carries an introgression.
 - Rigidity stays 0.5 % of the markers.
 - Two nf-core `bcftools/view` calls per donor (`-s`, then `-i 'GT="1"' -G`), not a script.
-- `CALL_ANCESTRY` writes per-line checks (donor segments, bp, reads and ALT % per state) as values; the curve rule's
+- `CALL_ANCESTRY` writes per-line checks (donor segments, bp, reads and ALT % per state) as values; the dosage check's
   thresholds and coverage are applied downstream.
 - Filter 1 (drop markers reading ALT in 2 or more REF lines) retired: on the eight chr10 donors it changed neither the
   ALT ceiling, the class shares nor the curve set, and its fixed cut drops more markers in large families.
+
+## 2026-10-16 Families stay in the union: Milestone 9b not merged, 9c dropped
+
+User, 2026-10-16 ("keep 9b as a record, record the decision"), on the chr10 diagnosis reviewed 2026-10-15.
+
+- Every donor's tier-A sites enter its taxon's union (Milestone 9a as on `dev`); no family is left out.
+- Milestone 9b (`--union_exclude`) is not merged; branch `m09b-union-exclude` stays as a record. Leaving families out
+  changed neither QTL power (diploperennis DTA LOD 7.89 / 7.89 / 7.88) nor noise (mexicana kept donors 1.06 -> 1.10
+  introgressions per line).
+- Milestone 9c (the dosage check deciding a second union pass) is dropped; draft spec on branch `m09c-curve-rule` only.
+- Lines and families are flagged, never dropped; the sample introgression dosage check stays a check applied downstream of the line checks.
