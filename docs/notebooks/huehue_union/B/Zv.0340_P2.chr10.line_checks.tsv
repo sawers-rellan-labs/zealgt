@@ -1,0 +1,8 @@
+line	n_donor_segments	donor_bp	ref_reads	ref_alt_pct	het_reads	het_alt_pct	alt_reads	alt_alt_pct
+P4062	0	0	82271	2.4	0	.	0	.
+PN11_SID1015	0	0	50623	1.6	0	.	0	.
+PN11_SID1016	2	12350789	35921	1.5	2942	46.3	2924	92.2
+PN11_SID1017	0	0	29307	1.6	0	.	0	.
+PN11_SID1018	0	0	43326	0.4	0	.	0	.
+PN11_SID1019	0	0	35110	0.8	0	.	0	.
+PN11_SID1020	0	0	30968	1.5	0	.	0	.

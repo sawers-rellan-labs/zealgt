@@ -1,0 +1,6 @@
+line	n_donor_segments	donor_bp	ref_reads	ref_alt_pct	het_reads	het_alt_pct	alt_reads	alt_alt_pct
+PN12_SID1120	2	26872711	41086	1.9	4214	62.2	11325	86.9
+PN12_SID1121	1	1411293	44331	2.8	595	57.6	0	.
+PN12_SID1122	1	15229	67659	1.7	90	48.9	0	.
+PN12_SID1123	0	0	43844	0.6	0	.	0	.
+PN12_SID1124	2	16160335	41912	0.8	8112	53.3	0	.

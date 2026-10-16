@@ -1,0 +1,10 @@
+line	n_donor_segments	donor_bp	ref_reads	ref_alt_pct	het_reads	het_alt_pct	alt_reads	alt_alt_pct
+P4120	0	0	138536	0.3	0	.	0	.
+P4121	0	0	62041	1.4	0	.	0	.
+PN15_SID1405	0	0	38261	0.7	0	.	0	.
+PN15_SID1406	0	0	40103	0.6	0	.	0	.
+PN15_SID1407	0	0	40553	0.5	0	.	0	.
+PN15_SID1408	2	13602883	43038	0.7	3277	59.5	4109	89.3
+PN15_SID1410	0	0	48207	0.6	0	.	0	.
+PN15_SID1411	0	0	32773	0.8	0	.	0	.
+PN15_SID1412	0	0	42072	1.7	0	.	0	.

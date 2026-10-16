@@ -1,0 +1,178 @@
+---
+title: "Huehuetenangensis marker union: alone, with parviglumis, or with mexicana"
+subtitle: "chr10 GENOTYPE runs A (huehuetenangensis alone), B (+ parviglumis), C (+ mexicana); 2026-10-16"
+author: "Fausto Rodríguez-Zapata"
+date: today
+format:
+  html:
+    toc: true
+    embed-resources: true
+    fig-width: 8
+    fig-height: 5
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+library(data.table)
+library(ggplot2)
+theme_set(theme_bw(base_size = 13))
+d <- "huehue_union"
+runs <- c(A = "alone", B = "+ parviglumis", C = "+ mexicana")
+hue <- c("Zh.0020_P3", "Zh.0030_P4")
+markers <- fread(file.path(d, "markers.tsv"))[, union := runs[run]]
+checks <- rbindlist(lapply(names(runs), function(r) {
+  rbindlist(lapply(list.files(file.path(d, r), "line_checks.tsv$", full.names = TRUE), function(f) {
+    fread(f, na.strings = ".")[, `:=`(run = r, donor = sub("\\.chr10.*", "", basename(f)))]
+  }))
+}))
+# sample introgression dosage check on per-donor medians (docs/decisions.md 2026-10-11, criteria 1-2)
+dose <- checks[, .(
+  samples = .N, segs_median = median(n_donor_segments), segs_max = max(n_donor_segments),
+  ref = median(ref_alt_pct, na.rm = TRUE), het = median(het_alt_pct, na.rm = TRUE), alt = median(alt_alt_pct, na.rm = TRUE)
+), by = .(run, donor)]
+dose[, balanced := segs_median <= 4 & (is.na(ref) | ref <= 3) & (is.na(het) | (het >= 30 & het <= 55)) &
+  (is.na(alt) | alt >= 75)]
+seg <- rbindlist(lapply(names(runs), function(r) {
+  rbindlist(lapply(hue, function(h) fread(file.path(d, r, paste0(h, ".segments.bed")))[, `:=`(run = r, donor = h)]))
+}))
+setnames(seg, "#chrom", "chrom", skip_absent = TRUE)
+shares <- seg[, .(bp = sum(end - start)), by = .(run, donor, line, state)][
+  , .(het = sum(bp[state == 1]) / sum(bp), alt = sum(bp[state == 2]) / sum(bp)),
+  by = .(run, donor, line)
+]
+snp <- fread(file.path(d, "snp50k_chr10_huehue.csv"))
+snp_shares <- snp[, .(bp = sum(end_bp - start_bp)), by = .(line = name, state)][
+  , .(het = sum(bp[state == 1]) / sum(bp), alt = sum(bp[state == 2]) / sum(bp)),
+  by = line
+]
+```
+
+## Why
+
+User, 2026-10-16: whether *Z. mays* ssp. *huehuetenangensis* (2 donors, 9 BC1 pools, 61 BC2S3 samples) gets its own
+union or joins another taxon's ("we need data to have a decision"). Chen et al. (2022) Fig. 2a source data:
+F~ST~ huehuetenangensis–parviglumis 0.200, –mexicana 0.248, –maize 0.330; mexicana–parviglumis 0.068. Run plan:
+`docs/runs/genotype_huehue_chr10.md`. Collected by `agent/huehue_chr10/collect.sh` (log there); this notebook reads only
+the extracted tables in `huehue_union/`.
+
+## 1. Markers per donor
+
+A donor's RTIGER markers are the union sites gap filling calls ALT for it: its own tier-A sites plus gap-filled sites
+from the other donors of the same union (Milestone 9a).
+
+```{r markers}
+knitr::kable(markers[, .(union, donor, union_sites, tier_a, union_alt, own, gap_filled)],
+  format.args = list(big.mark = ","),
+  col.names = c("union", "donor", "union sites", "tier-A sites", "markers (union-ALT)", "own", "gap-filled")
+)
+```
+
+## 2. Calls: the sample introgression dosage check
+
+Per donor, medians over its BC2S3 samples: donor segments per sample and ALT % of reads in REF / HET / ALT segments.
+A family has balanced tissue pools when the medians pass (at most 4 segments; REF <= 3 %, HET 30-55 %, ALT >= 75 %).
+
+```{r dosage}
+knitr::kable(dose[donor %in% hue][order(donor, run), .(
+  donor, union = runs[run], samples, segs_median, segs_max, ref, het, alt,
+  tissue_pools = fifelse(balanced, "balanced", "unbalanced")
+)], digits = 1, col.names = c(
+  "donor", "union", "samples", "segments, median", "segments, max", "REF % ALT", "HET % ALT", "ALT % ALT",
+  "tissue pools"
+))
+```
+
+## 3. Genotype classes
+
+Share of chr10 called HET and donor per BC2S3 sample, against the single-locus BC2S2 expectation (HET 6.25 %, donor
+9.4 %) and the SNP50K calls of the same samples.
+
+```{r classes}
+pipe_cls <- shares[, .(het = mean(het), alt = mean(alt), samples = .N), by = .(run, donor)]
+pipe_cls[, source := paste("union", runs[run])]
+snp_cls <- snp_shares[shares[run == "A", .(line, donor)], on = "line", nomatch = NULL][
+  , .(het = mean(het), alt = mean(alt), samples = .N),
+  by = donor
+][, source := "SNP50K"]
+cls <- rbind(pipe_cls[, .(donor, source, samples, het, alt)], snp_cls[, .(donor, source, samples, het, alt)])
+knitr::kable(cls[order(donor, source), .(donor, source, samples, het = 100 * het, donor_class = 100 * alt)],
+  digits = 1, col.names = c("donor", "calls", "samples", "HET % of chr10", "donor % of chr10")
+)
+```
+
+## 4. What adding huehuetenangensis does to the partner taxon
+
+```{r partner}
+mex_old <- rbindlist(lapply(list.files("huehue_union/mexicana_1273053", "line_checks.tsv$", full.names = TRUE), function(f) {
+  fread(f, na.strings = ".")[, donor := sub("\\.chr10.*", "", basename(f))]
+}))[, .(segs_old = median(n_donor_segments), het_old = median(het_alt_pct, na.rm = TRUE),
+       alt_old = median(alt_alt_pct, na.rm = TRUE)), by = donor]
+mex_new <- dose[run == "C" & !donor %in% hue, .(donor, segs_new = segs_median, het_new = het, alt_new = alt)]
+cmp <- mex_old[mex_new, on = "donor", nomatch = NULL]
+knitr::kable(cmp[, .(
+  donors = .N,
+  `segments: changed donors` = sum(segs_old != segs_new),
+  `HET % ALT: max change` = max(abs(het_new - het_old), na.rm = TRUE),
+  `ALT % ALT: max change` = max(abs(alt_new - alt_old), na.rm = TRUE)
+)], digits = 1, caption = "Mexicana donors' line-check medians, run C against run 1273053 (mexicana alone)")
+```
+
+Run B is the first parviglumis run, so it has no parviglumis-only baseline to compare with.
+
+## 5. Chromosome painting: SNP50K, the union alone and the union with parviglumis
+
+One row per BC2S3 sample, grouped by donor; chr10 along the x axis. Left: SNP50K calls (RTIGER on the 50K panel);
+middle: RTIGER at the union-ALT markers of the huehuetenangensis-only union (run A); right: the union with the 40
+parviglumis donors (run B).
+
+```{r painting, fig.width = 15, fig.height = 9}
+# the style of agent/genochr10/dip_plots/fig1_paint_columns.R: rows per sample, REF gold, HET springgreen4, ALT purple4
+paint <- rbind(
+  snp[, .(source = "SNP50K", line = name, start = start_bp, end = end_bp, state)],
+  seg[run == "A", .(source = "union alone", line, start, end, state)],
+  seg[run == "B", .(source = "union + parviglumis", line, start, end, state)]
+)
+paint <- unique(shares[run == "A", .(line, donor)])[paint, on = "line", nomatch = NULL]
+paint[, row := match(line, rev(sort(unique(line)))), by = donor]
+paint[, state := factor(state, levels = 0:2, labels = c("REF", "HET", "ALT"))]
+paint[, source := factor(source, levels = c("SNP50K", "union alone", "union + parviglumis"))]
+paint[, label := paste0(donor, "\n", uniqueN(line), " lines"), by = donor]
+ggplot(paint) +
+  geom_rect(aes(xmin = start / 1e6, xmax = end / 1e6, ymin = row - 0.48, ymax = row + 0.48, fill = state)) +
+  scale_fill_manual(values = c(REF = "gold", HET = "springgreen4", ALT = "purple4"), name = "State") +
+  facet_grid(label ~ source, scales = "free_y", space = "free_y") +
+  scale_y_continuous(breaks = NULL, expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(title = "chr10 ancestry per line, huehuetenangensis (RTIGER per donor, same lines)",
+       x = "chr10 position (Mb)", y = "lines") +
+  theme_classic(base_size = 11) +
+  theme(strip.text.y = element_text(angle = 0), strip.background = element_blank(), legend.position = "bottom",
+        panel.spacing.y = unit(4, "pt"))
+```
+
+## 6. Notes (2026-10-16)
+
+- **Union alone fragments.** With only 2 donors the union is thin (68,177 sites; 52-56 k markers per donor); RTIGER
+  breaks two samples into many pieces (SID806, SID846). Either partner union (+ parviglumis 464,813 sites, + mexicana
+  410,196) doubles the markers, mostly gap-filled, and both samples become clean segments placed as SNP50K places them.
+- **The partner taxon makes no difference here.** Runs B and C agree on segments, class shares and dosage medians for
+  both donors. The data give no reason to prefer parviglumis (F~ST~ 0.200) over mexicana (0.248).
+- **Proposal (user, 2026-10-16): one union of the three annual *Z. mays* subspecies** (mexicana, parviglumis,
+  huehuetenangensis). Open: it changes mexicana's and parviglumis's own calls too (run C already moved 3 of 42 mexicana
+  donors' segment counts); not yet tested as one run.
+- **Confidence in why partners help is low.** Both partners are large and both are annual *Z. mays*, so "many donors"
+  and "related donors" are confounded, and the mechanism (marker density or better gap-filling priors) is not
+  separated; two fragmented samples in two families. Tests that would separate them: huehuetenangensis with
+  diploperennis (distant), and with ~6 mexicana donors (few, close).
+- **SNP50K calls donor-homozygous segments HET** (Zh.0020_P3: SNP50K HET 10.7 % / donor 0.1 %; unions 4.6-5.6 % /
+  6.8-7.1 %; BC2S2 expectation 6.25 % / 9.4 %), as its diluted donor state predicts (diagnosis 2026-10-15, §4).
+- **Zh.0030_P4** carries almost no introgression on chr10 (median 0 donor segments in every call set); its few
+  "donor" calls in the union alone are short segments at 0-2 Mb, where SNP50K calls short HET segments.
+
+Pairwise F~ST~ between the ZEAL taxa (Chen et al. 2022, Fig. 2a source data, five samples per taxon): parviglumis is
+the nearest taxon to every other one (huehuetenangensis 0.200, diploperennis 0.230, luxurians 0.235, mexicana 0.068);
+diploperennis and luxurians are far from each other (0.453) and from huehuetenangensis (0.48). Next: the same test for
+diploperennis (`docs/runs/genotype_diploperennis_partners_chr10.md`).
