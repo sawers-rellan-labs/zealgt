@@ -312,3 +312,6 @@ Spec approved by the user, 2026-10-16 (`docs/milestones/09e_variant_calling_ance
 - `--ancestry_fit chromosome` (default, outputs as before) or `genome` (one RTIGER fit per donor over its regions).
 - Short task names: stages `LINE_COUNTS` and `ANCESTRY_RTIGER`; the pipeline workflow `ZEALGT`.
 - Published folders `variant_calling/` and `ancestry/` (were `genotype/`); results already on `/rsstu` stay where they are.
+- RTIGER rigidity as a window in Mb, replacing 0.5 % of the markers (user, 2026-10-16: "the per Mb rule seems to work
+  the best everywhere for now"; "1 Mb default, add it to 9e"): r = `--rigidity_mb` (default 1) x the median line's
+  covered markers per Mb of the markers' span, per chromosome and per genome alike.

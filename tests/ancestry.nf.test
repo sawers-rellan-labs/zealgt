@@ -95,6 +95,7 @@ nextflow_pipeline {
                 outdir      = "$outputDir"
                 input       = counts_sheet
                 step        = 'ancestry'
+                rigidity_mb = 0.001 // the fixture's markers span 2 kb: a 1 kb window, rigidity 1
                 genetic_map = "$baseDir/tests/fixtures/genotype/chrA_map.tsv"
             }
         }
@@ -132,6 +133,7 @@ nextflow_pipeline {
                 input        = counts_sheet
                 step         = 'ancestry'
                 ancestry_fit = 'genome'
+                rigidity_mb  = 0.001 // the fixture's markers span 2 kb: a 1 kb window, rigidity 1
                 genetic_map  = "$baseDir/tests/fixtures/genotype/chrA_map.tsv"
             }
         }

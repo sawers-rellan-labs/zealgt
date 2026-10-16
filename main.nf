@@ -21,12 +21,13 @@ include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_zeal
 include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_zealgt_pipeline'
 include { softwareVersionsToYAML  } from './subworkflows/nf-core/utils_nfcore_pipeline'
 
-// typed so that --head, --read_qc and the variant calling cuts from the command line arrive as numbers and a boolean
+// typed so that --head, --read_qc, the variant calling cuts and the rigidity from the command line arrive as numbers and a boolean
 params {
     head: Integer = 0
     read_qc: Boolean = false
     max_check_alt_rate: Float = 0.01
     min_mean_coverage: Float = 0.05
+    rigidity_mb: Float = 1
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

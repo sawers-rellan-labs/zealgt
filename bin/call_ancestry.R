@@ -4,12 +4,12 @@
 #
 # Markers: the union sites gap filling called ALT for the donor; per line, n_ref and n_alt are the bcftools mpileup
 # AD of the site's REF and of the donor's ALT allele, summed over the count files (one per region). Rigidity
-# r = max(1, round(fraction x markers)); lines with fewer than 2r covered markers (>= 1 read) on any chromosome are
-# dropped first, since RTIGER stops on them. States: 0 B73/B73, 1 het,
+# r = max(1, round(Mb x the median line's covered markers (>= 1 read) per Mb of the markers' span)); lines with fewer
+# than 2r covered markers on any chromosome are dropped first, since RTIGER stops on them. States: 0 B73/B73, 1 het,
 # 2 donor/donor. Line checks (curve rule, docs/decisions.md 2026-10-11): per called line, its donor (state 1-2)
 # segments, their bp, and the reads and ALT % of its markers inside the segments of each state.
 #
-# Usage: call_ancestry.R --markers MARKERS.vcf [...] --counts LINE.vcf.gz [...] --rigidity-fraction F
+# Usage: call_ancestry.R --markers MARKERS.vcf [...] --counts LINE.vcf [...] --rigidity-mb MB
 #        --segments OUT.bed --dropped OUT.tsv --line-checks OUT.tsv [--seed S]
 suppressPackageStartupMessages({
   library(data.table)
@@ -74,18 +74,26 @@ main <- function(argv = commandArgs(trailingOnly = TRUE)) {
 
   sites <- rbindlist(lapply(a$markers, function(f) read_vcf(f)[, .(CHROM, POS, REF, ALT)]))
   chroms <- unique(sites$CHROM)
-  rigidity <- max(1L, as.integer(round(as.numeric(a$`rigidity-fraction`) * nrow(sites))))
-  log_info(
-    "%d markers on %d chromosome(s); rigidity %d, lines need >= %d covered markers on each", nrow(sites),
-    length(chroms), rigidity, 2L * rigidity
-  )
 
   # a count file holds one region's records; the others' sites are 0 in it, so a line's files sum to its counts
   counts <- rbindlist(lapply(a$counts, read_line_counts, sites = sites))
   counts <- counts[, .(n_ref = sum(n_ref), n_alt = sum(n_alt)), by = .(name, chrom, pos)]
+  by_chrom <- counts[, .(covered = sum(n_ref + n_alt >= 1L)), by = .(name, chrom)]
+
+  # rigidity from a window in Mb: the median line's covered markers per Mb of the markers' span, summed over chromosomes
+  span_mb <- sites[, .(span = max(POS) - min(POS)), by = CHROM][, sum(span)] / 1e6
+  per_mb <- if (nrow(by_chrom) && span_mb > 0) median(by_chrom[, .(n = sum(covered)), by = name]$n) / span_mb else 0
+  rigidity <- max(1L, as.integer(round(as.numeric(a$`rigidity-mb`) * per_mb)))
+  log_info(
+    paste(
+      "%d markers on %d chromosome(s), %.2f Mb; median line %.1f covered markers per Mb;",
+      "rigidity %d (%s Mb), lines need >= %d covered markers on each"
+    ),
+    nrow(sites), length(chroms), span_mb, per_mb, rigidity, a$`rigidity-mb`, 2L * rigidity
+  )
+
   # a line's covered markers on its least covered chromosome
-  covered <- counts[, .(covered = sum(n_ref + n_alt >= 1L)), by = .(name, chrom)]
-  covered <- covered[, .(covered_markers = min(covered)), by = .(line = name)]
+  covered <- by_chrom[, .(covered_markers = min(covered)), by = .(line = name)]
   covered[, cut := 2L * rigidity]
   dropped <- covered[covered_markers < cut]
   fwrite(dropped[order(line)], a$dropped, sep = "\t")

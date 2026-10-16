@@ -64,8 +64,10 @@ without rerunning discovery for every HMM setting.
   (the pipeline would list files itself).
 - **`--ancestry_fit chromosome` the default**, so outputs stay as today. Rejected: `genome` the default before it is
   tested on our markers.
-- **Rigidity unchanged**: 0.5 % of the markers in the fit (with `genome`, of all chromosomes' markers). The rule
-  (fraction, 512, per Mb) is open decision 1 and stays out of this milestone.
+- **Rigidity as a window in Mb** (added 2026-10-16, user: "the per Mb rule seems to work the best everywhere for now";
+  "1 Mb default, add it to 9e"): r = `--rigidity_mb` (default 1) x the median line's covered markers per Mb of the
+  markers' span, the same in both fit modes; tests and slices on short windows pass a smaller value. Rejected: 0.5 %
+  of the markers in the fit (over a genome a window of tens of Mb, and lines fall under the 2r cut).
 - **Published paths renamed** (`genotype/` -> `variant_calling/`, `ancestry/`); results already on `/rsstu` stay where
   they are. Rejected: keeping `genotype/` for the first step (the name would no longer say what it holds).
 

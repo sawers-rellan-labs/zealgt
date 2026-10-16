@@ -79,9 +79,15 @@ counts <- vapply(lines, function(l) {
   system2("gzip", p)
   paste0(p, ".gz")
 }, "")
-rigidity <- max(1L, round(0.005 * nrow(sites)))
+# the rigidity call_ancestry.R derives from a 1 Mb window: the median line's covered markers per Mb of the markers' span
+r_of <- function(o, s, mb) {
+  span_mb <- sum(s[, diff(range(pos)), by = chrom]$V1) / 1e6
+  per_mb <- median(o[, .(n = sum(n_ref + n_alt > 0L)), by = name]$n) / span_mb
+  max(1L, as.integer(round(mb * per_mb)))
+}
+rigidity <- r_of(obs, sites[, .(chrom = "chr10", pos)], 1)
 res <- run_tool("call_ancestry.R", c(
-  "--markers", file.path(dir, "markers.vcf"), "--counts", counts, "--rigidity-fraction", "0.005",
+  "--markers", file.path(dir, "markers.vcf"), "--counts", counts, "--rigidity-mb", "1",
   "--segments", file.path(dir, "D.bed"), "--dropped", file.path(dir, "D.dropped.tsv"),
   "--line-checks", file.path(dir, "D.line_checks.tsv")
 ), dir)
@@ -152,14 +158,14 @@ counts10 <- vapply(lines, function(l) {
 }, "")
 res2 <- run_tool("call_ancestry.R", c(
   "--markers", file.path(dir, "markers9.vcf"), file.path(dir, "markers.vcf"), "--counts", counts9, counts10,
-  "--rigidity-fraction", "0.0025", "--segments", file.path(dir, "G.bed"), "--dropped", file.path(dir, "G.dropped.tsv"),
+  "--rigidity-mb", "1", "--segments", file.path(dir, "G.bed"), "--dropped", file.path(dir, "G.dropped.tsv"),
   "--line-checks", file.path(dir, "G.line_checks.tsv")
 ), dir)
 
-test_that("two chromosomes: one fit, rigidity from all markers, the cut on the least covered chromosome", {
+test_that("two chromosomes: one fit, rigidity from both spans, the cut on the least covered chromosome", {
   expect_equal(res2$status, 0L, info = paste(res2$log, collapse = "\n"))
-  r2 <- max(1L, round(0.0025 * (nrow(sites) + nrow(sites9))))
-  expect_match(paste(res2$log, collapse = "\n"), sprintf("on 2 chromosome\\(s\\); rigidity %d,", r2))
+  r2 <- r_of(rbind(obs9, obs10), rbind(sites9[, .(chrom = "chr9", pos)], sites[, .(chrom = "chr10", pos)]), 1)
+  expect_match(paste(res2$log, collapse = "\n"), sprintf("on 2 chromosome\\(s\\).*rigidity %d \\(1 Mb\\)", r2))
   dropped <- fread(file.path(dir, "G.dropped.tsv"))
   expect_equal(dropped$line, lines[1])
   # its covered markers on chr9, the least covered chromosome (the 10 kept markers, less those simulated without reads)

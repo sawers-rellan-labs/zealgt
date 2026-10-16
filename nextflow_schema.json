@@ -167,6 +167,13 @@
                     "description": "RTIGER fit unit: one fit per donor and region (chromosome) or one per donor over all its regions (genome).",
                     "fa_icon": "fas fa-object-group"
                 },
+                "rigidity_mb": {
+                    "type": "number",
+                    "default": 1,
+                    "exclusiveMinimum": 0,
+                    "description": "RTIGER rigidity as a window in Mb: this many Mb times the median line's covered markers per Mb.",
+                    "fa_icon": "fas fa-ruler-horizontal"
+                },
                 "genetic_map": {
                     "type": "string",
                     "format": "file-path",
