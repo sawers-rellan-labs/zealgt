@@ -24,7 +24,8 @@ BINDS=/usr/bin/sbatch,/usr/bin/squeue,/usr/bin/scancel,/usr/lib64/slurm,/var/spo
 BINDS=$BINDS,/usr/lib64/libmunge.so.2,/run/munge,/usr/lib64/libnss_sss.so.2,/var/lib/sss/pipes
 BINDS=$BINDS,/share/maize/frodrig4,/rsstu/users/r/rrellan,$APPTAINER
 export APPTAINERENV_PREPEND_PATH="$APPTAINER/bin"
-nxf() { "$APPTAINER/bin/apptainer" exec -B "$BINDS" "$SIF" env NXF_OFFLINE=true NXF_PLUGINS_DIR="$NXF_DIR/plugins" \
+# a time limit goes inside: timeout cannot call a shell function; NXF_TIMEOUT=0 means none
+nxf() { timeout "${NXF_TIMEOUT:-0}" "$APPTAINER/bin/apptainer" exec -B "$BINDS" "$SIF" env NXF_OFFLINE=true NXF_PLUGINS_DIR="$NXF_DIR/plugins" \
     NXF_SECRETS_FILE="$NXF_DIR/secrets/store.json" NXF_OPTS="-Xms256m -Xmx1g" "$@"; }
 stamp() { awk -v n="$1" '{ print strftime("%F %T"), "[" n "]", $0; fflush() }'; }
 cd "$REPO" || exit 2
@@ -39,7 +40,7 @@ if [ -n "$PARAMS" ]; then
       nxf nextflow -q config "$REPO" -profile "${PROFILE:-hpc_prod}" > config.txt &&
       nxf nextflow -q inspect "$REPO" -profile "${PROFILE:-hpc_prod}" -params-file "$PARAMS" > inspect.json &&
       echo "config ok; $(grep -c '"container"' inspect.json) containers" &&
-      { timeout 120 nxf nextflow run "$REPO" -preview -profile "${PROFILE:-hpc_prod}" -params-file "$PARAMS" > preview.log 2>&1
+      { NXF_TIMEOUT=120 nxf nextflow run "$REPO" -preview -profile "${PROFILE:-hpc_prod}" -params-file "$PARAMS" > preview.log 2>&1
         grep -q 'Pipeline completed successfully' preview.log && echo "parameters ok"; }
       rc=$?
       echo "exit=$rc"
