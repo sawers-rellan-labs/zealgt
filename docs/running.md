@@ -107,9 +107,15 @@ change: edit the resources in `conf/hpc_dev.config` or `conf/hpc_prod.config`, t
 
 ## Stubs on hazel
 
-A stub checks paths, containers and the launch directory, so it should take minutes. With every task a Slurm job, each
-step waits about a minute for Nextflow's job status check: the GENOTYPE stub (job 1270344, two donors, ~20 dependent
-steps) took 24 min for seconds of work.
+Step 3 of the test order (`CLAUDE.md`) checks paths, containers, Slurm and the profiles, no logic, in minutes. A
+pipeline stub cannot: its dependent steps run one after another, and Slurm starts each new job only at its next
+scheduling pass (`SchedulerParameters=defer`, ~50 s), so the GENOTYPE stub (~20 steps) took 24 min (job 1270344) and
+19 min with 10 s polling (1316875); the alignment stub (8 steps) 57 and 9 min (1271775, 1316876). Hence:
+
+- **Process checks**: every process's stub runs alone from ready inputs, all at once, one Slurm wait in all (not built
+  yet). Parallel tasks cannot race: each task writes only in its own work directory.
+- **`-preview`**: config, parameters and the DAG, no tasks.
+- **A pipeline stub** only after changes to the launch scripts or the profiles, as below.
 
 1. **Check the sheet first** (seconds, no Nextflow):
    - every path is absolute, since Nextflow resolves `--input` from the launch directory (stub 1269132);
