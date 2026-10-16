@@ -250,9 +250,19 @@ knitr::kable(sc, caption = "SNP50K RTIGER donor allele frequency (%) per chromos
 - **Gap markers are mostly CRISP misses**, not promoted tier-B sites: per-donor CRISP leaves out sites its own BC1 reads
   score tier A at the union. One CRISP over all BC1 pools and every donor's witness pool would be the principled form
   (user); a separate test (`agent/diplo_chr10/joint_crisp_test_plan.md`).
-- **For mapping, smoothing toward REF is preferred** (user): a diluted stretch called REF costs the large REF class
-  least; SNP50K RTIGER does the same. For choosing samples at a candidate gene the line checks flag the diluted ones
-  (REF % ALT > 3), but per sample, not per position: a windowed flag would be a design change.
+- **For mapping, calling diluted stretches REF is preferred** (user): it puts the error in the large REF class. SNP50K
+  RTIGER calls the same stretches REF: of the bp our runs call REF in samples with REF % ALT > 3, SNP50K calls
+  96-99 % REF and 1-4 % HET (clean samples: 99.7-99.9 % REF; table below). Unlike SNP50K, which calls
+  donor-homozygous segments HET, the union runs keep the classes separate (segment ALT % nearer 0 / 50 / 100). For
+  choosing samples at a candidate gene the line checks flag the diluted ones (REF % ALT > 3), per sample, not per
+  position: a windowed flag would be a design change.
+
+```{r snp50k_in_ref}
+sr <- rd("snp50k_in_ref.tsv")[, taxon := taxa[taxon]]
+knitr::kable(sr, col.names = c("taxon", "samples", "group", "SNP50K REF (%)", "SNP50K HET (%)", "SNP50K ALT (%)"),
+             caption = "SNP50K RTIGER states over the bp our runs call REF (run B, 1270808, 1273053; samples in both).")
+```
+
 - **Diluted pools are authentic introgressions carried by some of the 6 sampled plants** (user); 6 of the 12 planted
   plants estimate the bulk's allele frequency well. If the phenotype came from the same plants, their dose is
   fractional, and neither REF nor HET states it.

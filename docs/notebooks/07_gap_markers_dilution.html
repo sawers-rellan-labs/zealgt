@@ -14611,11 +14611,108 @@
               (<code>agent/diplo_chr10/joint_crisp_test_plan.md</code>).
             </li>
             <li>
-              <strong>For mapping, smoothing toward REF is preferred</strong> (user): a diluted stretch called REF costs
-              the large REF class least; SNP50K RTIGER does the same. For choosing samples at a candidate gene the line
-              checks flag the diluted ones (REF % ALT &gt; 3), but per sample, not per position: a windowed flag would
-              be a design change.
+              <strong>For mapping, calling diluted stretches REF is preferred</strong> (user): it puts the error in the
+              large REF class. SNP50K RTIGER calls the same stretches REF: of the bp our runs call REF in samples with
+              REF % ALT &gt; 3, SNP50K calls 96-99 % REF and 1-4 % HET (clean samples: 99.7-99.9 % REF; table below).
+              Unlike SNP50K, which calls donor-homozygous segments HET, the union runs keep the classes separate
+              (segment ALT % nearer 0 / 50 / 100). For choosing samples at a candidate gene the line checks flag the
+              diluted ones (REF % ALT &gt; 3), per sample, not per position: a windowed flag would be a design change.
             </li>
+          </ul>
+          <div class="cell">
+            <div class="cell-output-display">
+              <table class="caption-top table table-sm table-striped small">
+                <caption>
+                  SNP50K RTIGER states over the bp our runs call REF (run B, 1270808, 1273053; samples in both).
+                </caption>
+                <colgroup>
+                  <col style="width: 20%" />
+                  <col style="width: 9%" />
+                  <col style="width: 17%" />
+                  <col style="width: 17%" />
+                  <col style="width: 17%" />
+                  <col style="width: 17%" />
+                </colgroup>
+                <thead>
+                  <tr class="header">
+                    <th style="text-align: left">taxon</th>
+                    <th style="text-align: right">samples</th>
+                    <th style="text-align: left">group</th>
+                    <th style="text-align: right">SNP50K REF (%)</th>
+                    <th style="text-align: right">SNP50K HET (%)</th>
+                    <th style="text-align: right">SNP50K ALT (%)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="odd">
+                    <td style="text-align: left">diploperennis</td>
+                    <td style="text-align: right">215</td>
+                    <td style="text-align: left">REF % ALT &lt;= 3</td>
+                    <td style="text-align: right">99.7</td>
+                    <td style="text-align: right">0.3</td>
+                    <td style="text-align: right">0</td>
+                  </tr>
+                  <tr class="even">
+                    <td style="text-align: left">diploperennis</td>
+                    <td style="text-align: right">37</td>
+                    <td style="text-align: left">REF % ALT &gt; 3</td>
+                    <td style="text-align: right">97.6</td>
+                    <td style="text-align: right">2.4</td>
+                    <td style="text-align: right">0</td>
+                  </tr>
+                  <tr class="odd">
+                    <td style="text-align: left">huehuetenangensis</td>
+                    <td style="text-align: right">57</td>
+                    <td style="text-align: left">REF % ALT &lt;= 3</td>
+                    <td style="text-align: right">99.9</td>
+                    <td style="text-align: right">0.1</td>
+                    <td style="text-align: right">0</td>
+                  </tr>
+                  <tr class="even">
+                    <td style="text-align: left">huehuetenangensis</td>
+                    <td style="text-align: right">4</td>
+                    <td style="text-align: left">REF % ALT &gt; 3</td>
+                    <td style="text-align: right">98.8</td>
+                    <td style="text-align: right">1.2</td>
+                    <td style="text-align: right">0</td>
+                  </tr>
+                  <tr class="odd">
+                    <td style="text-align: left">parviglumis</td>
+                    <td style="text-align: right">351</td>
+                    <td style="text-align: left">REF % ALT &lt;= 3</td>
+                    <td style="text-align: right">99.9</td>
+                    <td style="text-align: right">0.1</td>
+                    <td style="text-align: right">0</td>
+                  </tr>
+                  <tr class="even">
+                    <td style="text-align: left">parviglumis</td>
+                    <td style="text-align: right">30</td>
+                    <td style="text-align: left">REF % ALT &gt; 3</td>
+                    <td style="text-align: right">99.0</td>
+                    <td style="text-align: right">1.0</td>
+                    <td style="text-align: right">0</td>
+                  </tr>
+                  <tr class="odd">
+                    <td style="text-align: left">mexicana</td>
+                    <td style="text-align: right">518</td>
+                    <td style="text-align: left">REF % ALT &lt;= 3</td>
+                    <td style="text-align: right">99.9</td>
+                    <td style="text-align: right">0.1</td>
+                    <td style="text-align: right">0</td>
+                  </tr>
+                  <tr class="even">
+                    <td style="text-align: left">mexicana</td>
+                    <td style="text-align: right">53</td>
+                    <td style="text-align: left">REF % ALT &gt; 3</td>
+                    <td style="text-align: right">96.4</td>
+                    <td style="text-align: right">3.6</td>
+                    <td style="text-align: right">0</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <ul>
             <li>
               <strong>Diluted pools are authentic introgressions carried by some of the 6 sampled plants</strong>
               (user); 6 of the 12 planted plants estimate the bulk’s allele frequency well. If the phenotype came from
