@@ -36,7 +36,7 @@ params {
 //
 // WORKFLOW: Run main analysis pipeline depending on type of input
 //
-workflow SAWERSRELLANLABS_ZEALGT {
+workflow ZEALGT {
 
     take:
     samplesheet // channel: samplesheet read in from --input
@@ -155,7 +155,7 @@ workflow {
     //
     // WORKFLOW: Run main workflow
     //
-    SAWERSRELLANLABS_ZEALGT (
+    ZEALGT (
         PIPELINE_INITIALISATION.out.samplesheet
     )
     //
@@ -166,16 +166,16 @@ workflow {
     )
 
     publish:
-    fastq = SAWERSRELLANLABS_ZEALGT.out.fastq
+    fastq = ZEALGT.out.fastq
     // CRAMs and their QC always, to permanent storage
-    cram = SAWERSRELLANLABS_ZEALGT.out.cram
-    cram_qc = SAWERSRELLANLABS_ZEALGT.out.cram_qc
-    discovery_vcf = SAWERSRELLANLABS_ZEALGT.out.discovery_vcf
-    discovery_sites = SAWERSRELLANLABS_ZEALGT.out.discovery_sites
-    dropped_b73_checks = SAWERSRELLANLABS_ZEALGT.out.dropped_b73_checks
-    union = SAWERSRELLANLABS_ZEALGT.out.union
-    donor_alleles = SAWERSRELLANLABS_ZEALGT.out.donor_alleles
-    ancestry = SAWERSRELLANLABS_ZEALGT.out.ancestry
+    cram = ZEALGT.out.cram
+    cram_qc = ZEALGT.out.cram_qc
+    discovery_vcf = ZEALGT.out.discovery_vcf
+    discovery_sites = ZEALGT.out.discovery_sites
+    dropped_b73_checks = ZEALGT.out.dropped_b73_checks
+    union = ZEALGT.out.union
+    donor_alleles = ZEALGT.out.donor_alleles
+    ancestry = ZEALGT.out.ancestry
 }
 
 output {
