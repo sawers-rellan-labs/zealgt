@@ -44,8 +44,9 @@ Before running or rerunning the pipeline, read `docs/running.md`. Steps in order
 
 1. Tools: each tool alone on small fixtures (unit tests, reference outputs) before it goes into a module.
 2. Wiring: the pipeline on stubs on the laptop, in seconds; gives the channel-level DAG. All laptop tests <= 5 min.
-3. Hazel setup, minutes, no chain: `-preview` (config, parameters, DAG) and every process's stub run alone from ready
-   inputs, all at once (containers, Slurm, profiles). Checks no logic.
+3. Hazel setup, minutes, no chain: the run's config, containers and parameters (`nextflow config`, `inspect`,
+   `-preview`) and every process's stub run alone from ready inputs, all at once (`scripts/run_hazel_tests.sbatch`).
+   Checks no logic.
 4. Review: CodeRabbit on the commit range, beside step 3. Skipped for config, docs and one-line fixes with a test.
 5. Slice: the pipeline on a real-data slice (a few samples, a few Mb) on the laptop, results checked; <= 15 min.
 6. Resource profiling on hazel, at most 30 min per process. No runs on full libraries without the user's OK.
