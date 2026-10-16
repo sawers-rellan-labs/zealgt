@@ -125,7 +125,25 @@ knitr::kable(dcast(pieces[, .(segments = .N, whole = round(100 * mean(pieces == 
              caption = "Share (%) of SNP50K HET segments >= 1 Mb kept whole (1 piece) and split into >= 3 pieces.")
 ```
 
-## 4. Chromosome painting
+## 4. Mapping power
+
+R/qtl Haley-Knott on chr10, family covariate, 1,000 permutations, 251 samples, the notebook of the 2026-10-15
+diagnosis (`agent/genochr10/dip_dta/03_rqtl_dta_zd_chr10.qmd`; DTA and PH as SpATS BLUEs, CLY23 + CLY25) run on
+each call set's segments (`agent/genochr10/render_partner_scans.sh`).
+
+```{r power}
+pw <- rd("power.tsv")
+pw[, calls := factor(calls, c("SNP50K", names(runs)), c("SNP50K", runs))]
+knitr::kable(dcast(pw, calls ~ trait, value.var = c("lod", "peak_cM", "threshold")),
+             col.names = c("calls", "DTA LOD", "PH LOD", "DTA peak (cM)", "PH peak (cM)", "DTA 5 % thr.", "PH 5 % thr."),
+             caption = "Max LOD with the family covariate, its peak and the 5 % permutation threshold.")
+```
+
+The union-ALT calls beat SNP50K on both traits at two independent loci (DTA at ZmCCT10's region; PH at 13-49 Mb),
+as the 2026-10-15 diagnosis found for the diploperennis union alone (`agent/genochr10/DIAGNOSIS_20261015_union_alt_genotypes.md`,
+§1). Partner taxa keep DTA (7.89 to 8.08) and lower PH by 0.3 LOD, still above SNP50K.
+
+## 5. Chromosome painting
 
 ```{r paint, fig.height = 18, fig.width = 13}
 src <- c(SNP50K = "NILs (RTIGER 50K)", runs)
@@ -148,7 +166,7 @@ ggplot(pt) +
         panel.spacing.y = unit(4, "pt"))
 ```
 
-## 5. Notes (2026-10-16)
+## 6. Notes (2026-10-16)
 
 - **Partners add candidates, not markers**: the union grows 2-2.5-fold; each donor takes only the sites its own BC1
   reads support.
@@ -162,4 +180,9 @@ ggplot(pt) +
   every union where SNP50K calls long HET segments: its fragmentation has another cause than marker density (the
   diagnosis's dilution in its pools is the candidate).
 - **D and E agree closely**: the partner's taxon matters less than adding one.
-- Run F (both partners) to be added when it finishes.
+- **F (both partners, 88 donors, 727,756 union sites) continues D and E**: Zd.0020_P3's most fragmented sample drops
+  from 14 to 9 segments; ALT-segment purity falls further in Zd.0010_P2 (median 79.9 → 74.7 % ALT) and Zd.0040_P1
+  (84.6 → 73.0 %). F took 3 h 59 min against 1 h 59 min alone.
+- **Mapping power holds**: union-ALT calls beat SNP50K with or without partners (DTA 7.89-8.08 against 6.70; PH
+  5.92-6.23 against 5.25). The gain over SNP50K comes from the taxon's own union (9a); partners keep DTA and cost PH
+  0.3 LOD.
