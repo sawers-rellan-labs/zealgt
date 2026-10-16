@@ -6,7 +6,8 @@ Nextflow 26.04.6 (laptop, or hazel GPFS with tasks on Slurm compute nodes).
 
 ## Profiles and launch directories
 
-- `hpc_dev`: development on heads of one library; launch directory always `/share/maize/frodrig4/nf_work/zealgt_dev`;
+- `hpc_dev`: development on heads of one library; launch directory `/share/maize/frodrig4/nf_work/zealgt_dev` (a second
+  run at the same time: its own, `ZEALGT_LAUNCH=<dir>`);
   `work/` kept; outputs published as hard links.
 - `hpc_prod`: whole libraries; launch directory `/share/maize/frodrig4/nf_work/zealgt_prod` (a second chain at the same
   time: its own, `ZEALGT_LAUNCH=<dir>`; a chain after another: `AFTER=<job id>` of its last wave); outputs (the FASTQs
@@ -103,6 +104,22 @@ change: edit the resources in `conf/hpc_dev.config` or `conf/hpc_prod.config`, t
   a failed run keeps its `work/` (tested). A run that took every step from the cache leaves `work/` as it was (tested).
 - Hard-linked published files (`publish_dir_mode = 'link'`, output on `/share`) keep their content when cleanup deletes
   `work/` (tested on hazel); symlinks would break.
+
+## Stubs on hazel
+
+A stub checks paths, containers and the launch directory, so it should take minutes. With every task a Slurm job, each
+step waits about a minute for Nextflow's job status check: the GENOTYPE stub (job 1270344, two donors, ~20 dependent
+steps) took 24 min for seconds of work.
+
+1. **Check the sheet first** (seconds, no Nextflow):
+   - every path is absolute, since Nextflow resolves `--input` from the launch directory (stub 1269132);
+   - every file exists;
+   - every donor keeps a BC1 pool and a line at or above `min_mean_coverage`. A donor without lines over the floor has
+     no witness, and the union's join stops the run (stub 1269329).
+2. **Run the stub's tasks inside the head job**: add `-process.executor local` to the stub command, so no task goes
+   through Slurm. Same containers and paths. Not tested yet. The local executor refuses a task that asks for more CPUs
+   or memory than the head job has (expected; the test confirms). So the head job needs the largest request of the stubbed step
+   (GENOTYPE: `CRISP` 16 GB), or a `-c` config that lowers the requests for the stub.
 
 ## Laptop runs
 
