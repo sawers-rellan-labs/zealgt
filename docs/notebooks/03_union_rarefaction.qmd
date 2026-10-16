@@ -698,8 +698,8 @@ pools** when its donor segments read too little ALT:
 `r nrow(mx_donors[status == "pass"])` balanced, `r nrow(mx_donors[status == "fail"])` unbalanced, Zx.0520_P4 has no tier-A
 sites. Too many donors to list every subset (section 3.2), so the curve is the exact mean over all sets of $k$ donors
 from each site's number of carrying donors $d$: $E[U(k)] = \sum_{\text{sites}} 1 - \binom{n-d}{k} / \binom{n}{k}$, the
-same mean as Eq. 4. Inputs: `union_rarefaction/mexicana42_carriers.tsv` and `mexicana42_donors.tsv`
-(`agent/union_mex42/write_carriers.R`).
+same mean as Eq. 4. Inputs (not in git): `union_rarefaction/mexicana42_carriers.tsv` and `mexicana42_donors.tsv`
+(`agent/union_mex42/write_carriers.R`); master copy in `/rsstu/users/r/rrellan/BZea/ZEAL/genotype/notebook_inputs/``union_rarefaction/`.
 
 
 ```{r mx-table}
