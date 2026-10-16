@@ -682,11 +682,13 @@ mx_table <- rbindlist(lapply(names(models), function(k) {
   data.table(
     model = k, parameters = paste(sprintf("%s = %s", sym[names(cf)], signif(cf, 3)), collapse = ", "),
     rmse = if (is.null(mx_fit[[k]])) NA_real_ else sqrt(mean(residuals(mx_fit[[k]])^2)),
+    aic = if (is.null(mx_fit[[k]])) NA_real_ else AIC(mx_fit[[k]]),
+    d_aic = NA_real_,
     at_42 = pred(mx_fit[[k]], 42),
     k8_at_24 = 100 * (pred(mx_fit8[[k]], n_pass) / mx_pass[donors == n_pass, sites] - 1),
     k8_at_42 = 100 * (pred(mx_fit8[[k]], 42) / u_all - 1)
   )
-}))[order(rmse)]
+}))[order(rmse)][, d_aic := aic - min(aic, na.rm = TRUE)]
 ```
 
 The 42 mexicana donors of run 1273053, curve rule on their line checks (per-donor medians; criterion 3 not applied):
@@ -699,9 +701,9 @@ same mean as Eq. 4. Inputs: `union_rarefaction/mexicana42_carriers.tsv` and `mex
 
 ```{r mx-table}
 knitr::kable(mx_table,
-  digits = c(0, 0, 0, 0, 1, 1), format.args = list(big.mark = ","),
+  digits = c(0, 0, 0, 1, 1, 0, 1, 1), format.args = list(big.mark = ","),
   col.names = c(
-    "model", "parameters (pass set)", "RMSE (sites)", "at 42 donors", "fit on k <= 8: error at 24 (%)",
+    "model", "parameters (pass set)", "RMSE (sites)", "AIC", "ΔAIC", "at 42 donors", "fit on k <= 8: error at 24 (%)",
     "fit on k <= 8: error at 42 (%)"
   )
 )
@@ -711,8 +713,30 @@ Fitted on all `r n_pass` points, Michaelis-Menten has the lowest RMSE. Fitted on
 tests) and carried out, it misses the observed union at `r n_pass` donors by
 `r round(mx_table[model == "Michaelis-Menten", k8_at_24], 1)` % and the union of all 42 donors
 (`r format(u_all, big.mark = ",")` sites, failing families included, so not the same donor set) by
-`r round(mx_table[model == "Michaelis-Menten", k8_at_42], 1)` %. The curve points are not independent, so RMSE ranks
-the models but its differences carry no significance.
+`r round(mx_table[model == "Michaelis-Menten", k8_at_42], 1)` %. The curve points are not independent (each is a mean
+over the same donors), so RMSE and AIC rank the models but their differences carry no significance.
+
+Residuals of each fit on all `r n_pass` points. A model that describes the curve leaves residuals without a trend;
+a curve that bends too early or too late leaves a wave.
+
+```{r mx-residuals, fig.width = 11, fig.height = 6}
+mx_res <- rbindlist(lapply(names(mx_fit), function(k) {
+  if (is.null(mx_fit[[k]])) {
+    return(NULL)
+  }
+  data.table(model = k, donors = mx_pass$donors, residual = residuals(mx_fit[[k]]))
+}))
+mx_res[, model := factor(model, levels = mx_table$model)]
+ggplot(mx_res, aes(donors, residual / 1e3)) +
+  geom_hline(yintercept = 0, colour = "grey50") +
+  geom_line(colour = "grey60") +
+  geom_point(size = 1.8) +
+  facet_wrap(~model, ncol = 4) +
+  labs(
+    title = "Residuals of the seven fits, pass-set curve", subtitle = "ordered by RMSE; same y-axis in every panel",
+    x = "Donors in the union", y = "Observed - fitted (thousand sites)"
+  )
+```
 
 ```{r mx-plot, fig.width = 10, fig.height = 5.5}
 mx_cv <- rbindlist(lapply(c("Michaelis-Menten", "Negative exponential", "Watterson + false alleles", "Power", "Watterson"),
