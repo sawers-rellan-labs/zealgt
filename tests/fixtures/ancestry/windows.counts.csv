@@ -1,0 +1,5 @@
+sample_id,donor,region,counts,markers,union
+M_1,Zx.9002_P1,chrA:1-2500,tests/fixtures/ancestry/windows/Zx.9002_P1/chrA_1-2500/M_1.vcf,tests/fixtures/ancestry/windows/Zx.9002_P1/chrA_1-2500/Zx.9002_P1.chrA_1-2500.union_alt.vcf,tests/fixtures/ancestry/windows/chrA_1-2500.union.vcf.gz
+L_1,Zx.9001_P1,chrA:1-2500,tests/fixtures/ancestry/windows/Zx.9001_P1/chrA_1-2500/L_1.vcf,tests/fixtures/ancestry/windows/Zx.9001_P1/chrA_1-2500/Zx.9001_P1.chrA_1-2500.union_alt.vcf,tests/fixtures/ancestry/windows/chrA_1-2500.union.vcf.gz
+M_1,Zx.9002_P1,chrA:2501-5000,tests/fixtures/ancestry/windows/Zx.9002_P1/chrA_2501-5000/M_1.vcf,tests/fixtures/ancestry/windows/Zx.9002_P1/chrA_2501-5000/Zx.9002_P1.chrA_2501-5000.union_alt.vcf,tests/fixtures/ancestry/windows/chrA_2501-5000.union.vcf.gz
+L_1,Zx.9001_P1,chrA:2501-5000,tests/fixtures/ancestry/windows/Zx.9001_P1/chrA_2501-5000/L_1.vcf,tests/fixtures/ancestry/windows/Zx.9001_P1/chrA_2501-5000/Zx.9001_P1.chrA_2501-5000.union_alt.vcf,tests/fixtures/ancestry/windows/chrA_2501-5000.union.vcf.gz

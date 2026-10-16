@@ -1,0 +1,152 @@
+nextflow_pipeline {
+
+    name "Test --step ancestry"
+    script "../main.nf"
+    tag "pipeline"
+    tag "ancestry"
+
+    profile "test,docker"
+
+    test("--step ancestry - stub, per chromosome") {
+
+        options "-stub"
+
+        when {
+            // nf-test launches in its own directory: the fixture sheet's relative paths are made absolute
+            def counts_sheet = new File("$outputDir/windows.counts.csv").with { sheet ->
+                sheet.parentFile.mkdirs()
+                sheet.text = new File("$baseDir/tests/fixtures/ancestry/windows.counts.csv").text.replace('tests/fixtures/', "$baseDir/tests/fixtures/")
+                sheet.path
+            } // a bare closing brace here ends nf-core lint's scan of the when block before params
+            params {
+                outdir      = "$outputDir"
+                input       = counts_sheet
+                step        = 'ancestry'
+                genetic_map = "$baseDir/tests/fixtures/genotype/chrA_map.tsv"
+            }
+        }
+
+        then {
+            def tasks = workflow.trace.tasks().countBy { t -> t.name.tokenize(':')[-1].tokenize(' ')[0] }
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: false, ignore: ['pipeline_info/**', '*.csv'])*.toString()
+            assert workflow.success
+            assertAll(
+                // 2 donors x 2 regions: one RTIGER call each, one grid per region, one VCF per donor and region
+                { assert tasks == [CALL_ANCESTRY: 4, ANCESTRY_GRID: 2, ANCESTRY_VCF_INDEX: 4] },
+                { assert stable_path.sort() == ['chrA_1-2500', 'chrA_2501-5000'].collectMany { r ->
+                    ['Zx.9001_P1', 'Zx.9002_P1'].collectMany { d ->
+                        ['segments.bed', 'dropped_lines.tsv', 'line_checks.tsv', 'rqtl.csv', 'ancestry.vcf.gz', 'ancestry.vcf.gz.tbi'].collect { f -> "ancestry/${d}.${r}.${f}" }
+                    } + ["ancestry/${r}.grid.tsv"]
+                }*.toString().sort() },
+                // software versions as in the other pipeline tests
+                { assert snapshot(removeNextflowVersion("$outputDir/pipeline_info/zealgt_software_mqc_versions.yml"), stable_path.sort()).match() }
+            )
+        }
+    }
+
+    test("--step ancestry - stub, genome") {
+
+        options "-stub"
+
+        when {
+            // nf-test launches in its own directory: the fixture sheet's relative paths are made absolute
+            def counts_sheet = new File("$outputDir/windows.counts.csv").with { sheet ->
+                sheet.parentFile.mkdirs()
+                sheet.text = new File("$baseDir/tests/fixtures/ancestry/windows.counts.csv").text.replace('tests/fixtures/', "$baseDir/tests/fixtures/")
+                sheet.path
+            } // a bare closing brace here ends nf-core lint's scan of the when block before params
+            params {
+                outdir       = "$outputDir"
+                input        = counts_sheet
+                step         = 'ancestry'
+                ancestry_fit = 'genome'
+                genetic_map  = "$baseDir/tests/fixtures/genotype/chrA_map.tsv"
+            }
+        }
+
+        then {
+            def tasks = workflow.trace.tasks().countBy { t -> t.name.tokenize(':')[-1].tokenize(' ')[0] }
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: false, ignore: ['pipeline_info/**', '*.csv'])*.toString()
+            assert workflow.success
+            assertAll(
+                // one RTIGER call per donor over both regions; the grid stays per region
+                { assert tasks == [CALL_ANCESTRY: 2, ANCESTRY_GRID: 2, ANCESTRY_VCF_INDEX: 4] },
+                { assert stable_path.sort() == (['Zx.9001_P1', 'Zx.9002_P1'].collectMany { d ->
+                    ['segments.bed', 'dropped_lines.tsv', 'line_checks.tsv'].collect { f -> "ancestry/${d}.genome.${f}" }
+                } + ['chrA_1-2500', 'chrA_2501-5000'].collectMany { r ->
+                    ['Zx.9001_P1', 'Zx.9002_P1'].collectMany { d ->
+                        ['rqtl.csv', 'ancestry.vcf.gz', 'ancestry.vcf.gz.tbi'].collect { f -> "ancestry/${d}.${r}.${f}" }
+                    } + ["ancestry/${r}.grid.tsv"]
+                })*.toString().sort() }
+            )
+        }
+    }
+
+    test("--step ancestry - fixtures, per chromosome") {
+
+        when {
+            // nf-test launches in its own directory: the fixture sheet's relative paths are made absolute
+            def counts_sheet = new File("$outputDir/whole.counts.csv").with { sheet ->
+                sheet.parentFile.mkdirs()
+                sheet.text = new File("$baseDir/tests/fixtures/ancestry/whole.counts.csv").text.replace('tests/fixtures/', "$baseDir/tests/fixtures/")
+                sheet.path
+            } // a bare closing brace here ends nf-core lint's scan of the when block before params
+            params {
+                outdir      = "$outputDir"
+                input       = counts_sheet
+                step        = 'ancestry'
+                genetic_map = "$baseDir/tests/fixtures/genotype/chrA_map.tsv"
+            }
+        }
+
+        then {
+            def a = "$outputDir/ancestry"
+            def ancestry = path("$a/Zx.9001_P1.chrA_1-5000.ancestry.vcf.gz").linesGzip.findAll { l -> !l.startsWith('##') }*.tokenize('\t')
+            assert workflow.success
+            assertAll(
+                // L_1 (the witness reads, ALT at both sites) one het segment over both union-ALT sites, none dropped (r 1, cut 2)
+                { assert path("$a/Zx.9001_P1.chrA_1-5000.segments.bed").readLines() == ['#chrom\tstart\tend\tline\tstate', 'chrA\t1999\t4000\tL_1\t1'] },
+                { assert path("$a/Zx.9001_P1.chrA_1-5000.dropped_lines.tsv").readLines() == ['line\tcovered_markers\tcut'] },
+                // L_1's checks: one donor segment of 2001 bp, all its reads in it
+                { assert path("$a/Zx.9001_P1.chrA_1-5000.line_checks.tsv").readLines()*.tokenize('\t').with { r ->
+                    r[0][0..2] == ['line', 'n_donor_segments', 'donor_bp'] && r[1][0..3] == ['L_1', '1', '2001', '0'] && (r[1][5] as int) > 0 } },
+                // the grid: both union sites, 2 cM apart on the chrA map; R/qtl and VCF read at it
+                { assert path("$a/chrA_1-5000.grid.tsv").readLines()*.tokenize('\t')*.getAt(0) == ['marker', 'chrA_2000', 'chrA_4000'] },
+                { assert path("$a/Zx.9001_P1.chrA_1-5000.rqtl.csv").readLines() == ['id,,,L_1', 'chrA_2000,A,2.0000,1', 'chrA_4000,A,4.0000,1'] },
+                { assert ancestry[0][9] == 'L_1' && ancestry.drop(1).collect { r -> [r[1], r[9]] } == [['2000', '0/1'], ['4000', '0/1']] }
+            )
+        }
+    }
+
+    test("--step ancestry - fixtures, genome") {
+
+        when {
+            // nf-test launches in its own directory: the fixture sheet's relative paths are made absolute
+            def counts_sheet = new File("$outputDir/windows.counts.csv").with { sheet ->
+                sheet.parentFile.mkdirs()
+                sheet.text = new File("$baseDir/tests/fixtures/ancestry/windows.counts.csv").text.replace('tests/fixtures/', "$baseDir/tests/fixtures/")
+                sheet.path
+            } // a bare closing brace here ends nf-core lint's scan of the when block before params
+            params {
+                outdir       = "$outputDir"
+                input        = counts_sheet
+                step         = 'ancestry'
+                ancestry_fit = 'genome'
+                genetic_map  = "$baseDir/tests/fixtures/genotype/chrA_map.tsv"
+            }
+        }
+
+        then {
+            def a = "$outputDir/ancestry"
+            assert workflow.success
+            assertAll(
+                // the two windows' markers (one each) in one fit: L_1 keeps 2 covered markers on chrA (cut 2), one het segment
+                { assert path("$a/Zx.9001_P1.genome.segments.bed").readLines() == ['#chrom\tstart\tend\tline\tstate', 'chrA\t1999\t4000\tL_1\t1'] },
+                { assert path("$a/Zx.9001_P1.genome.dropped_lines.tsv").readLines() == ['line\tcovered_markers\tcut'] },
+                // each window's grid holds its one union site, read from the genome-wide segments
+                { assert path("$a/Zx.9001_P1.chrA_1-2500.rqtl.csv").readLines() == ['id,,,L_1', 'chrA_2000,A,2.0000,1'] },
+                { assert path("$a/Zx.9001_P1.chrA_2501-5000.rqtl.csv").readLines() == ['id,,,L_1', 'chrA_4000,A,4.0000,1'] }
+            )
+        }
+    }
+}

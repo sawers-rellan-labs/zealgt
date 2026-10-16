@@ -113,5 +113,102 @@
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
         }
+    },
+    "--step variant_calling - stub": {
+        "content": [
+            {
+                "BCFTOOLS_MERGE": {
+                    "bcftools": "1.23.1"
+                },
+                "BCFTOOLS_MPILEUP": {
+                    "bcftools": "1.23.1"
+                },
+                "BCFTOOLS_NORM": {
+                    "bcftools": "1.23.1"
+                },
+                "BED_CLIP": {
+                    "bcftools": "1.23.1"
+                },
+                "BIALLELIC_UNION": {
+                    "bcftools": "1.23.1"
+                },
+                "CHECK_ALT_RATE": {
+                    "bcftools": "1.23.1"
+                },
+                "CHECK_COUNTS": {
+                    "bcftools": "1.23.1"
+                },
+                "COUNT_LINES": {
+                    "bcftools": "1.23.1"
+                },
+                "COUNT_UNION": {
+                    "bcftools": "1.23.1"
+                },
+                "CRISP": {
+                    "crisp": "1a9027e"
+                },
+                "DONOR_ALLELES_MERGE": {
+                    "bcftools": "1.23.1"
+                },
+                "DONOR_ALT_SITES": {
+                    "bcftools": "1.23.1"
+                },
+                "DONOR_SUBSET": {
+                    "bcftools": "1.23.1"
+                },
+                "FILL_DONOR_ALLELES": {
+                    "pysam": "0.24.1",
+                    "python": "3.12.14"
+                },
+                "POOLED_LIKELIHOOD_TIERS": {
+                    "pysam": "0.24.1",
+                    "python": "3.12.14"
+                },
+                "SAMTOOLS_ADDREPLACERG": {
+                    "samtools": 1.24
+                },
+                "SAMTOOLS_INDEX": {
+                    "samtools": 1.24
+                },
+                "SAMTOOLS_MERGE": {
+                    "samtools": 1.24
+                },
+                "UNION_SITE_COUNTS": {
+                    "pysam": "0.24.1",
+                    "python": "3.12.14"
+                },
+                "UNION_TIERS": {
+                    "pysam": "0.24.1",
+                    "python": "3.12.14"
+                },
+                "WITNESS_VETO": {
+                    "bcftools": "1.23.1"
+                },
+                "Workflow": {
+                    "sawers-rellan-labs/zealgt": "v0.2.0dev"
+                }
+            },
+            [
+                "variant_calling/counts/Zx.9001_P1/chrA/L_1.vcf",
+                "variant_calling/counts/Zx.9001_P1/chrA/Zx.9001_P1.chrA.union_alt.vcf",
+                "variant_calling/counts/Zx.9002_P1/chrA/M_1.vcf",
+                "variant_calling/counts/Zx.9002_P1/chrA/Zx.9002_P1.chrA.union_alt.vcf",
+                "variant_calling/discovery/Zx.9001_P1.chrA.sites.tsv.gz",
+                "variant_calling/discovery/Zx.9001_P1.chrA.vcf.gz",
+                "variant_calling/discovery/Zx.9001_P1.chrA.vcf.gz.tbi",
+                "variant_calling/discovery/Zx.9002_P1.chrA.sites.tsv.gz",
+                "variant_calling/discovery/Zx.9002_P1.chrA.vcf.gz",
+                "variant_calling/discovery/Zx.9002_P1.chrA.vcf.gz.tbi",
+                "variant_calling/union/chrA.donor_alleles.vcf.gz",
+                "variant_calling/union/chrA.donor_alleles.vcf.gz.tbi",
+                "variant_calling/union/chrA.union.vcf.gz",
+                "variant_calling/union/chrA.union.vcf.gz.tbi"
+            ]
+        ],
+        "timestamp": "2026-10-16T19:05:06.523612",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
     }
 }

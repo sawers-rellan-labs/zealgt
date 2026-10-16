@@ -7,12 +7,14 @@
 %%metro file: report_out | HTML
 %%metro line: demultiplex | --step demultiplex | #2db572
 %%metro line: alignment | --step alignment | #0570b0
-%%metro line: genotype | --step genotype | #e6550d
+%%metro line: variant_calling | --step variant_calling | #e6550d
+%%metro line: ancestry | --step ancestry | #756bb1
 %%metro file: checks_out | TSV
 %%metro file: vcf_out | VCF
 %%metro file: sites_out | TSV
 %%metro file: union_out | VCF
 %%metro file: alleles_out | VCF
+%%metro file: counts_out | CSV | counts sheet
 %%metro file: segments_out | BED
 %%metro file: line_checks_out | TSV
 %%metro file: rqtl_out | CSV
@@ -24,7 +26,8 @@
 %%metro grid: align | 0,1
 %%metro grid: qc | 1,1
 %%metro grid: geno | 0,2
-%%metro process_scope: SAWERSRELLANLABS_ZEALGT
+%%metro grid: anc | 0,3
+%%metro process_scope: ZEALGT
 %%metro process: extract_lane_d | EXTRACT_LANE
 %%metro process: fqtk | FQTK
 %%metro process: cat_fastq | CAT_FASTQ
@@ -90,7 +93,7 @@ graph LR
 
     subgraph align [Alignment]
         %%metro entry: left | alignment
-        %%metro exit: right | genotype
+        %%metro exit: right | variant_calling
         split[seqkit split2]
         minibwa[minibwa]
         fgumi[fgumi clip]
@@ -125,8 +128,9 @@ graph LR
         multiqc -->|alignment| report_out
     end
 
-    subgraph geno [Genotype]
-        %%metro entry: left | genotype
+    subgraph geno [Variant calling]
+        %%metro entry: left | variant_calling
+        %%metro exit: right | ancestry
         cov_filter[coverage filter]
         check_counts[mpileup checks]
         check_rate[ALT rate]
@@ -155,6 +159,47 @@ graph LR
         donor_subset[donor column]
         donor_alt[donor ALT sites]
         count_lines[mpileup lines]
+        counts_out[counts]
+
+        cov_filter -->|variant_calling| check_counts
+        check_counts -->|variant_calling| check_rate
+        check_rate -->|variant_calling| checks_out
+        check_rate -->|variant_calling| merge_pools
+        cov_filter -->|variant_calling| merge_pools
+        regions_in -->|variant_calling| merge_pools
+        regions_in -->|variant_calling| crisp
+        merge_pools -->|variant_calling| addrg
+        addrg -->|variant_calling| index_pools
+        index_pools -->|variant_calling| crisp
+        index_pools -->|variant_calling| mpileup_ctrl
+        crisp -->|variant_calling| bed_clip
+        bed_clip -->|variant_calling| veto
+        veto -->|variant_calling| vcf_out
+        veto -->|variant_calling| mpileup_ctrl
+        mpileup_ctrl -->|variant_calling| tiers
+        tiers -->|variant_calling| sites_out
+        tiers -->|variant_calling| merge_union
+        merge_union -->|variant_calling| norm_union
+        norm_union -->|variant_calling| biallelic
+        biallelic -->|variant_calling| union_out
+        biallelic -->|variant_calling| count_union
+        index_pools -->|variant_calling| count_union
+        count_union -->|variant_calling| union_tiers
+        union_tiers -->|variant_calling| site_counts
+        site_counts -->|variant_calling| fill
+        union_tiers -->|variant_calling| fill
+        fill -->|variant_calling| merge_alleles
+        merge_alleles -->|variant_calling| alleles_out
+        merge_alleles -->|variant_calling| donor_subset
+        donor_subset -->|variant_calling| donor_alt
+        donor_alt -->|variant_calling| count_lines
+        cov_filter -->|variant_calling| count_lines
+        count_lines -->|variant_calling| counts_out
+        biallelic -->|variant_calling| counts_out
+    end
+
+    subgraph anc [Ancestry]
+        %%metro entry: left | ancestry
         rtiger[RTIGER]
         segments_out[ ]
         line_checks_out[ ]
@@ -163,47 +208,12 @@ graph LR
         index_ancestry[index]
         ancestry_out[ ]
 
-        cov_filter -->|genotype| check_counts
-        check_counts -->|genotype| check_rate
-        check_rate -->|genotype| checks_out
-        check_rate -->|genotype| merge_pools
-        cov_filter -->|genotype| merge_pools
-        regions_in -->|genotype| merge_pools
-        regions_in -->|genotype| crisp
-        merge_pools -->|genotype| addrg
-        addrg -->|genotype| index_pools
-        index_pools -->|genotype| crisp
-        index_pools -->|genotype| mpileup_ctrl
-        crisp -->|genotype| bed_clip
-        bed_clip -->|genotype| veto
-        veto -->|genotype| vcf_out
-        veto -->|genotype| mpileup_ctrl
-        mpileup_ctrl -->|genotype| tiers
-        tiers -->|genotype| sites_out
-        tiers -->|genotype| merge_union
-        merge_union -->|genotype| norm_union
-        norm_union -->|genotype| biallelic
-        biallelic -->|genotype| union_out
-        biallelic -->|genotype| count_union
-        index_pools -->|genotype| count_union
-        count_union -->|genotype| union_tiers
-        union_tiers -->|genotype| site_counts
-        site_counts -->|genotype| fill
-        union_tiers -->|genotype| fill
-        fill -->|genotype| merge_alleles
-        merge_alleles -->|genotype| alleles_out
-        merge_alleles -->|genotype| donor_subset
-        donor_subset -->|genotype| donor_alt
-        donor_alt -->|genotype| count_lines
-        cov_filter -->|genotype| count_lines
-        count_lines -->|genotype| rtiger
-        rtiger -->|genotype| segments_out
-        rtiger -->|genotype| line_checks_out
-        rtiger -->|genotype| grid
-        biallelic -->|genotype| grid
-        grid -->|genotype| rqtl_out
-        grid -->|genotype| index_ancestry
-        index_ancestry -->|genotype| ancestry_out
+        rtiger -->|ancestry| segments_out
+        rtiger -->|ancestry| line_checks_out
+        rtiger -->|ancestry| grid
+        grid -->|ancestry| rqtl_out
+        grid -->|ancestry| index_ancestry
+        index_ancestry -->|ancestry| ancestry_out
     end
 
     fastq_sheet -->|alignment| split
@@ -211,4 +221,5 @@ graph LR
     index -->|alignment| picard_wgs
     index -->|alignment| mosdepth
     markdup -->|alignment| multiqc
-    cram_out -->|genotype| cov_filter
+    cram_out -->|variant_calling| cov_filter
+    counts_out -->|ancestry| rtiger

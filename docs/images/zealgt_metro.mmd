@@ -6,9 +6,11 @@
 %%metro file: reads_report | HTML
 %%metro line: demultiplex | --step demultiplex | #2db572
 %%metro line: alignment | --step alignment | #0570b0
-%%metro line: genotype | --step genotype | #e6550d
+%%metro line: variant_calling | --step variant_calling | #e6550d
+%%metro line: ancestry | --step ancestry | #756bb1
 %%metro file: b73_in | CRAM | B73 checks
 %%metro file: alleles_out | VCF | donor alleles
+%%metro file: counts_out | CSV | counts sheet
 %%metro file: ancestry_out | VCF | ancestry
 %%metro file: regions_in | LIST | --regions
 %%metro off_track: b73_in
@@ -17,6 +19,7 @@
 %%metro grid: demux | 0,0
 %%metro grid: align | 0,1
 %%metro grid: geno | 0,2
+%%metro grid: anc | 0,3
 
 graph LR
     subgraph demux [Demultiplex]
@@ -41,7 +44,7 @@ graph LR
 
     subgraph align [Alignment]
         %%metro entry: left | alignment
-        %%metro exit: right | genotype
+        %%metro exit: right | variant_calling
         split[seqkit split2]
         minibwa[minibwa]
         fgumi[fgumi clip]
@@ -61,8 +64,9 @@ graph LR
     end
 
 
-    subgraph geno [Genotype]
-        %%metro entry: left | genotype
+    subgraph geno [Variant calling]
+        %%metro entry: left | variant_calling
+        %%metro exit: right | ancestry
         crisp[CRISP]
         veto[witness veto]
         b73_in[ ]
@@ -73,25 +77,34 @@ graph LR
         fill[gap filling]
         merge_alleles[merge]
         alleles_out[donor alleles]
+        count_lines[mpileup lines]
+        counts_out[counts]
+
+        regions_in -->|variant_calling| crisp
+        crisp -->|variant_calling| veto
+        veto -->|variant_calling| tiers
+        b73_in -->|variant_calling| tiers
+        tiers -->|variant_calling| union
+        union -->|variant_calling| site_counts
+        site_counts -->|variant_calling| fill
+        union -->|variant_calling| fill
+        fill -->|variant_calling| merge_alleles
+        merge_alleles -->|variant_calling| alleles_out
+        merge_alleles -->|variant_calling| count_lines
+        count_lines -->|variant_calling| counts_out
+        union -->|variant_calling| counts_out
+    end
+
+    subgraph anc [Ancestry]
+        %%metro entry: left | ancestry
         rtiger[RTIGER]
         grid[0.1 cM grid]
         ancestry_out[ancestry]
 
-        regions_in -->|genotype| crisp
-        crisp -->|genotype| veto
-        veto -->|genotype| tiers
-        b73_in -->|genotype| tiers
-        tiers -->|genotype| union
-        union -->|genotype| site_counts
-        site_counts -->|genotype| fill
-        union -->|genotype| fill
-        fill -->|genotype| merge_alleles
-        merge_alleles -->|genotype| alleles_out
-        merge_alleles -->|genotype| rtiger
-        rtiger -->|genotype| grid
-        union -->|genotype| grid
-        grid -->|genotype| ancestry_out
+        rtiger -->|ancestry| grid
+        grid -->|ancestry| ancestry_out
     end
 
-    cram_out -->|genotype| crisp
+    cram_out -->|variant_calling| crisp
+    counts_out -->|ancestry| rtiger
     fastq_sheet -->|alignment| split

@@ -13,14 +13,15 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { DEMULTIPLEX } from './workflows/demultiplex'
-include { ALIGNMENT   } from './workflows/alignment'
-include { GENOTYPE    } from './workflows/genotype'
+include { DEMULTIPLEX     } from './workflows/demultiplex'
+include { ALIGNMENT       } from './workflows/alignment'
+include { VARIANT_CALLING } from './workflows/variant_calling'
+include { ANCESTRY        } from './workflows/ancestry'
 include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_zealgt_pipeline'
 include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_zealgt_pipeline'
 include { softwareVersionsToYAML  } from './subworkflows/nf-core/utils_nfcore_pipeline'
 
-// typed so that --head, --read_qc and the genotype cuts from the command line arrive as numbers and a boolean
+// typed so that --head, --read_qc and the variant calling cuts from the command line arrive as numbers and a boolean
 params {
     head: Integer = 0
     read_qc: Boolean = false
@@ -76,12 +77,13 @@ workflow ZEALGT {
     def ch_dropped_b73_checks = channel.empty()
     def ch_union = channel.empty()
     def ch_donor_alleles = channel.empty()
+    def ch_counts = channel.empty()
     def ch_ancestry = channel.empty()
     if (params.step == 'demultiplex') {
         DEMULTIPLEX(samplesheet, params.head, file(params.multiqc_config ?: "${projectDir}/assets/multiqc_config.yml", checkIfExists: true))
         ch_fastq = DEMULTIPLEX.out.fastq
-    } else if (params.step == 'genotype') {
-        GENOTYPE(
+    } else if (params.step == 'variant_calling') {
+        VARIANT_CALLING(
             samplesheet,
             params.b73_controls,
             params.fasta,
@@ -89,15 +91,17 @@ workflow ZEALGT {
             params.check_sites,
             params.max_check_alt_rate,
             params.min_mean_coverage,
-            params.genetic_map,
             params.regions,
         )
-        ch_discovery_vcf = GENOTYPE.out.discovery_vcf
-        ch_discovery_sites = GENOTYPE.out.discovery_sites
-        ch_dropped_b73_checks = GENOTYPE.out.dropped_b73_checks
-        ch_union = GENOTYPE.out.union
-        ch_donor_alleles = GENOTYPE.out.donor_alleles
-        ch_ancestry = GENOTYPE.out.ancestry
+        ch_discovery_vcf = VARIANT_CALLING.out.discovery_vcf
+        ch_discovery_sites = VARIANT_CALLING.out.discovery_sites
+        ch_dropped_b73_checks = VARIANT_CALLING.out.dropped_b73_checks
+        ch_union = VARIANT_CALLING.out.union
+        ch_donor_alleles = VARIANT_CALLING.out.donor_alleles
+        ch_counts = VARIANT_CALLING.out.counts
+    } else if (params.step == 'ancestry') {
+        ANCESTRY(samplesheet, params.ancestry_fit, params.genetic_map)
+        ch_ancestry = ANCESTRY.out.ancestry
     } else {
         ALIGNMENT (
             samplesheet,
@@ -125,6 +129,7 @@ workflow ZEALGT {
     dropped_b73_checks = ch_dropped_b73_checks // channel: dropped_b73_checks.tsv
     union              = ch_union              // channel: [ meta, vcf.gz, tbi ]
     donor_alleles      = ch_donor_alleles      // channel: [ meta, vcf.gz, tbi ]
+    counts             = ch_counts             // channel: [ sample_id:, donor:, region:, counts:, markers:, union: ], one per line x region
     ancestry           = ch_ancestry           // channel: [ meta, files ], the grid and each donor's mosaic outputs
 }
 /*
@@ -175,6 +180,7 @@ workflow {
     dropped_b73_checks = ZEALGT.out.dropped_b73_checks
     union = ZEALGT.out.union
     donor_alleles = ZEALGT.out.donor_alleles
+    counts = ZEALGT.out.counts
     ancestry = ZEALGT.out.ancestry
 }
 
@@ -205,24 +211,37 @@ output {
     }
     // variant discovery per donor and the dropped B73 checks
     discovery_vcf {
-        path 'genotype/discovery'
+        path 'variant_calling/discovery'
     }
     discovery_sites {
-        path 'genotype/discovery'
+        path 'variant_calling/discovery'
     }
     dropped_b73_checks {
-        path 'genotype/discovery'
+        path 'variant_calling/discovery'
     }
     // the union sites and every donor's allele there
     union {
-        path 'genotype/union'
+        path 'variant_calling/union'
     }
     donor_alleles {
-        path 'genotype/union'
+        path 'variant_calling/union'
+    }
+    // each line's counts and its donor's markers per region, and the counts sheet --step ancestry reads
+    counts {
+        enabled params.step == 'variant_calling'
+        path { r ->
+            r.counts >> "variant_calling/counts/${r.donor}/${r.region.replace(':', '_')}/${r.counts.name}"
+            r.markers >> "variant_calling/counts/${r.donor}/${r.region.replace(':', '_')}/${r.markers.name}"
+            r.union >> "variant_calling/union/${r.union.name}"
+        }
+        index {
+            path "samplesheets/${file(params.input).baseName}.counts.csv"
+            header true
+        }
     }
     // each donor's mosaic (segments, dropped lines, R/qtl, VCF) and the R/qtl grid
     ancestry {
-        path 'genotype/ancestry'
+        path 'ancestry'
     }
 }
 
