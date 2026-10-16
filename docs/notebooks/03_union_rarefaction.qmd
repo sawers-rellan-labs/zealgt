@@ -654,6 +654,87 @@ taxon-specific SNPs may sit more often in repeats, so they likely overstate what
 A first-order projection: the mexicana union at 43 donors times a taxon factor between ~1.2 (parviglumis-specific SNPs only)
 and 2.3 (all Zea). Simulation S3 replaces that range with a curve; the union over all samples measures it.
 
+## 6. Mexicana, 42 donors on chr10 (run 1273053, 2026-10-14)
+
+```{r mx-data}
+mx_donors <- fread("union_rarefaction/mexicana42_donors.tsv")
+mx_carriers <- fread("union_rarefaction/mexicana42_carriers.tsv")
+rare_exact <- function(cr) {
+  n <- max(cr$carriers)
+  data.table(donors = seq_len(n), sites = sapply(seq_len(n), function(k) {
+    sum(cr$sites * (1 - exp(lchoose(n - cr$carriers, k) - lchoose(n, k))))
+  }))
+}
+mx_pass <- rare_exact(mx_carriers[set == "pass"])
+mx_all <- rare_exact(mx_carriers[set == "all"])
+n_pass <- nrow(mx_pass)
+u_all <- mx_carriers[set == "all", sum(sites)]
+fit_all <- function(dt) {
+  lapply(models, function(m) {
+    tryCatch(nls(m$f, data = dt, start = m$start, control = nls.control(maxiter = 500)), error = function(e) NULL)
+  })
+}
+mx_fit <- fit_all(mx_pass)
+mx_fit8 <- fit_all(mx_pass[donors <= 8])
+pred <- function(f, k) if (is.null(f)) NA_real_ else predict(f, data.table(donors = k))
+mx_table <- rbindlist(lapply(names(models), function(k) {
+  cf <- if (is.null(mx_fit[[k]])) NULL else coef(mx_fit[[k]])
+  data.table(
+    model = k, parameters = paste(sprintf("%s = %s", sym[names(cf)], signif(cf, 3)), collapse = ", "),
+    rmse = if (is.null(mx_fit[[k]])) NA_real_ else sqrt(mean(residuals(mx_fit[[k]])^2)),
+    at_42 = pred(mx_fit[[k]], 42),
+    k8_at_24 = 100 * (pred(mx_fit8[[k]], n_pass) / mx_pass[donors == n_pass, sites] - 1),
+    k8_at_42 = 100 * (pred(mx_fit8[[k]], 42) / u_all - 1)
+  )
+}))[order(rmse)]
+```
+
+The 42 mexicana donors of run 1273053, curve rule on their line checks (per-donor medians; criterion 3 not applied):
+`r nrow(mx_donors[status == "pass"])` pass, `r nrow(mx_donors[status == "fail"])` fail, Zx.0520_P4 has no tier-A
+sites. Too many donors to list every subset (section 3.2), so the curve is the exact mean over all sets of $k$ donors
+from each site's number of carrying donors $d$: $E[U(k)] = \sum_{\text{sites}} 1 - \binom{n-d}{k} / \binom{n}{k}$, the
+same mean as Eq. 4. Inputs: `union_rarefaction/mexicana42_carriers.tsv` and `mexicana42_donors.tsv`
+(`agent/union_mex42/write_carriers.R`).
+
+
+```{r mx-table}
+knitr::kable(mx_table,
+  digits = c(0, 0, 0, 0, 1, 1), format.args = list(big.mark = ","),
+  col.names = c(
+    "model", "parameters (pass set)", "RMSE (sites)", "at 42 donors", "fit on k <= 8: error at 24 (%)",
+    "fit on k <= 8: error at 42 (%)"
+  )
+)
+```
+
+Fitted on all `r n_pass` points, Michaelis-Menten has the lowest RMSE. Fitted on $k \le 8$ (the range of the earlier
+tests) and carried out, it misses the observed union at `r n_pass` donors by
+`r round(mx_table[model == "Michaelis-Menten", k8_at_24], 1)` % and the union of all 42 donors
+(`r format(u_all, big.mark = ",")` sites, failing families included, so not the same donor set) by
+`r round(mx_table[model == "Michaelis-Menten", k8_at_42], 1)` %. The curve points are not independent, so RMSE ranks
+the models but its differences carry no significance.
+
+```{r mx-plot, fig.width = 10, fig.height = 5.5}
+mx_cv <- rbindlist(lapply(c("Michaelis-Menten", "Negative exponential", "Watterson + false alleles", "Power", "Watterson"),
+  function(k) data.table(model = k, donors = seq(1, 42, 0.5), sites = pred(mx_fit8[[k]], seq(1, 42, 0.5)))
+))
+ggplot(mx_cv, aes(donors, sites / 1e3, colour = model)) +
+  geom_line(linewidth = 0.9) +
+  geom_vline(xintercept = 8.5, linetype = "dashed", colour = "grey50") +
+  geom_point(data = mx_all, aes(donors, sites / 1e3), inherit.aes = FALSE, colour = "grey60", size = 1.8) +
+  geom_point(data = mx_pass, aes(donors, sites / 1e3), inherit.aes = FALSE, size = 2.5) +
+  annotate("point", x = 42, y = u_all / 1e3, shape = 23, size = 4, fill = "gold") +
+  labs(
+    title = "Mexicana chr10: fits on k <= 8 of the pass-set curve, carried to 42 donors",
+    subtitle = sprintf("black: %d donors passing the curve rule; grey: all %d donors with sites; gold: all-42 union",
+      n_pass, nrow(mx_all)),
+    x = "Donors in the union", y = "Union sites (thousands)", colour = NULL
+  )
+```
+
+With the failing families in (grey) the curve starts lower: they are the shallower donors, so a random set of $k$
+holds fewer sites, and they add their sites late.
+
 ## Caveats
 
 - Six donors, four races, all mexicana: every curve in section 3 fits them; the choice between curves rests on section 4,
