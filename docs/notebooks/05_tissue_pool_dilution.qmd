@@ -1,5 +1,5 @@
 ---
-title: "Tissue-pool dilution"
+title: "ALT read dilution: tissue dilution in sampled pools"
 subtitle: "Why some families' BC2S3 samples read too little donor ALT: the dilution factor per sample, mexicana chr10 (run 1273053; 2026-10-16)"
 author: "Fausto Rodríguez-Zapata"
 date: today
