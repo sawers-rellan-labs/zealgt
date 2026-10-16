@@ -1,0 +1,29 @@
+nextflow_process {
+
+    name "POOLED_LIKELIHOOD_TIERS stub (hazel setup check)"
+    script "../../modules/local/pooled_likelihood_tiers/main.nf"
+    process "POOLED_LIKELIHOOD_TIERS"
+    tag "hazel"
+    tag "genotype"
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                region = 'chrA'
+            }
+            process {
+                """
+                input[0] = [[id: 'Zx.0540_P3', donor: 'Zx.0540_P3'], [file("${projectDir}/tests/fixtures/genotype/fill/union.vcf", checkIfExists: true)], [file("${projectDir}/tests/fixtures/genotype/fill/union.vcf", checkIfExists: true)], file("${projectDir}/tests/fixtures/genotype/fill/Zx.0540_P3.sites.tsv", checkIfExists: true)]
+                input[1] = file("${projectDir}/bin/score_pooled_likelihood.py", checkIfExists: true)
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}

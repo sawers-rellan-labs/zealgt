@@ -1,0 +1,29 @@
+nextflow_process {
+
+    name "CALL_ANCESTRY stub (hazel setup check)"
+    script "../../modules/local/call_ancestry/main.nf"
+    process "CALL_ANCESTRY"
+    tag "hazel"
+    tag "genotype"
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                region = 'chrA'
+            }
+            process {
+                """
+                input[0] = [[id: 'Zx.0540_P3', donor: 'Zx.0540_P3'], file("${projectDir}/tests/fixtures/genotype/fill/union.vcf", checkIfExists: true), [file("${projectDir}/tests/fixtures/genotype/fill/union.vcf", checkIfExists: true)]]
+                input[1] = file("${projectDir}/bin/call_ancestry.R", checkIfExists: true)
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}

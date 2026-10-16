@@ -1,0 +1,29 @@
+nextflow_process {
+
+    name "UNION_SITE_COUNTS stub (hazel setup check)"
+    script "../../modules/local/union_site_counts/main.nf"
+    process "UNION_SITE_COUNTS"
+    tag "hazel"
+    tag "genotype"
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                region = 'chrA'
+            }
+            process {
+                """
+                input[0] = [[id: 'Zx.0540_P3', donor: 'Zx.0540_P3'], file("${projectDir}/tests/fixtures/genotype/fill/union.vcf", checkIfExists: true), file("${projectDir}/tests/fixtures/genotype/check_sites.vcf.gz.tbi", checkIfExists: true), ['Zx.0540_P3'], [file("${projectDir}/tests/fixtures/genotype/fill/union.vcf", checkIfExists: true)], [file("${projectDir}/tests/fixtures/genotype/fill/Zx.0540_P3.sites.tsv", checkIfExists: true)]]
+                input[1] = file("${projectDir}/bin/fill_donor_alleles.py", checkIfExists: true)
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}
