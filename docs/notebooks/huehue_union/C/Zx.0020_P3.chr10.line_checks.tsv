@@ -1,0 +1,10 @@
+line	n_donor_segments	donor_bp	ref_reads	ref_alt_pct	het_reads	het_alt_pct	alt_reads	alt_alt_pct
+P4274	1	1714342	53048	1.5	1425	9.6	0	.
+PN4_SID333	1	1218238	69678	1	741	12.4	0	.
+PN4_SID334	0	0	63446	0.3	0	.	0	.
+PN4_SID335	0	0	95109	0.2	0	.	0	.
+PN4_SID336	1	1667	94886	1.2	179	60.9	0	.
+PN4_SID337	0	0	111207	0.4	0	.	0	.
+PN4_SID338	1	956924	98767	1.9	550	13.6	0	.
+PN4_SID339	0	0	94762	1.2	0	.	0	.
+PN4_SID340	2	2728582	91043	1.2	2640	9.5	0	.

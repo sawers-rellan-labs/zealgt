@@ -1,0 +1,6 @@
+line	n_donor_segments	donor_bp	ref_reads	ref_alt_pct	het_reads	het_alt_pct	alt_reads	alt_alt_pct
+PN17_SID1628	2	966878	48019	3.2	661	38.4	0	.
+PN17_SID1629	8	57483445	37746	1.9	19489	19.8	0	.
+PN17_SID1630	7	92444390	49786	2.6	52041	32.3	6741	55
+PN17_SID1631	1	4046884	60178	1.1	882	29.4	5054	62.1
+PN17_SID1632	0	0	58185	0.7	0	.	0	.
