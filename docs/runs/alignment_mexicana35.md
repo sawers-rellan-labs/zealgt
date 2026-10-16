@@ -66,17 +66,21 @@ Estimates scale attempt 3's 140 GB in 2 h 45 min; the bc1 pools dominate raw siz
 ## Supervision (a new session, from a handover)
 
 - After the user's OK on the submission the waves run unattended. A background poller on the chain (`sacct` state,
-  `/share` usage, ssh and stat timings) is the session's signal; the user watches the head logs.
+  `/share` usage of `frodrig4` and of group `maize`, ssh and stat timings) is the session's signal; the user watches the
+  head logs.
+- `/share` is shared by the whole `maize` group: the run is judged by its user's usage (`mmlsquota -u frodrig4`), the
+  group's only for headroom (20 TB quota minus group usage).
 - On a failed wave: `scancel` the pending waves (`afterok` never releases them), read the failed task's `.command.err`,
   resubmit from that wave with `RESUME=<session id>`; the failed attempt's `work/` goes on the user's removal list
-  (`cleanup` deletes only what the successful run made). The session stops and asks on code fixes or if `/share` passes
-  4 TB.
+  (`cleanup` deletes only what the successful run made). The session stops and asks on code fixes, if `frodrig4`'s
+  `/share` usage passes 6 TB (both alignment chains together, user 2026-10-12; was 4 TB), or if the group's headroom falls below 2 TB (one wave's peak).
 - Known and accepted: retries get the same time and memory (except Picard and MultiQC); scaled to the largest sample the
   tightest is `MINIBWA_MAP` memory, 12.9 of 16 GB. Three lines have 1-19 MB of raw FASTQ (the pilot aligned a 9.3 MB
   line); they fall under GENOTYPE's 0.05x floor anyway. Adversarial review: `agent/align35/adversarial_review.md`.
 
 ## Done when
 
-- Every wave succeeded and `cleanup` emptied its `work/`; `/share` back to its level before the run.
+- Every wave succeeded and `cleanup` emptied its `work/`; `frodrig4`'s `/share` usage back to its level
+  before the run (36 GB, 64,937 files on 2026-10-11).
 - 597 new CRAMs with index and CollectWgsMetrics in `ZEAL/alignment/cram/`; MEAN_COVERAGE per sample and per wave in the
   report; time and peak per wave in `docs/RESOURCES.md`.
