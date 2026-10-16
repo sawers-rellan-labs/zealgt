@@ -1,6 +1,6 @@
 #!/bin/bash
 # Hazel setup check (CLAUDE.md test step 3): every tests/hazel stub test at once, tasks as Slurm jobs (hpc_prod);
-# with PARAMS=<params file of a run> also the run's config, containers and parameters, beside the tests.
+# with PARAMS=<params file of a run> also the run's config and containers, beside the tests.
 # Usage, on hazel: sbatch --export=ALL,ZEALGT_REPO=<checkout>[,PARAMS=<params.yaml>,PROFILE=<hpc_dev|hpc_prod>]
 #                  scripts/run_hazel_tests.sbatch [test files; default all]
 # nf-test 0.9.5 (/share/maize/frodrig4/nf-test, unpacked from the release tarball) runs with the Nextflow image's java.
@@ -24,25 +24,21 @@ BINDS=/usr/bin/sbatch,/usr/bin/squeue,/usr/bin/scancel,/usr/lib64/slurm,/var/spo
 BINDS=$BINDS,/usr/lib64/libmunge.so.2,/run/munge,/usr/lib64/libnss_sss.so.2,/var/lib/sss/pipes
 BINDS=$BINDS,/share/maize/frodrig4,/rsstu/users/r/rrellan,$APPTAINER
 export APPTAINERENV_PREPEND_PATH="$APPTAINER/bin"
-# a time limit goes inside: timeout cannot call a shell function; NXF_TIMEOUT=0 means none; the JVM in the image can
-# fail to handle SIGTERM (job 1325574), hence the kill 15 s later
-nxf() { timeout --kill-after=15s "${NXF_TIMEOUT:-0}" "$APPTAINER/bin/apptainer" exec -B "$BINDS" "$SIF" env NXF_OFFLINE=true NXF_PLUGINS_DIR="$NXF_DIR/plugins" \
+nxf() { "$APPTAINER/bin/apptainer" exec -B "$BINDS" "$SIF" env NXF_OFFLINE=true NXF_PLUGINS_DIR="$NXF_DIR/plugins" \
     NXF_SECRETS_FILE="$NXF_DIR/secrets/store.json" NXF_OPTS="-Xms256m -Xmx1g" "$@"; }
 stamp() { awk -v n="$1" '{ print strftime("%F %T"), "[" n "]", $0; fflush() }'; }
 cd "$REPO" || exit 2
 echo "$(date '+%F %T') job=$SLURM_JOB_ID node=$(hostname) commit=$(git rev-parse --short HEAD) params=${PARAMS:-none}"
 [ $# -gt 0 ] || set -- tests/hazel/*.nf.test
 pids=()
-# the run's setup, in order: config, every container, then -preview for the parameters; -preview does not exit after
-# its last line (nextflow-io/nextflow#7836), so it gets 2 min and passes on "Pipeline completed successfully"
+# the run's setup: config, then every container; no -preview: it never exits with a workflow output block
+# (nextflow-io/nextflow#7836); parameters are checked by the sheet check and in the run's first seconds
 if [ -n "$PARAMS" ]; then
     mkdir -p "$WORK/setup"
     ( cd "$WORK/setup" || exit 2
       nxf nextflow -q config "$REPO" -profile "${PROFILE:-hpc_prod}" > config.txt &&
       nxf nextflow -q inspect "$REPO" -profile "${PROFILE:-hpc_prod}" -params-file "$PARAMS" > inspect.json &&
-      echo "config ok; $(grep -c '"container"' inspect.json) containers" &&
-      { NXF_TIMEOUT=120 nxf nextflow run "$REPO" -preview -profile "${PROFILE:-hpc_prod}" -params-file "$PARAMS" > preview.log 2>&1
-        grep -q 'Pipeline completed successfully' preview.log && echo "parameters ok"; }
+      echo "config ok; $(grep -c '"container"' inspect.json) containers"
       rc=$?
       echo "exit=$rc"
       exit $rc ) 2>&1 | stamp setup &
