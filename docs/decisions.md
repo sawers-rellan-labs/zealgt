@@ -286,3 +286,14 @@ Spec approved by the user, 2026-10-11 (`docs/milestones/09a_union_alt_markers.md
   thresholds and coverage are applied downstream.
 - Filter 1 (drop markers reading ALT in 2 or more REF lines) retired: on the eight chr10 donors it changed neither the
   ALT ceiling, the class shares nor the curve set, and its fixed cut drops more markers in large families.
+
+## 2026-10-16 Families stay in the union: Milestone 9b not merged, 9c dropped
+
+User, 2026-10-16 ("keep 9b as a record, record the decision"), on the chr10 diagnosis reviewed 2026-10-15.
+
+- Every donor's tier-A sites enter its taxon's union (Milestone 9a as on `dev`); no family is left out.
+- Milestone 9b (`--union_exclude`) is not merged; branch `m09b-union-exclude` stays as a record. Leaving families out
+  changed neither QTL power (diploperennis DTA LOD 7.89 / 7.89 / 7.88) nor noise (mexicana kept donors 1.06 -> 1.10
+  introgressions per line).
+- Milestone 9c (the curve rule deciding a second union pass) is dropped; draft spec on branch `m09c-curve-rule` only.
+- Lines and families are flagged, never dropped; the curve rule stays a check applied downstream of the line checks.
