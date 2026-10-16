@@ -116,12 +116,11 @@ steps) took 24 min for seconds of work.
    - every file exists;
    - every donor keeps a BC1 pool and a line at or above `min_mean_coverage`. A donor without lines over the floor has
      no witness, and the union's join stops the run (stub 1269329).
-2. **Run the stub's tasks inside the head job**: add `-stub -c <checkout>/conf/stub_local.config` to the head job's
-   arguments (an absolute path: the head job runs in the launch directory), so no task goes through Slurm. Same
-   containers and paths. The config also turns job arrays off and gives the local executor the profiles' resource
-   limits. `-process.executor local` alone fails, `Executor 'local' does not support job arrays` (hpc_dev
-   `COUNT_UNION|COUNT_LINES`, hpc_prod `CAT_FASTQ`), and `-process.array 0` does not override a `withName` selector.
-   Laptop: the GENOTYPE stub with hpc_dev's settings ran 54 tasks in 32 s.
+2. **Poll Slurm every 10 s**: add `-stub -c <checkout>/conf/stub_hazel.config` to the head job's arguments (an
+   absolute path: the head job runs in the launch directory). Tasks stay Slurm jobs with their containers, as in a real
+   run. Running them inside the head job (`process.executor = 'local'`) does not work on hazel: Nextflow runs in its own
+   Apptainer image there, and a task's Apptainer started inside it fails (`stat /bin/bash: no such file or directory`,
+   stubs 1316854 and 1316855; `failed to resolve session directory`, srun test 1316867).
 
 ## Laptop runs
 
