@@ -245,6 +245,54 @@ knitr::kable(sc, caption = "SNP50K RTIGER donor allele frequency (%) per chromos
 - Across chromosomes parviglumis is higher than mexicana on chr4-8 and lower on chr1-3, 9, 10; equal over all ten
   (SNP50K 6.8 %).
 
+### Tests of selection for the genome-wide genotypes
+
+Planned, not run (2026-10-16). Each family (donor) is the unit: its samples share one donor gamete, and neighbouring
+windows share segments. A BC2S3 sample is the selfed progeny of one BC2S2 plant, so its pool estimates that parent's
+dosage, and its calls are read at the BC2S2 level (84.4 % REF, 6.25 % HET, 9.4 % donor homozygous; donor allele
+12.5 %). The neutral null for every test is the zealtiger pedigree simulation (BC1 pools, BC2, selfings, real map,
+each family's pool and sample numbers), which carries the founder effect.
+
+1. **Transmission, BC1 to BC2S3.** Each donor segment in a BC1 plant has a Mendelian chance of reaching each descendant
+   sample: observed vs expected transmission per segment, as a transmission test (TDT). A family is compared with its
+   own ancestors, not with an external 12.5 %. Needs donor segments called in the BC1 pools.
+2. **Parallel change across families** (evolve-and-resequence). Selection moves all families at a locus the same way,
+   drift moves each on its own: per window, a Cochran-Mantel-Haenszel test across families (observed vs expected
+   donor allele count). All taxa together for selection in the B73 background, one taxon for adaptation.
+3. **More spread than drift allows** (Lewontin-Krakauer / F~ST~-outlier style). The variance of donor frequency
+   across loci under drift alone is set by the pedigree (plants advanced per generation); loci far outside the
+   simulated spread are candidates.
+4. **Segment ends and lengths near a selected locus.** Selection for the donor allele keeps longer donor segments
+   around it (hitchhiking); selection against it piles up recombination breakpoints nearby, with donor segments
+   stopping short of it. From the RTIGER segments; less affected by dilution than frequencies.
+5. **Gametophytic factors.** Maize x teosinte crosses carry gametophyte loci that bias transmission from
+   heterozygotes (*Ga1* and *Tcb1* on chr4, *Ga2* on chr5): positive controls for distortion. Which taxa carry which
+   alleles is to be checked in the literature.
+6. **Association with fitness traits.** A QTL scan (family covariate) for seed set, germination, vigour or flowering
+   time, if scored, for loci the breeding could have selected on.
+7. **Generation by environment.** If generations alternated between the PV23 winter nursery (short days) and summer
+   nurseries (long days), the photoperiod hypothesis predicts locus-specific changes that differ between
+   environments. Needs the nursery history and more than one genotyped generation.
+8. **HET to donor-homozygous ratio, per locus and genome-wide**, against BC2S2's 0.67 (6.25 / 9.375; earlier skim
+   analyses about 2:1). With the allele frequency it separates selection against donor homozygotes (recessive
+   deleterious alleles, as Chen et al. suggest near *tga1*: the ratio rises well above 0.67, the frequency falls less)
+   from additive selection against the allele (HET and homozygous classes shrink together).
+9. **Divergence between taxa.** Per-family donor allele frequency, parviglumis (40) vs mexicana (42), genome-wide and
+   per chromosome; permutation of taxon labels across families, or a mixed model (sample frequency ~ taxon +
+   (1 | family)).
+
+Where the reading fails, and how it is guarded:
+
+- **Diluted pools:** when the 6 sampled plants do not represent their sibship (`r nil_label("PN9_SID806")`), the
+  pool does not measure the parent's dosage; the line checks flag them (REF % ALT > 3).
+- **State calls:** HET called where the pool reads near-homozygous ALT inflates the ratio of test 8 (SNP50K:
+  Zh.0020_P3 0.1 % donor homozygous against 6.8-7.1 % in the unions), so test 8 uses zealgt calls.
+- **Detection bias:** detection that differs by taxon or region mimics selection. A caller calibration per taxon
+  (simulated reads, known truth), including TIL01 reads (parviglumis mapping bias not measured), or comparisons
+  within one call set and taxon. Test 1 is the least affected (BC1 and samples share the reference bias).
+- **Data:** all tests need the genome-wide zealgt genotypes; tests 1 and 4 also need donor segments called in the
+  BC1 pools.
+
 ## 6. Notes (2026-10-16)
 
 - **Gap markers are mostly CRISP misses**, not promoted tier-B sites: per-donor CRISP leaves out sites its own BC1 reads
@@ -274,15 +322,6 @@ knitr::kable(sr, col.names = c("taxon", "samples", "group", "SNP50K REF (%)", "S
   points), SNP50K on the same samples 6.3 vs 5.2 % (gap 1.1), mexicana higher in most 5-Mb windows from 10 to 110 Mb.
   Genome-wide SNP50K shows no difference (6.8 vs 6.8 %; the sign changes between chromosomes). Not yet known for
   zealgt genome-wide.
-- **Tests, once zealgt genotypes cover the genome** (family, i.e. donor, as the unit: a family's samples share one
-  donor gamete and neighbouring windows share segments):
-  1. *Divergence*: per-family donor allele frequency, parviglumis (40) vs mexicana (42), genome-wide and per
-     chromosome; permutation of taxon labels across families (or a mixed model, sample frequency ~ taxon +
-     (1 | family)). The neutral spread of family means, which carries the founder effect, from the zealtiger pedigree
-     simulation (BC1 pools, BC2, three selfings, real map, each family's pool and sample numbers). Simulated TIL01
-     reads through the same pipeline, to rule out a detection bias by taxon (TIL01 mapping bias not measured).
-  2. *Selection*: the overall deficit against the neutral pedigree null after a caller calibration per taxon
-     (simulated reads, known truth); per-window segregation distortion against each taxon's genome-wide mean, shared
-     by all taxa (selection in the B73 background, e.g. near *tga1*) or in one taxon only (adaptation; Inv4m as the
-     first check, zealhmm `analysis/zeal-inv4m-rtiger-genotype.qmd`). The HET excess is no test here: a pool of
-     segregating plants reads HET.
+- **Tests, once zealgt genotypes cover the genome**: section 5, "Tests of selection for the genome-wide genotypes"
+  (divergence between taxa, the overall deficit after a caller calibration per taxon, per-window distortion shared by
+  all taxa or in one only, with Inv4m as the first check, zealhmm `analysis/zeal-inv4m-rtiger-genotype.qmd`).
