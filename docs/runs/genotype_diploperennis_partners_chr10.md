@@ -5,10 +5,10 @@ Draft, for the user's OK before any submission.
 ## Why
 
 User, 2026-10-16: "plan the same approach for diplo as we did for huehue: make the genotyping using information from
-parviglumis and mexicana; there is a chance that the fragmentation improves; judging by the F~~ST~~ it should work."
+parviglumis and mexicana; there is a chance that the fragmentation improves; judging by the FST it should work."
 Diploperennis fragments (diagnosis 2026-10-15, §3: 35 % of its SNP50K HET segments >= 1 Mb split into >= 3 pieces, 15 %
 in mexicana; cause not found). Huehuetenangensis lost its fragmentation when a partner taxon joined its union
-(notebook 06). F~~ST~~ (Chen 2022, Fig. 2a source data): diploperennis-parviglumis 0.230, -mexicana 0.277.
+(notebook 06). FST (Chen 2022, Fig. 2a source data): diploperennis-parviglumis 0.230, -mexicana 0.277.
 
 ## Runs (chr10, code of runs A-C: origin/dev 8bfdbe7 via branch runs-genotype-huehue-chr10)
 
