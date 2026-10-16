@@ -32,7 +32,7 @@ echo "$(date '+%F %T') job=$SLURM_JOB_ID node=$(hostname) commit=$(git rev-parse
 [ $# -gt 0 ] || set -- tests/hazel/*.nf.test
 pids=()
 # the run's setup, in order: config, every container, then -preview for the parameters; -preview does not exit after
-# its last line, so it gets 2 min and passes on "Pipeline completed successfully"
+# its last line (nextflow-io/nextflow#7836), so it gets 2 min and passes on "Pipeline completed successfully"
 if [ -n "$PARAMS" ]; then
     mkdir -p "$WORK/setup"
     ( cd "$WORK/setup" || exit 2

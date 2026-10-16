@@ -121,7 +121,7 @@ scheduling pass (`SchedulerParameters=defer`, ~50 s), so the GENOTYPE stub (~20 
 - **The run's setup**, with `PARAMS=<the run's params file>` (and `PROFILE`) on the same job, beside the tests and in
   order: `nextflow config` (config, profile), `nextflow inspect` (every container; it does not check parameters), then
   `-preview` (parameters). With a workflow output block `-preview` never exits in Nextflow 26.04.6 (16-line
-  reproduction, `agent/stubloc/preview_toy/`; bug report drafted), so it gets 2 min and passes on "Pipeline completed
+  reproduction, nextflow-io/nextflow#7836), so it gets 2 min and passes on "Pipeline completed
   successfully" until Nextflow fixes it.
 - **A pipeline stub** only after changes to the launch scripts or the profiles, as below.
 
