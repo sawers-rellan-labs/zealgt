@@ -1,6 +1,6 @@
 # Milestone 9d: GENOTYPE over several chromosomes in one run
 
-Draft, for the user's approval.
+Approved by the user, 2026-10-16 ("approve").
 
 `GENOTYPE` takes a list of regions instead of one `--region`; every per-region step runs once per region, all regions
 side by side in one run. Outputs per region are unchanged.
