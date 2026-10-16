@@ -1,6 +1,6 @@
 ---
 title: "Marker union rarefaction"
-subtitle: "How the union of donor sites grows with donors: a demographic model of teosinte, the simulations that would complete it, and the curves fitted to the six donors of the eight-donor chr10 test that pass the curve rule (2026-10-11)"
+subtitle: "How the union of donor sites grows with donors: a demographic model of teosinte, the simulations that would complete it, and the curves fitted to the six donors of the eight-donor chr10 test whose families have balanced tissue pools (2026-10-11), and the 24 such families of the 42 mexicana donors (2026-10-16)"
 author: "Fausto Rodríguez-Zapata"
 date: today
 format:
@@ -32,7 +32,7 @@ once the union over all samples exists. The math supplement's Section 5.6 summar
   each new population adds a block of private alleles, and false alleles add a constant number per donor.
 - **Simulations proposed** (section 2): the expected site frequency spectrum of the donors under (S1) mexicana's Ne history,
   (S2) races as demes, (S3) the Zea species tree with ZEAL's donor composition; Eq. 1 turns each into a union curve.
-- **Empirical fits** (six mexicana donors, four races, the ones that pass the curve rule; two families off the curve shown
+- **Empirical fits** (six mexicana donors, four races, families with balanced tissue pools; two families off the curve shown
   apart): Michaelis-Menten ($U_\infty \approx 474$ thousand sites on chr10), Watterson, and Watterson with false alleles
   ($\varepsilon_f \approx 13$ thousand per donor): 245, 225 and 263 thousand sites at 10 donors. The false-allele term's
   linear growth is what sets the last apart (section 3.7). The five-donor fits overshot the sixth donor by 5-11 %
@@ -654,12 +654,120 @@ taxon-specific SNPs may sit more often in repeats, so they likely overstate what
 A first-order projection: the mexicana union at 43 donors times a taxon factor between ~1.2 (parviglumis-specific SNPs only)
 and 2.3 (all Zea). Simulation S3 replaces that range with a curve; the union over all samples measures it.
 
+## 6. Mexicana, 42 donors on chr10 (run 1273053, 2026-10-14)
+
+```{r mx-data}
+mx_donors <- fread("union_rarefaction/mexicana42_donors.tsv")
+mx_carriers <- fread("union_rarefaction/mexicana42_carriers.tsv")
+rare_exact <- function(cr) {
+  n <- max(cr$carriers)
+  data.table(donors = seq_len(n), sites = sapply(seq_len(n), function(k) {
+    sum(cr$sites * (1 - exp(lchoose(n - cr$carriers, k) - lchoose(n, k))))
+  }))
+}
+mx_pass <- rare_exact(mx_carriers[set == "pass"])
+mx_all <- rare_exact(mx_carriers[set == "all"])
+n_pass <- nrow(mx_pass)
+u_all <- mx_carriers[set == "all", sum(sites)]
+fit_all <- function(dt) {
+  lapply(models, function(m) {
+    tryCatch(nls(m$f, data = dt, start = m$start, control = nls.control(maxiter = 500)), error = function(e) NULL)
+  })
+}
+mx_fit <- fit_all(mx_pass)
+mx_fit8 <- fit_all(mx_pass[donors <= 8])
+pred <- function(f, k) if (is.null(f)) NA_real_ else predict(f, data.table(donors = k))
+mx_table <- rbindlist(lapply(names(models), function(k) {
+  cf <- if (is.null(mx_fit[[k]])) NULL else coef(mx_fit[[k]])
+  data.table(
+    model = k, parameters = paste(sprintf("%s = %s", sym[names(cf)], signif(cf, 3)), collapse = ", "),
+    rmse = if (is.null(mx_fit[[k]])) NA_real_ else sqrt(mean(residuals(mx_fit[[k]])^2)),
+    aic = if (is.null(mx_fit[[k]])) NA_real_ else AIC(mx_fit[[k]]),
+    d_aic = NA_real_,
+    at_42 = pred(mx_fit[[k]], 42),
+    k8_at_24 = 100 * (pred(mx_fit8[[k]], n_pass) / mx_pass[donors == n_pass, sites] - 1),
+    k8_at_42 = 100 * (pred(mx_fit8[[k]], 42) / u_all - 1)
+  )
+}))[order(rmse)][, d_aic := aic - min(aic, na.rm = TRUE)]
+```
+
+The 42 mexicana donors of run 1273053. Each BC2S3 sample is a tissue pool: one punch from each of six plants of the
+same NIL (`docs/TERMINOLOGY.md`). A family has **balanced tissue pools** when its samples pass the sample introgression
+dosage check of `docs/decisions.md` (2026-10-11; per-donor medians, criterion 3 not applied), and **unbalanced tissue
+pools** when its donor segments read too little ALT:
+`r nrow(mx_donors[status == "pass"])` balanced, `r nrow(mx_donors[status == "fail"])` unbalanced, Zx.0520_P4 has no tier-A
+sites. Too many donors to list every subset (section 3.2), so the curve is the exact mean over all sets of $k$ donors
+from each site's number of carrying donors $d$: $E[U(k)] = \sum_{\text{sites}} 1 - \binom{n-d}{k} / \binom{n}{k}$, the
+same mean as Eq. 4. Inputs: `union_rarefaction/mexicana42_carriers.tsv` and `mexicana42_donors.tsv`
+(`agent/union_mex42/write_carriers.R`).
+
+
+```{r mx-table}
+knitr::kable(mx_table,
+  digits = c(0, 0, 0, 1, 1, 0, 1, 1), format.args = list(big.mark = ","),
+  col.names = c(
+    "model", "parameters (balanced)", "RMSE (sites)", "AIC", "ΔAIC", "at 42 donors", "fit on k <= 8: error at 24 (%)",
+    "fit on k <= 8: error at 42 (%)"
+  )
+)
+```
+
+Fitted on all `r n_pass` points, Michaelis-Menten has the lowest RMSE. Fitted on $k \le 8$ (the range of the earlier
+tests) and carried out, it misses the observed union at `r n_pass` donors by
+`r round(mx_table[model == "Michaelis-Menten", k8_at_24], 1)` % and the union of all 42 donors
+(`r format(u_all, big.mark = ",")` sites, unbalanced families included, so not the same donor set) by
+`r round(mx_table[model == "Michaelis-Menten", k8_at_42], 1)` %. The curve points are not independent (each is a mean
+over the same donors), so RMSE and AIC rank the models but their differences carry no significance.
+
+Residuals of each fit on all `r n_pass` points. A model that describes the curve leaves residuals without a trend;
+a curve that bends too early or too late leaves a wave.
+
+```{r mx-residuals, fig.width = 11, fig.height = 6}
+mx_res <- rbindlist(lapply(names(mx_fit), function(k) {
+  if (is.null(mx_fit[[k]])) {
+    return(NULL)
+  }
+  data.table(model = k, donors = mx_pass$donors, residual = residuals(mx_fit[[k]]))
+}))
+mx_res[, model := factor(model, levels = mx_table$model)]
+ggplot(mx_res, aes(donors, residual / 1e3)) +
+  geom_hline(yintercept = 0, colour = "grey50") +
+  geom_line(colour = "grey60") +
+  geom_point(size = 1.8) +
+  facet_wrap(~model, ncol = 4) +
+  labs(
+    title = "Residuals of the seven fits, balanced families", subtitle = "ordered by RMSE; same y-axis in every panel",
+    x = "Donors in the union", y = "Observed - fitted (thousand sites)"
+  )
+```
+
+```{r mx-plot, fig.width = 10, fig.height = 5.5}
+mx_cv <- rbindlist(lapply(c("Michaelis-Menten", "Negative exponential", "Watterson + false alleles", "Power", "Watterson"),
+  function(k) data.table(model = k, donors = seq(1, 42, 0.5), sites = pred(mx_fit8[[k]], seq(1, 42, 0.5)))
+))
+ggplot(mx_cv, aes(donors, sites / 1e3, colour = model)) +
+  geom_line(linewidth = 0.9) +
+  geom_vline(xintercept = 8.5, linetype = "dashed", colour = "grey50") +
+  geom_point(data = mx_all, aes(donors, sites / 1e3), inherit.aes = FALSE, colour = "grey60", size = 1.8) +
+  geom_point(data = mx_pass, aes(donors, sites / 1e3), inherit.aes = FALSE, size = 2.5) +
+  annotate("point", x = 42, y = u_all / 1e3, shape = 23, size = 4, fill = "gold") +
+  labs(
+    title = "Mexicana chr10: fits on k <= 8 of the balanced-family curve, carried to 42 donors",
+    subtitle = sprintf("black: %d families with balanced tissue pools; grey: all %d families with sites; gold: all-42 union",
+      n_pass, nrow(mx_all)),
+    x = "Donors in the union", y = "Union sites (thousands)", colour = NULL
+  )
+```
+
+With the unbalanced families in (grey) the curve starts lower: they are the shallower donors, so a random set of $k$
+holds fewer sites, and they add their sites late.
+
 ## Caveats
 
 - Six donors, four races, all mexicana: every curve in section 3 fits them; the choice between curves rests on section 4,
   not on the fit. Discovery depth differs ninefold between them (9,060-85,952 tier-A sites), and two of the eight donors
   are off the curve.
-- Zx.0500_P2 passes the curve rule on its lines' calls at union sites, but its own tier-A sites read a median 4.5 % ALT inside
+- Zx.0500_P2 passes the sample introgression dosage check on its lines' calls at union sites, but its own tier-A sites read a median 4.5 % ALT inside
   its lines' REF segments, against 1-2 % for the other five (artifacts present in all lines), so some of its sites in the sharing patterns are likely false.
 - The rarefaction mean averages over donors; a donor with few lines or low coverage finds fewer sites and adds fewer.
 - Section 4's numbers mix Chen's discovery (individual genomes, 22x, strict filters) with ours (BC1 pools); $\eta$ and the
