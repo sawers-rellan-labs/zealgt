@@ -3,14 +3,14 @@
 Approved by the user, 2026-10-11 ("spec approved, go ahead").
 
 Change to `CRAM_ANCESTRY_RTIGER` (Milestone 9): each donor's markers are the union sites gap filling called ALT for it,
-not its own tier-A sites; `CALL_ANCESTRY` also writes the per-line checks of the curve rule.
+not its own tier-A sites; `CALL_ANCESTRY` also writes the per-line checks of the sample introgression dosage check.
 
 ## Why
 
 User, 2026-10-08: own tier-A markers can't be believed where no line carries an introgression; they fail for families
 whose lines don't cover the chromosome. Tested in `agent/` scripts on the eight chr10 donors (2026-10-08 to 10-11):
 Zx.0090_P2 went from 18 to 1.5 donor segments per line (SNP50K 2.5); segment dosage REF 1-2 %, HET 38-45 %, ALT 79-87 %;
-class shares over 249 lines HET 7.6 %, ALT 5.5 % (SNP50K 10.2 / 0.9). The user's curve rule (`docs/decisions.md`,
+class shares over 249 lines HET 7.6 %, ALT 5.5 % (SNP50K 10.2 / 0.9). The user's sample introgression dosage check (`docs/decisions.md`,
 2026-10-11) is checked on these calls.
 
 ## What changes
@@ -43,7 +43,7 @@ ref/het/alt_alt_pct` (as `agent/union8/union_markers/check_lines.py`).
   samples); a script (bcftools does it).
 - **Line checks written by `CALL_ANCESTRY`**, which already holds the counts and segments. Rejected: a separate process
   and script (reads every line's counts a second time).
-- **Line checks as values, no pass/fail and no coverage per donor in the pipeline.** The curve rule's thresholds and the
+- **Line checks as values, no pass/fail and no coverage per donor in the pipeline.** The dosage check's thresholds and the
   coverage (check 3) are applied downstream (notebook 03). Rejected: flags in the pipeline (thresholds would become
   pipeline parameters for an analysis choice).
 - **Filter 1 retired** (drop markers that read ALT in 2 or more lines REF there; user, 2026-10-11). Tested on the eight
