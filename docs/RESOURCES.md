@@ -124,6 +124,43 @@ request, 1 h 01 min).
   timed out on `sbatch` ("Socket timed out on send/recv operation") past the default retries and aborted mexicana wave 08
   and diploperennis wave 11 (jobs 1214146, 1211542; resubmitted with `-resume`).
 
+## Production alignment with job arrays, measured (2026-10-16, waves 23-24, jobs 1317749-50)
+
+`hpc_prod` with arrays of 20 on `SAMTOOLS_FIXMATE`, `SAMTOOLS_SORT`, the per-sample `SAMTOOLS_MERGE`, `SAMTOOLS_INDEX`,
+`SAMTOOLS_STATS` and `MOSDEPTH`; numbers and context in `docs/runs/alignment_remaining.md`, "Results".
+
+| wave | samples                     | raw    | time   | task jobs | cpu h | `work/` peak    | running cpus peak |
+| ---- | --------------------------- | ------ | ------ | --------- | ----- | --------------- | ----------------- |
+| 23   | 22 BC1                      | 245 GB | 2 h 44 | 419       | 512   | 1.82 TB (7.4 x) | 754               |
+| 24   | 6 BC1, 182 lines, 21 checks | 208 GB | 2 h 23 | 2,324     | 749   | 1.62 TB (7.8 x) | 769               |
+
+- Wave 24 (many small samples) took 2 h 23; parviglumis wave 21 (260 lines, 250 GB, no arrays on these steps) ~5 h.
+  Not a controlled comparison.
+
+## Production alignment efficiency, measured (2026-10-12, mexicana wave 06, job 1200745)
+
+16 BC1 pools, 218 GB raw, `hpc_prod`. Per process from `sacct` over the wave's completed tasks: CPU = TotalCPU /
+(AllocCPUS x Elapsed); memory = MaxRSS / ReqMem, both weighted by Elapsed (`agent/align35/compute_wave_efficiency.py`).
+
+| process                     | tasks | cpu h requested | cpu h used | cpu  | memory |
+| --------------------------- | ----- | --------------- | ---------- | ---- | ------ |
+| `MINIBWA_MAP`               | 44    | 302.1           | 291.5      | 96 % | 94 %   |
+| `SAMTOOLS_SORT`             | 44    | 27.9            | 11.1       | 40 % | 85 %   |
+| `SAMTOOLS_FIXMATE`          | 44    | 15.6            | 8.1        | 52 % | 6 %    |
+| `SAMTOOLS_MERGE`            | 16    | 12.3            | 6.8        | 55 % | 3 %    |
+| `PICARD_COLLECTWGSMETRICS`  | 16    | 11.2            | 11.0       | 99 % | 88 %   |
+| `SAMTOOLS_MARKDUP`          | 16    | 7.4             | 6.1        | 83 % | 18 %   |
+| `SEQKIT_SPLIT2`             | 16    | 6.6             | 5.9        | 89 % | 100 %  |
+| `FGUMI_CLIP`                | 44    | 6.1             | 5.6        | 93 % | 93 %   |
+| `SAMTOOLS_STATS`            | 16    | 5.4             | 4.2        | 79 % | 39 %   |
+| `MOSDEPTH`                  | 16    | 1.6             | 0.7        | 43 % | 78 %   |
+| `SAMTOOLS_INDEX`, `MULTIQC` | 17    | 0.1             | 0.0        | -    | -      |
+| all                         | 289   | 396.3           | 351.0      | 89 % | 87 %   |
+
+- `MINIBWA_MAP` memory: `sacct` MaxRSS counts the shared index pages per process (94 % of 16 GB); the trace's
+  `peak_rss` is 10.1-11.0 GB.
+- `PICARD_COLLECTWGSMETRICS` time grows with depth: 24-30 min at 2.7-5.3x, 1 h 20 min at 12.6x (S_4E_8), the wave's tail.
+
 ## Production demultiplexing, measured (2026-10-03/04, `hpc_prod`)
 
 | wave | source       | samples | head job | run time                             |

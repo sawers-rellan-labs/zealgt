@@ -1,0 +1,28 @@
+nextflow_process {
+
+    name "PICARD_COLLECTWGSMETRICS stub (hazel setup check)"
+    script "../../modules/nf-core/picard/collectwgsmetrics/main.nf"
+    process "PICARD_COLLECTWGSMETRICS"
+    tag "hazel"
+    tag "alignment"
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [[id: 't', single_end: false, library: 'L', lanes: '1'], file("${projectDir}/tests/fixtures/genotype/cram/L_1.cram", checkIfExists: true), file("${projectDir}/tests/fixtures/genotype/cram/L_1.cram.crai", checkIfExists: true)]
+                input[1] = [[id: 'tiny'], file("${projectDir}/tests/fixtures/ref/tiny.fa", checkIfExists: true)]
+                input[2] = [[id: 'tiny'], file("${projectDir}/tests/fixtures/ref/tiny.fa.fai", checkIfExists: true)]
+                input[3] = []
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}

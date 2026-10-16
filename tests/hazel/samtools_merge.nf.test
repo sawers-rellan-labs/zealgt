@@ -1,0 +1,27 @@
+nextflow_process {
+
+    name "SAMTOOLS_MERGE stub (hazel setup check)"
+    script "../../modules/nf-core/samtools/merge/main.nf"
+    process "SAMTOOLS_MERGE"
+    tag "hazel"
+    tag "alignment"
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [[id: 't', single_end: false, library: 'L', lanes: '1'], [file("${projectDir}/tests/fixtures/genotype/cram/L_1.cram", checkIfExists: true)], []]
+                input[1] = [[:], [], [], []]
+                input[2] = ''
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}

@@ -1,0 +1,29 @@
+nextflow_process {
+
+    name "BCFTOOLS_MERGE stub (hazel setup check)"
+    script "../../modules/nf-core/bcftools/merge/main.nf"
+    process "BCFTOOLS_MERGE"
+    tag "hazel"
+    tag "genotype"
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            params {
+                region = 'chrA'
+            }
+            process {
+                """
+                input[0] = [[id: 'Zx.0540_P3', donor: 'Zx.0540_P3'], [file("${projectDir}/tests/fixtures/genotype/fill/union.vcf", checkIfExists: true)], [file("${projectDir}/tests/fixtures/genotype/check_sites.vcf.gz.tbi", checkIfExists: true)], []]
+                input[1] = [[id: 'tiny'], file("${projectDir}/tests/fixtures/ref/tiny.fa", checkIfExists: true), file("${projectDir}/tests/fixtures/ref/tiny.fa.fai", checkIfExists: true)]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}
