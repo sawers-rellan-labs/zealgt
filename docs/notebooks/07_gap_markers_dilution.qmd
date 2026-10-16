@@ -253,9 +253,13 @@ dosage, and its calls are read at the BC2S2 level (84.4 % REF, 6.25 % HET, 9.4 %
 12.5 %). The neutral null for every test is the zealtiger pedigree simulation (BC1 pools, BC2, selfings, real map,
 each family's pool and sample numbers), which carries the founder effect.
 
-1. **Transmission, BC1 to BC2S3.** Each donor segment in a BC1 plant has a Mendelian chance of reaching each descendant
-   sample: observed vs expected transmission per segment, as a transmission test (TDT). A family is compared with its
-   own ancestors, not with an external 12.5 %. Needs donor segments called in the BC1 pools.
+1. **Transmission, BC1 pool to BC2S3 (by frequency).** A BC1 sample is a pool of 6 independent BC1 plants, so its
+   reads give the share of BC1 chromosomes carrying the donor allele at each site (about 25 % on average; 6 plants
+   cover most of the donor genome), not each plant's segments. One more backcross halves that share and selfing keeps
+   it: per window and family, the donor frequency in the BC2S3 samples against half the pool's, with the pedigree
+   simulation as the null. A family is compared with its own ancestors, at the level of frequency. Assumes the
+   family's samples descend from the pooled plants in about equal numbers (to check in the records); the pools'
+   depth (3.5-5x for 12 haplotypes) makes per-site frequencies noisy, so only windows of many sites.
 2. **Parallel change across families** (evolve-and-resequence). Selection moves all families at a locus the same way,
    drift moves each on its own: per window, a Cochran-Mantel-Haenszel test across families (observed vs expected
    donor allele count). All taxa together for selection in the B73 background, one taxon for adaptation.
@@ -290,8 +294,8 @@ Where the reading fails, and how it is guarded:
 - **Detection bias:** detection that differs by taxon or region mimics selection. A caller calibration per taxon
   (simulated reads, known truth), including TIL01 reads (parviglumis mapping bias not measured), or comparisons
   within one call set and taxon. Test 1 is the least affected (BC1 and samples share the reference bias).
-- **Data:** all tests need the genome-wide zealgt genotypes; tests 1 and 4 also need donor segments called in the
-  BC1 pools.
+- **Data:** all tests need the genome-wide zealgt genotypes; test 1 also needs the BC1 pools' donor allele counts at
+  the markers (the union counts already hold them) and the pedigree link from pooled plants to samples.
 
 Optional, TeoNAM as a comparison population (user, 2026-10-16): 1,237 BC1S4 RILs in 5 families, one teosinte
 accession each crossed to W22, genotyped as single plants (zealhmm `DATA.md`, EasiGP copy, classes 76.6 / 8.1 /

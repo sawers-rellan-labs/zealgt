@@ -14623,10 +14623,14 @@
             </p>
             <ol type="1">
               <li>
-                <strong>Transmission, BC1 to BC2S3.</strong> Each donor segment in a BC1 plant has a Mendelian chance of
-                reaching each descendant sample: observed vs expected transmission per segment, as a transmission test
-                (TDT). A family is compared with its own ancestors, not with an external 12.5 %. Needs donor segments
-                called in the BC1 pools.
+                <strong>Transmission, BC1 pool to BC2S3 (by frequency).</strong> A BC1 sample is a pool of 6 independent
+                BC1 plants, so its reads give the share of BC1 chromosomes carrying the donor allele at each site (about
+                25 % on average; 6 plants cover most of the donor genome), not each plant’s segments. One more backcross
+                halves that share and selfing keeps it: per window and family, the donor frequency in the BC2S3 samples
+                against half the pool’s, with the pedigree simulation as the null. A family is compared with its own
+                ancestors, at the level of frequency. Assumes the family’s samples descend from the pooled plants in
+                about equal numbers (to check in the records); the pools’ depth (3.5-5x for 12 haplotypes) makes
+                per-site frequencies noisy, so only windows of many sites.
               </li>
               <li>
                 <strong>Parallel change across families</strong> (evolve-and-resequence). Selection moves all families
@@ -14692,8 +14696,9 @@
                 samples share the reference bias).
               </li>
               <li>
-                <strong>Data:</strong> all tests need the genome-wide zealgt genotypes; tests 1 and 4 also need donor
-                segments called in the BC1 pools.
+                <strong>Data:</strong> all tests need the genome-wide zealgt genotypes; test 1 also needs the BC1 pools’
+                donor allele counts at the markers (the union counts already hold them) and the pedigree link from
+                pooled plants to samples.
               </li>
             </ul>
             <p>
