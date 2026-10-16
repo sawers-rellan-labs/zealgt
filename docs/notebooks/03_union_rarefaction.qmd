@@ -691,8 +691,10 @@ mx_table <- rbindlist(lapply(names(models), function(k) {
 }))[order(rmse)][, d_aic := aic - min(aic, na.rm = TRUE)]
 ```
 
-The 42 mexicana donors of run 1273053, curve rule on their line checks (per-donor medians; criterion 3 not applied):
-`r nrow(mx_donors[status == "pass"])` pass, `r nrow(mx_donors[status == "fail"])` fail, Zx.0520_P4 has no tier-A
+The 42 mexicana donors of run 1273053. A family has **balanced line pools** when its lines (each a pool of six
+plants) pass the dosage check of `docs/decisions.md` (2026-10-11; per-donor medians, criterion 3 not applied), and
+**unbalanced line pools** when its HET segments read low ALT, presumed from unequal plant contributions to the pools:
+`r nrow(mx_donors[status == "pass"])` balanced, `r nrow(mx_donors[status == "fail"])` unbalanced, Zx.0520_P4 has no tier-A
 sites. Too many donors to list every subset (section 3.2), so the curve is the exact mean over all sets of $k$ donors
 from each site's number of carrying donors $d$: $E[U(k)] = \sum_{\text{sites}} 1 - \binom{n-d}{k} / \binom{n}{k}$, the
 same mean as Eq. 4. Inputs: `union_rarefaction/mexicana42_carriers.tsv` and `mexicana42_donors.tsv`
@@ -703,7 +705,7 @@ same mean as Eq. 4. Inputs: `union_rarefaction/mexicana42_carriers.tsv` and `mex
 knitr::kable(mx_table,
   digits = c(0, 0, 0, 1, 1, 0, 1, 1), format.args = list(big.mark = ","),
   col.names = c(
-    "model", "parameters (pass set)", "RMSE (sites)", "AIC", "ΔAIC", "at 42 donors", "fit on k <= 8: error at 24 (%)",
+    "model", "parameters (balanced)", "RMSE (sites)", "AIC", "ΔAIC", "at 42 donors", "fit on k <= 8: error at 24 (%)",
     "fit on k <= 8: error at 42 (%)"
   )
 )
@@ -712,7 +714,7 @@ knitr::kable(mx_table,
 Fitted on all `r n_pass` points, Michaelis-Menten has the lowest RMSE. Fitted on $k \le 8$ (the range of the earlier
 tests) and carried out, it misses the observed union at `r n_pass` donors by
 `r round(mx_table[model == "Michaelis-Menten", k8_at_24], 1)` % and the union of all 42 donors
-(`r format(u_all, big.mark = ",")` sites, failing families included, so not the same donor set) by
+(`r format(u_all, big.mark = ",")` sites, unbalanced families included, so not the same donor set) by
 `r round(mx_table[model == "Michaelis-Menten", k8_at_42], 1)` %. The curve points are not independent (each is a mean
 over the same donors), so RMSE and AIC rank the models but their differences carry no significance.
 
@@ -733,7 +735,7 @@ ggplot(mx_res, aes(donors, residual / 1e3)) +
   geom_point(size = 1.8) +
   facet_wrap(~model, ncol = 4) +
   labs(
-    title = "Residuals of the seven fits, pass-set curve", subtitle = "ordered by RMSE; same y-axis in every panel",
+    title = "Residuals of the seven fits, balanced families", subtitle = "ordered by RMSE; same y-axis in every panel",
     x = "Donors in the union", y = "Observed - fitted (thousand sites)"
   )
 ```
@@ -749,14 +751,14 @@ ggplot(mx_cv, aes(donors, sites / 1e3, colour = model)) +
   geom_point(data = mx_pass, aes(donors, sites / 1e3), inherit.aes = FALSE, size = 2.5) +
   annotate("point", x = 42, y = u_all / 1e3, shape = 23, size = 4, fill = "gold") +
   labs(
-    title = "Mexicana chr10: fits on k <= 8 of the pass-set curve, carried to 42 donors",
-    subtitle = sprintf("black: %d donors passing the curve rule; grey: all %d donors with sites; gold: all-42 union",
+    title = "Mexicana chr10: fits on k <= 8 of the balanced-family curve, carried to 42 donors",
+    subtitle = sprintf("black: %d families with balanced line pools; grey: all %d families with sites; gold: all-42 union",
       n_pass, nrow(mx_all)),
     x = "Donors in the union", y = "Union sites (thousands)", colour = NULL
   )
 ```
 
-With the failing families in (grey) the curve starts lower: they are the shallower donors, so a random set of $k$
+With the unbalanced families in (grey) the curve starts lower: they are the shallower donors, so a random set of $k$
 holds fewer sites, and they add their sites late.
 
 ## Caveats
