@@ -270,3 +270,19 @@ knitr::kable(sr, col.names = c("taxon", "samples", "group", "SNP50K REF (%)", "S
   a photoperiod-gene dip nor a consistent lowland (parviglumis) deficit across chromosomes is seen: the parviglumis
   chr10 shift is about 2.4 standard errors of the family mean and other chromosomes differ by 1-2 points in both
   directions. The genome-wide run decides.
+- **Mexicana above parviglumis on chr10, in both call sets** (user, 2026-10-16): zealgt 9.3 vs 7.2 % (gap 2.1
+  points), SNP50K on the same samples 6.3 vs 5.2 % (gap 1.1), mexicana higher in most 5-Mb windows from 10 to 110 Mb.
+  Genome-wide SNP50K shows no difference (6.8 vs 6.8 %; the sign changes between chromosomes). Not yet known for
+  zealgt genome-wide.
+- **Tests, once zealgt genotypes cover the genome** (family, i.e. donor, as the unit: a family's samples share one
+  donor gamete and neighbouring windows share segments):
+  1. *Divergence*: per-family donor allele frequency, parviglumis (40) vs mexicana (42), genome-wide and per
+     chromosome; permutation of taxon labels across families (or a mixed model, sample frequency ~ taxon +
+     (1 | family)). The neutral spread of family means, which carries the founder effect, from the zealtiger pedigree
+     simulation (BC1 pools, BC2, three selfings, real map, each family's pool and sample numbers). Simulated TIL01
+     reads through the same pipeline, to rule out a detection bias by taxon (TIL01 mapping bias not measured).
+  2. *Selection*: the overall deficit against the neutral pedigree null after a caller calibration per taxon
+     (simulated reads, known truth); per-window segregation distortion against each taxon's genome-wide mean, shared
+     by all taxa (selection in the B73 background, e.g. near *tga1*) or in one taxon only (adaptation; Inv4m as the
+     first check, zealhmm `analysis/zeal-inv4m-rtiger-genotype.qmd`). The HET excess is no test here: a pool of
+     segregating plants reads HET.
