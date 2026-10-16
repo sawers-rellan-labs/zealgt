@@ -107,19 +107,30 @@ change: edit the resources in `conf/hpc_dev.config` or `conf/hpc_prod.config`, t
 
 ## Stubs on hazel
 
-A stub checks paths, containers and the launch directory, so it should take minutes. With every task a Slurm job, each
-step waits about a minute for Nextflow's job status check: the GENOTYPE stub (job 1270344, two donors, ~20 dependent
-steps) took 24 min for seconds of work.
+Step 3 of the test order (`CLAUDE.md`) checks paths, containers, Slurm and the profiles, no logic, in minutes. A
+pipeline stub cannot: its dependent steps run one after another, and Slurm starts each new job only at its next
+scheduling pass (`SchedulerParameters=defer`, ~50 s), so the GENOTYPE stub (~20 steps) took 24 min (job 1270344) and
+19 min with 10 s polling (1316875); the alignment stub (8 steps) 57 and 9 min (1271775, 1316876). Hence:
+
+- **Process checks**: every process's stub runs alone from ready inputs, all at once, one Slurm wait in all.
+  `tests/hazel/*.nf.test` (one per module, inputs from `tests/fixtures/`; the nf-core modules' own tests download
+  theirs) run from one job: `sbatch --export=ALL,ZEALGT_REPO=<checkout> scripts/run_hazel_tests.sbatch`, with nf-test
+  under the Nextflow image's java and `conf/stub_hazel.config`. 26 tests in 6 min (job 1317802). Parallel tasks cannot
+  race: each task writes only in its own work directory. A process test applies settings under the module's own name
+  only, not under its aliases (`COUNT_LINES`, `.*FASTQ_ALIGN_MINIBWA:SAMTOOLS_MERGE`).
+- **`-preview`**: config, parameters and the DAG, no tasks. Not checked yet: on the laptop it wrote no DAG.
+- **A pipeline stub** only after changes to the launch scripts or the profiles, as below.
 
 1. **Check the sheet first** (seconds, no Nextflow):
    - every path is absolute, since Nextflow resolves `--input` from the launch directory (stub 1269132);
    - every file exists;
    - every donor keeps a BC1 pool and a line at or above `min_mean_coverage`. A donor without lines over the floor has
      no witness, and the union's join stops the run (stub 1269329).
-2. **Run the stub's tasks inside the head job**: add `-process.executor local` to the stub command, so no task goes
-   through Slurm. Same containers and paths. Not tested yet. The local executor refuses a task that asks for more CPUs
-   or memory than the head job has (expected; the test confirms). So the head job needs the largest request of the stubbed step
-   (GENOTYPE: `CRISP` 16 GB), or a `-c` config that lowers the requests for the stub.
+2. **Poll Slurm every 10 s**: add `-stub -c <checkout>/conf/stub_hazel.config` to the head job's arguments (an
+   absolute path: the head job runs in the launch directory). Tasks stay Slurm jobs with their containers, as in a real
+   run. Running them inside the head job (`process.executor = 'local'`) does not work on hazel: Nextflow runs in its own
+   Apptainer image there, and a task's Apptainer started inside it fails (`stat /bin/bash: no such file or directory`,
+   stubs 1316854 and 1316855; `failed to resolve session directory`, srun test 1316867).
 
 ## Laptop runs
 
