@@ -293,6 +293,19 @@ Where the reading fails, and how it is guarded:
 - **Data:** all tests need the genome-wide zealgt genotypes; tests 1 and 4 also need donor segments called in the
   BC1 pools.
 
+Optional, TeoNAM as a comparison population (user, 2026-10-16): 1,237 BC1S4 RILs in 5 families, one teosinte
+accession each crossed to W22, genotyped as single plants (zealhmm `DATA.md`, EasiGP copy, classes 76.6 / 8.1 /
+15.0 % as published). Expected 73.44 / 3.13 / 23.44 %, teosinte allele 25 %.
+
+- Test 8 without pools: HET to teosinte-homozygous ratio expected 0.13 (3.13 / 23.44), observed 0.54; per locus, where
+  the excess concentrates (Chen et al.: 4S near *tga1*).
+- Tests 2-5 per family and across the five; zealhmm's per-family χ² outlier lists against BC1S4
+  (`agent/qtl_permap_run.log`, 318-421 flagged markers per family) as a first set of candidates. Test 6 with the 22
+  published traits if fitness proxies are among them. Test 1 only if earlier generations were genotyped; test 9
+  depends on the accessions' taxa (to check in the paper).
+- Loci distorted in both TeoNAM (W22 background) and ZEAL (B73 background) point to selection on the teosinte allele
+  itself; loci in one population only, to that background or to a detection artefact.
+
 ## 6. Notes (2026-10-16)
 
 - **Gap markers are mostly CRISP misses**, not promoted tier-B sites: per-donor CRISP leaves out sites its own BC1 reads
