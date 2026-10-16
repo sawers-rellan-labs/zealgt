@@ -1,0 +1,262 @@
+---
+title: "Gap markers, diluted tissue pools and the donor allele deficit"
+subtitle: "chr10 GENOTYPE runs A-C (huehuetenangensis unions), 1270808 (diploperennis), 1273053 (mexicana); 2026-10-16"
+author: "Fausto Rodríguez-Zapata"
+date: today
+format:
+  html:
+    toc: true
+    embed-resources: true
+    fig-width: 8
+    fig-height: 5
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+library(data.table)
+library(ggplot2)
+theme_set(theme_bw(base_size = 13))
+# inputs (not tracked): agent/nb07/collect.sh; master copy on /rsstu, see "Why"
+d <- "gap_markers_dilution"
+rd <- function(f, ...) fread(file.path(d, f), ...)
+taxa <- c(Zd = "diploperennis", Zh = "huehuetenangensis", Zv = "parviglumis", Zx = "mexicana")
+runs <- c(A = "alone", B = "+ parviglumis", C = "+ mexicana")
+nil <- fread("../../meta/samples.csv")[, .(line = sample_id, nil_id)]
+nil_label <- function(x) paste0(nil[match(x, line), nil_id], " (", x, ")")
+lc <- rd("line_checks.tsv", na.strings = ".")
+# one call set per taxon: run B for huehuetenangensis and parviglumis, 1270808 diploperennis, 1273053 mexicana
+lc_taxa <- lc[run %in% c("B", "1270808", "1273053")][, taxon := taxa[substr(donor, 1, 2)]]
+expected <- 12.5 # BC2 donor allele frequency, kept by selfing
+```
+
+## Why
+
+Questions of the user, 2026-10-16, while the diploperennis partner runs D-F ran
+(`docs/runs/genotype_diploperennis_partners_chr10.md`):
+
+- gap markers skip the witness veto, so how can they smooth the genotypes of notebook 06;
+- whether the smoothing erases diluted signal, and what that means for mapping;
+- whether the low donor allele frequency is selection against the donor, as in TeoNAM.
+
+Inputs (not in git): small tables in `gap_markers_dilution/`, made by `agent/nb07/collect.sh` (log there) from the runs
+on hazel and from the measurement jobs 1332113 and 1332684; master copy in
+`/rsstu/users/r/rrellan/BZea/ZEAL/genotype/notebook_inputs/gap_markers_dilution/`; copy it next to this notebook to
+re-render. Lines are named by registry NIL id with the sample in parentheses.
+
+## 1. Where the gap markers come from
+
+A donor's RTIGER markers are the union sites gap filling called ALT for it (Milestone 9a): its own tier-A sites and gap
+sites, discovered in other donors. Each gap marker, looked up in the donor's own discovery (CRISP, then the witness veto,
+then the tiers):
+
+```{r origin}
+go <- rd("gap_origin.tsv")
+go[, class := fifelse(grepl("^in discovery", class), "in discovery, tier B or C", class)]
+knitr::kable(dcast(go[src == "gap", .(n = sum(n)), by = .(run, donor, markers, class)],
+                   run + donor + markers ~ class, value.var = "n", fill = 0),
+             format.args = list(big.mark = ","))
+bc1 <- rd("gap_marker_bc1.tsv")
+bc1[, tier_a_pct := round(100 * as.numeric(sub(".*'A': ([0-9]+).*", "\\1", tiers)) / markers_in_table, 1)]
+knitr::kable(bc1[, .(run, donor, markers = src, `tier A at the union (%)` = tier_a_pct,
+                     `BC1 reads` = median_bc1_reads, `BC1 ALT reads` = median_bc1_alt,
+                     `pools with ALT` = median_pools_alt, LLR = median_LLR)],
+             caption = "Medians over the markers; tier from the donor's BC1 pools counted at the union sites.")
+```
+
+Most gap markers are sites the donor's own CRISP never called (about 90 % for Zh.0020_P3, half for Zh.0030_P4); about 9
+in 10 score tier A when the union is counted on the same BC1 reads (bcftools mpileup, MAPQ 20, base quality 20). So
+gap filling mostly adds sites the BC1 pools support, not promoted tier-B sites. For Zh.0030_P4, 44 % were removed by
+its witness veto: BC1 reads ALT, its lines do not.
+
+## 2. Do the lines carry them
+
+```{r lines}
+gr <- rd("gap_marker_reads.tsv")
+knitr::kable(gr[, .(run, donor, markers = src, n = markers, `with an ALT read in the lines (%)` = pct_alt_of_covered)],
+             format.args = list(big.mark = ","))
+gz <- rd("gap_marker_zero_alt.tsv")[k == 5]
+knitr::kable(gz[, .(run, donor, markers = src, `>= 5 reads from lines in donor state` = markers_k,
+                    `no ALT read (%)` = pct_zero_alt)],
+             caption = "A marker read only REF where its lines are in a donor state: probably REF in the donor.")
+gs <- rd("gap_marker_states.tsv")
+gs[, state := factor(state, 0:2, c("REF", "HET", "ALT"))]
+knitr::kable(dcast(gs[run == "B"], donor + src ~ state, value.var = "alt_pct"),
+             caption = "Run B: ALT % of the lines' reads per segment state, own vs gap markers (run C within a point).")
+```
+
+- Fewer gap markers have an ALT read in the lines, but read depth there is low; inside donor segments, Zh.0020_P3's
+  gap markers read ALT about as often as its own (HET 36 vs 41 %, ALT 77 vs 78 %).
+- About 6 % of Zh.0020_P3's testable gap markers (3x its own markers' share) and a fifth of Zh.0030_P4's read no ALT:
+  false alleles for this donor. Zh.0030_P4 carries almost no chr10 introgression (notebook 06), so its test is weak.
+- In REF segments gap markers are cleaner: 0.4-1.4 % ALT against 2.6-2.9 % at own markers.
+
+## 3. `r nil_label("PN9_SID806")`: what smoothing did
+
+```{r paint, fig.height = 6, fig.width = 11}
+seg <- rd("segments.tsv")[run %in% c("A", "B")]
+snp <- rd("snp50k_chr10_zh0020.tsv")[line %in% seg$line]
+src <- c(SNP50K = "NILs (RTIGER 50K)", A = "union alone (run A)", B = "+ parviglumis (run B)")
+pt <- rbind(snp[, .(source = src["SNP50K"], line, start, end, state)],
+            seg[, .(source = src[run], line, start, end, state)])
+lines_ord <- rev(sort(unique(pt$line)))
+pt[, row := match(line, lines_ord)]
+pt[, source := factor(source, levels = src)]
+pt[, state := factor(state, 0:2, c("REF", "HET", "ALT"))]
+ggplot(pt) +
+  geom_rect(aes(xmin = start / 1e6, xmax = end / 1e6, ymin = row - 0.48, ymax = row + 0.48, fill = state)) +
+  scale_fill_manual(values = c(REF = "gold", HET = "springgreen4", ALT = "purple4"), name = "State") +
+  facet_grid(. ~ source) +
+  scale_y_continuous(breaks = match("PN9_SID806", lines_ord), labels = nil_label("PN9_SID806"), expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(title = "Zh.0020_P3, chr10 ancestry per BC2S3 sample", x = "chr10 position (Mb)", y = NULL) +
+  theme_classic(base_size = 11) +
+  theme(strip.background = element_blank(), legend.position = "bottom")
+```
+
+```{r sid806, fig.height = 4}
+iv <- rd("sid806_intervals.tsv")[A_reads >= 20]
+ivl <- melt(iv[, .(mid = (start + end) / 2e6, A = A_alt_pct, `B own` = B_own_alt_pct, `B gap` = B_gap_alt_pct,
+                   nA = A_reads, nBo = B_own_reads, nBg = B_gap_reads)],
+            id.vars = c("mid", "nA", "nBo", "nBg"), variable.name = "markers", value.name = "alt_pct")
+ggplot(ivl, aes(mid, alt_pct, colour = markers)) +
+  geom_hline(yintercept = c(2.6, 41), linetype = "dashed", colour = "grey50") +
+  geom_point(size = 2) +
+  scale_colour_manual(values = c(A = "grey30", `B own` = "purple4", `B gap` = "darkorange")) +
+  labs(title = paste(nil_label("PN9_SID806"), ": intervals where runs A and B disagree"),
+       x = "chr10 position (Mb)", y = "ALT % of the line's reads",
+       caption = "Intervals with >= 20 reads in run A; dashed: own-marker REF noise (2.6 %) and HET (41 %).") +
+  theme_classic(base_size = 11) +
+  theme(legend.position = "bottom")
+knitr::kable(lc[line == "PN9_SID806", .(run = runs[run], segments = n_donor_segments, `REF % ALT` = ref_alt_pct,
+                                        `HET % ALT` = het_alt_pct, `ALT % ALT` = alt_alt_pct)],
+             caption = "Line checks of the sample.")
+```
+
+- Run A breaks 1.6-98 Mb into HET pieces; run B calls it REF. There the sample's own markers read 14-25 % ALT, far
+  above REF noise and below HET: about 0.18 donor allele frequency (/ 0.82, notebook 05), about 2 of the 6 plants HET.
+- Gap markers read half that or less, so they pulled the stretch to REF and the ALT segment at 143-146 Mb to HET.
+- The diluted signal is not lost: run B's line checks fail the sample (REF 7.5 % ALT, 7 donor segments).
+
+## 4. Diluted tissue pools across taxa
+
+```{r refalt}
+knitr::kable(lc_taxa[!is.na(ref_alt_pct), .(
+  lines = .N, `median REF % ALT` = median(ref_alt_pct), `p90` = quantile(ref_alt_pct, 0.9),
+  `lines > 3 %` = sum(ref_alt_pct > 3), `lines > 5 %` = sum(ref_alt_pct > 5),
+  `segments, > 3 %` = as.numeric(median(n_donor_segments[ref_alt_pct > 3])),
+  `segments, <= 3 %` = as.numeric(median(n_donor_segments[ref_alt_pct <= 3]))
+), by = taxon], digits = 1)
+ggplot(lc_taxa[!is.na(ref_alt_pct)], aes(ref_alt_pct, fill = taxon)) +
+  geom_histogram(binwidth = 0.25, boundary = 0) +
+  geom_vline(xintercept = 3, linetype = "dashed") +
+  facet_wrap(~taxon, ncol = 1, scales = "free_y") +
+  labs(x = "ALT % of the reads in REF segments", y = "samples") +
+  theme_classic(base_size = 11) +
+  theme(legend.position = "none")
+```
+
+7-15 % of the samples read more than 3 % ALT in their REF segments, and those also have more donor segments. Read
+as pools of 6 plants where only some carry an authentic introgression (user, 2026-10-16), plus some low-depth noise.
+
+## 5. The donor allele deficit
+
+### Called and hidden
+
+```{r dilution}
+dl <- rd("dilution.tsv")
+knitr::kable(dl[, .(taxon = taxa[taxon], run, donors, lines, `called (%)` = called_pct,
+                    `hidden in REF segments (%)` = hidden_pct, `together (%)` = called_plus_hidden_pct,
+                    `expected (%)` = expected_pct)],
+             caption = "Donor allele frequency on chr10 (HET 0.5, ALT 1, by bp, mean over samples); hidden: REF % ALT above the taxon's median sample, / 0.82.")
+```
+
+Hiding diluted signal in REF segments costs about half a point; the deficit is 3-7 points.
+
+### Against TeoNAM and SNP50K
+
+```{r teonam}
+tn <- rd("teonam_table1.tsv")[, teo_allele := teosinte_pct + het_pct / 2]
+knitr::kable(tn, col.names = c("population", "RILs", "W22 %", "HET %", "teosinte %", "teosinte allele % (computed)"),
+             caption = "Chen et al. (2019) Table 1, TeoNAM BC1S4 (expected 73.44 / 3.13 / 23.44 %, allele 25 %).")
+st <- rd("snp50k_taxa.tsv")[set == "our chr10 lines"]
+cmp <- rbind(
+  data.table(set = "TeoNAM, 5 families, all chromosomes", calls = "per RIL", obs = tn[population == "Composite", teo_allele],
+             exp = 25),
+  dl[, .(set = paste0("ZEAL ", taxa[taxon], ", chr10"), calls = paste0("zealgt (", run, ")"),
+         obs = called_plus_hidden_pct, exp = expected)],
+  st[, .(set = paste0("ZEAL ", taxa[taxon], ", chr10 (", lines, " samples)"), calls = "SNP50K RTIGER",
+         obs = chr10_pct, exp = expected)]
+)
+knitr::kable(cmp[, .(set, calls, `observed / expected` = sprintf("%.1f / %.1f", obs, exp), ratio = round(obs / exp, 2))])
+```
+
+The same direction as TeoNAM, where Chen et al. report "an excess of maize alleles" in all subpopulations; within a
+call set the taxa compare, across call sets only the direction. SNP50K sits lower partly because it calls
+donor-homozygous segments HET (notebook 06).
+
+### Coverage, families and markers
+
+```{r cov}
+knitr::kable(rd("coverage.tsv")[, taxon := taxa[taxon]], caption = "Sample coverage and called chr10 donor allele frequency by coverage band.")
+pd <- rd("per_donor.tsv")[, taxon := taxa[substr(donor, 1, 2)]][taxon %in% c("parviglumis", "mexicana", "diploperennis")]
+ggplot(pd, aes(markers / 1e3, freq_pct, colour = taxon)) +
+  geom_point(size = 2) +
+  labs(x = "union-ALT markers on chr10 (thousands)", y = "donor allele frequency (%)",
+       title = "Per family: chr10 donor allele frequency against its markers") +
+  theme_classic(base_size = 11) +
+  theme(legend.position = "bottom")
+knitr::kable(pd[, .(families = .N, `median (%)` = median(freq_pct), `mean (%)` = mean(freq_pct),
+                    `under 2 %` = sum(freq_pct < 2), `median markers` = median(markers),
+                    `median BC1 coverage` = median(bc1_mean_cov),
+                    `Spearman freq ~ markers` = cor(freq_pct, markers, method = "spearman")), by = taxon], digits = 2)
+```
+
+Line coverage is the same for parviglumis and mexicana (0.42x and 0.40x), and neither markers nor BC1 coverage predict
+a family's frequency. parviglumis is lower through its whole family distribution, not through families without chr10
+introgression.
+
+### Along the chromosome and across chromosomes
+
+```{r windows, fig.height = 6}
+cct <- data.table(chr = c("chr10", "chr9"), mb = c(96.18, 120.96), gene = c("ZmCCT10", "ZmCCT9"))
+wl <- function(f, calls, chr) {
+  w <- melt(rd(f), id.vars = "window_Mb", variable.name = "taxon", value.name = "freq")
+  w[, `:=`(mb = as.numeric(sub("-.*", "", window_Mb)) + 2.5, taxon = taxa[sub("_pct", "", taxon)], calls = calls, chr = chr)]
+}
+w <- rbind(wl("windows_zealgt_chr10.tsv", "zealgt", "chr10"), wl("windows_snp50k_chr10.tsv", "SNP50K RTIGER", "chr10"),
+           wl("windows_snp50k_chr9.tsv", "SNP50K RTIGER", "chr9"))
+ggplot(w[taxon != "huehuetenangensis"], aes(mb, freq, colour = taxon)) +
+  geom_vline(data = cct, aes(xintercept = mb), linetype = "dashed", colour = "grey40") +
+  geom_line() +
+  facet_grid(calls ~ chr, scales = "free_x") +
+  labs(x = "position (Mb, 5-Mb windows)", y = "donor allele frequency (%)",
+       caption = "Dashed: ZmCCT10 (chr10 96.18 Mb) and ZmCCT9 (chr9 120.96 Mb), v5 (zealhmm candidate table).") +
+  theme_classic(base_size = 11) +
+  theme(legend.position = "bottom")
+sc <- rd("snp50k_chroms.tsv")
+setnames(sc, c("chr", taxa[sub("_pct", "", names(sc)[-1])]))
+knitr::kable(sc, caption = "SNP50K RTIGER donor allele frequency (%) per chromosome.")
+```
+
+- No parviglumis dip at ZmCCT10 or ZmCCT9; on chr10 it is lower along the whole chromosome.
+- Across chromosomes parviglumis is higher than mexicana on chr4-8 and lower on chr1-3, 9, 10; equal over all ten
+  (SNP50K 6.8 %).
+
+## 6. Notes (2026-10-16)
+
+- **Gap markers are mostly CRISP misses**, not promoted tier-B sites: per-donor CRISP leaves out sites its own BC1 reads
+  score tier A at the union. One CRISP over all BC1 pools and every donor's witness pool would be the principled form
+  (user); a separate test (`agent/diplo_chr10/joint_crisp_test_plan.md`).
+- **For mapping, smoothing toward REF is preferred** (user): a diluted stretch called REF costs the large REF class
+  least; SNP50K RTIGER does the same. For choosing samples at a candidate gene the line checks flag the diluted ones
+  (REF % ALT > 3), but per sample, not per position: a windowed flag would be a design change.
+- **Diluted pools are authentic introgressions carried by some of the 6 sampled plants** (user); 6 of the 12 planted
+  plants estimate the bulk's allele frequency well. If the phenotype came from the same plants, their dose is
+  fractional, and neither REF nor HET states it.
+- **The donor allele deficit has the direction of TeoNAM's**; dilution explains half a point of 3-7. On chr10 neither
+  a photoperiod-gene dip nor a consistent lowland (parviglumis) deficit across chromosomes is seen: the parviglumis
+  chr10 shift is about 2.4 standard errors of the family mean and other chromosomes differ by 1-2 points in both
+  directions. The genome-wide run decides.
