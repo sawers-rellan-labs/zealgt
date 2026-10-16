@@ -112,9 +112,13 @@ pipeline stub cannot: its dependent steps run one after another, and Slurm start
 scheduling pass (`SchedulerParameters=defer`, ~50 s), so the GENOTYPE stub (~20 steps) took 24 min (job 1270344) and
 19 min with 10 s polling (1316875); the alignment stub (8 steps) 57 and 9 min (1271775, 1316876). Hence:
 
-- **Process checks**: every process's stub runs alone from ready inputs, all at once, one Slurm wait in all (not built
-  yet). Parallel tasks cannot race: each task writes only in its own work directory.
-- **`-preview`**: config, parameters and the DAG, no tasks.
+- **Process checks**: every process's stub runs alone from ready inputs, all at once, one Slurm wait in all.
+  `tests/hazel/*.nf.test` (one per module, inputs from `tests/fixtures/`; the nf-core modules' own tests download
+  theirs) run from one job: `sbatch --export=ALL,ZEALGT_REPO=<checkout> scripts/run_hazel_tests.sbatch`, with nf-test
+  under the Nextflow image's java and `conf/stub_hazel.config`. 26 tests in 6 min (job 1317802). Parallel tasks cannot
+  race: each task writes only in its own work directory. A process test applies settings under the module's own name
+  only, not under its aliases (`COUNT_LINES`, `.*FASTQ_ALIGN_MINIBWA:SAMTOOLS_MERGE`).
+- **`-preview`**: config, parameters and the DAG, no tasks. Not checked yet: on the laptop it wrote no DAG.
 - **A pipeline stub** only after changes to the launch scripts or the profiles, as below.
 
 1. **Check the sheet first** (seconds, no Nextflow):
