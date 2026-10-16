@@ -1,0 +1,165 @@
+---
+title: "Diploperennis with partner taxa in its union: dosage and fragmentation"
+subtitle: "chr10 GENOTYPE runs alone (1270808), D (+ parviglumis), E (+ mexicana), F (+ both); 2026-10-16"
+author: "Fausto Rodríguez-Zapata"
+date: today
+format:
+  html:
+    toc: true
+    embed-resources: true
+    fig-width: 8
+    fig-height: 5
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+library(data.table)
+library(ggplot2)
+theme_set(theme_bw(base_size = 13))
+# inputs (not tracked): agent/diplo_chr10/collect.sh, then agent/nb08/collect.sh; master copy on /rsstu, see "Why"
+d <- "diplo_partners"
+rd <- function(f, ...) fread(file.path(d, f), ...)
+all_runs <- c(alone = "alone", D = "+ parviglumis", E = "+ mexicana", F = "+ both")
+lc <- rd("line_checks.tsv", na.strings = ".")
+runs <- all_runs[names(all_runs) %in% unique(lc$run)]
+lc[, union := factor(runs[run], levels = runs)]
+seg <- rd("segments.tsv")[, union := factor(runs[run], levels = runs)]
+mk <- rd("markers.tsv")[, union := factor(runs[run], levels = runs)]
+gs <- rd("gap_states.tsv")[run %in% names(runs)][, union := factor(runs[run], levels = runs)]
+snp <- rd("snp50k_chr10_zd.tsv")
+nil <- fread("../../meta/samples.csv")[, .(line = sample_id, nil_id)]
+# sample introgression dosage check, per sample (docs/decisions.md 2026-10-11)
+lc[, passes := n_donor_segments <= 4 & (is.na(ref_alt_pct) | ref_alt_pct <= 3) &
+  (is.na(het_alt_pct) | (het_alt_pct >= 30 & het_alt_pct <= 55)) & (is.na(alt_alt_pct) | alt_alt_pct >= 75)]
+```
+
+## Why
+
+User, 2026-10-16: "plan the same approach for diplo as we did for huehue: make the genotyping using information from
+parviglumis and mexicana; there is a chance that the fragmentation improves; judging by the FST it should work"; then,
+for this notebook, the effect of partner taxa in the union on dosage and fragmentation. Run plan:
+`docs/runs/genotype_diploperennis_partners_chr10.md`. Runs shown: `r paste(names(runs), collapse = ", ")`.
+
+Inputs (not in git): small tables in `diplo_partners/`, made by `agent/diplo_chr10/collect.sh` and
+`agent/nb08/collect.sh` (logs there) and the measurement jobs (`agent/diplo_chr10/measure_diplo_*.log`); master copy
+in `/rsstu/users/r/rrellan/BZea/ZEAL/genotype/notebook_inputs/diplo_partners/`; copy it next to this notebook to
+re-render.
+
+## 1. Union and markers
+
+```{r markers}
+us <- mk[, .(u = union_sites[1]), by = union]
+knitr::kable(dcast(mk, donor ~ union, value.var = "union_alt"), format.args = list(big.mark = ","),
+             caption = sprintf("RTIGER markers per donor (union sites called ALT for it). Union sites: %s.",
+                               paste(us$union, format(us$u, big.mark = ","), collapse = "; ")))
+```
+
+The union grows 2-2.5-fold with a partner taxon; each donor's markers far less, and two donors lose a few: a donor
+still takes only the union sites its own BC1 reads support.
+
+## 2. Dosage
+
+### ALT % per segment state
+
+```{r dosage}
+med <- lc[, .(samples = .N, REF = median(ref_alt_pct, na.rm = TRUE), HET = median(het_alt_pct, na.rm = TRUE),
+              ALT = median(alt_alt_pct, na.rm = TRUE), `passing the dosage check` = sum(passes)), by = .(donor, union)]
+knitr::kable(med[order(donor, union)], digits = 1,
+             caption = "Medians over the donor's BC2S3 samples of the ALT % of reads in REF / HET / ALT segments.")
+ggplot(melt(lc, id.vars = c("donor", "union", "line"), measure.vars = c("het_alt_pct", "alt_alt_pct"),
+            variable.name = "state", value.name = "alt_pct", na.rm = TRUE)[
+  , state := factor(state, c("het_alt_pct", "alt_alt_pct"), c("HET segments", "ALT segments"))],
+aes(union, alt_pct, fill = union)) +
+  geom_boxplot(outlier.size = 0.6) +
+  facet_grid(state ~ donor, scales = "free_y") +
+  labs(x = NULL, y = "ALT % of the sample's reads", fill = "union") +
+  theme_classic(base_size = 10) +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), legend.position = "bottom")
+```
+
+### Own and gap markers
+
+```{r ownGap}
+gs[, state := factor(state, 0:2, c("REF", "HET", "ALT"))]
+knitr::kable(dcast(gs, donor + src ~ union + state, value.var = "alt_pct"), digits = 1,
+             caption = "ALT % of the samples' reads per segment state, at the donor's own and gap markers.")
+```
+
+### Class shares and donor allele frequency
+
+```{r classes}
+bp <- seg[, .(bp = sum(end - start)), by = .(union, donor, line, state)]
+cls <- bp[, .(HET = 100 * sum(bp[state == 1]) / sum(bp), ALT = 100 * sum(bp[state == 2]) / sum(bp)), by = .(union, donor)]
+cls[, allele := ALT + HET / 2]
+knitr::kable(dcast(cls, donor ~ union, value.var = c("HET", "ALT", "allele")), digits = 1,
+             caption = "Shares of chr10 bp called HET / ALT and donor allele frequency (HET 0.5, ALT 1); BC2S2: 6.25 / 9.4 / 12.5 %.")
+```
+
+## 3. Fragmentation
+
+```{r frag}
+knitr::kable(lc[, .(samples = .N, `median segments` = as.numeric(median(n_donor_segments)),
+                    `mean` = mean(n_donor_segments), `p90` = quantile(n_donor_segments, 0.9),
+                    `max` = as.numeric(max(n_donor_segments)), `samples > 4 segments` = sum(n_donor_segments > 4),
+                    `REF % ALT > 3` = sum(ref_alt_pct > 3, na.rm = TRUE)), by = .(donor, union)][order(donor, union)],
+             digits = 1, caption = "Donor segments per sample.")
+```
+
+SNP50K HET segments of at least 1 Mb, and how many pieces (segments of any state) each run calls over them in the same
+sample (the fragmentation measure of the 2026-10-15 diagnosis):
+
+```{r frag50k}
+hs <- snp[state == 1 & end - start >= 1e6, .(line, s = start, e = end)]
+pieces <- rbindlist(lapply(names(runs), function(r) {
+  x <- seg[run == r, .(line, start, end)]
+  m <- x[hs, on = .(line, start < e, end > s), nomatch = NULL, .(line, s = i.s, e = i.e)]
+  m[, .(pieces = .N), by = .(line, s, e)][, union := runs[r]]
+}))[, union := factor(union, levels = runs)]
+pieces <- merge(pieces, unique(lc[, .(line, donor)]), by = "line")
+knitr::kable(dcast(pieces[, .(segments = .N, whole = round(100 * mean(pieces == 1), 1),
+                              split3 = round(100 * mean(pieces >= 3), 1)), by = .(donor, union)],
+                   donor ~ union, value.var = c("whole", "split3")),
+             caption = "Share (%) of SNP50K HET segments >= 1 Mb kept whole (1 piece) and split into >= 3 pieces.")
+```
+
+## 4. Chromosome painting
+
+```{r paint, fig.height = 18, fig.width = 13}
+src <- c(SNP50K = "NILs (RTIGER 50K)", runs)
+pt <- rbind(snp[line %in% lc$line, .(source = src["SNP50K"], line, start, end, state)],
+            seg[, .(source = runs[run], line, start, end, state)])
+pt <- merge(pt, unique(lc[, .(line, donor)]), by = "line")
+pt[, row := match(line, rev(sort(unique(line)))), by = donor]
+pt[, source := factor(source, levels = src)]
+pt[, state := factor(state, 0:2, c("REF", "HET", "ALT"))]
+pt[, label := paste0(donor, "\n", uniqueN(line), " samples"), by = donor]
+ggplot(pt) +
+  geom_rect(aes(xmin = start / 1e6, xmax = end / 1e6, ymin = row - 0.48, ymax = row + 0.48, fill = state)) +
+  scale_fill_manual(values = c(REF = "gold", HET = "springgreen4", ALT = "purple4"), name = "State") +
+  facet_grid(label ~ source, scales = "free_y", space = "free_y") +
+  scale_y_continuous(breaks = NULL, expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(title = "Diploperennis, chr10 ancestry per BC2S3 sample", x = "chr10 position (Mb)", y = "samples") +
+  theme_classic(base_size = 11) +
+  theme(strip.text.y = element_text(angle = 0), strip.background = element_blank(), legend.position = "bottom",
+        panel.spacing.y = unit(4, "pt"))
+```
+
+## 5. Notes (2026-10-16)
+
+- **Partners add candidates, not markers**: the union grows 2-2.5-fold; each donor takes only the sites its own BC1
+  reads support.
+- **Noise and fragmentation change little for diploperennis**: its own 6-donor union already supplies gap markers;
+  partners lower the gap markers' REF noise by at most half a point, and trim the most fragmented samples
+  (maximum segments down by 2-4) while medians stay at 0-3. Samples with REF % ALT > 3 stay flagged.
+- **Dosage**: class shares barely move; ALT segments read less ALT in Zd.0010_P2 and Zd.0040_P1 with partners
+  (gap markers there read 67-72 % ALT against 80-91 % at own markers): a slide toward HET, larger with mexicana.
+- **The fragmentation measure does not move**: the share of SNP50K HET segments >= 1 Mb kept whole or split into
+  >= 3 pieces changes by a few points at most, in either direction. In the painting, Zd.0020_P3 is fragmented in
+  every union where SNP50K calls long HET segments: its fragmentation has another cause than marker density (the
+  diagnosis's dilution in its pools is the candidate).
+- **D and E agree closely**: the partner's taxon matters less than adding one.
+- Run F (both partners) to be added when it finishes.
