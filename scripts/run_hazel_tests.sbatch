@@ -24,8 +24,9 @@ BINDS=/usr/bin/sbatch,/usr/bin/squeue,/usr/bin/scancel,/usr/lib64/slurm,/var/spo
 BINDS=$BINDS,/usr/lib64/libmunge.so.2,/run/munge,/usr/lib64/libnss_sss.so.2,/var/lib/sss/pipes
 BINDS=$BINDS,/share/maize/frodrig4,/rsstu/users/r/rrellan,$APPTAINER
 export APPTAINERENV_PREPEND_PATH="$APPTAINER/bin"
-# a time limit goes inside: timeout cannot call a shell function; NXF_TIMEOUT=0 means none
-nxf() { timeout "${NXF_TIMEOUT:-0}" "$APPTAINER/bin/apptainer" exec -B "$BINDS" "$SIF" env NXF_OFFLINE=true NXF_PLUGINS_DIR="$NXF_DIR/plugins" \
+# a time limit goes inside: timeout cannot call a shell function; NXF_TIMEOUT=0 means none; the JVM in the image can
+# fail to handle SIGTERM (job 1325574), hence the kill 15 s later
+nxf() { timeout --kill-after=15s "${NXF_TIMEOUT:-0}" "$APPTAINER/bin/apptainer" exec -B "$BINDS" "$SIF" env NXF_OFFLINE=true NXF_PLUGINS_DIR="$NXF_DIR/plugins" \
     NXF_SECRETS_FILE="$NXF_DIR/secrets/store.json" NXF_OPTS="-Xms256m -Xmx1g" "$@"; }
 stamp() { awk -v n="$1" '{ print strftime("%F %T"), "[" n "]", $0; fflush() }'; }
 cd "$REPO" || exit 2
