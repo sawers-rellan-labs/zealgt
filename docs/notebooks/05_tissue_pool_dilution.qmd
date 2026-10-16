@@ -1,0 +1,93 @@
+---
+title: "Tissue-pool dilution"
+subtitle: "Why some families' BC2S3 samples read too little donor ALT: the dilution factor per sample, mexicana chr10 (run 1273053; 2026-10-16)"
+author: "Fausto Rodríguez-Zapata"
+date: today
+format:
+  html:
+    toc: true
+    embed-resources: true
+    fig-width: 7.5
+    fig-height: 6.5
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+library(data.table)
+library(ggplot2)
+theme_set(theme_bw(base_size = 13))
+dl <- fread("tissue_pool_dilution/dilution_factor_mex42.tsv")
+dl[, family := fcase(status == "pass", "balanced", status == "fail", "unbalanced", default = "no tier-A sites")]
+both <- dl[!is.na(f_het) & !is.na(f_alt) & family != "no tier-A sites"]
+summ <- dl[family != "no tier-A sites", .(
+  samples = .N, f_het = median(f_het, na.rm = TRUE), f_alt = median(f_alt, na.rm = TRUE),
+  ref_bg = median(ref_bg, na.rm = TRUE)
+), by = family]
+corr <- both[, .(samples = .N, r = cor(f_het, f_alt)), by = family]
+diag_cluster <- both[family == "unbalanced" & f_alt < 0.65 & abs(f_alt - f_het) < 0.2]
+```
+
+## The question
+
+Each BC2S3 sample is a tissue pool: one leaf punch from each of six plants of one NIL, assumed to give equimolar DNA
+(`docs/TERMINOLOGY.md`). The sample introgression dosage check (`docs/decisions.md`, 2026-10-11) splits the 42
+mexicana families of run 1273053 into two sets: families with **balanced tissue pools**
+(their samples read the expected ALT in donor segments) and with **unbalanced tissue pools** (too little ALT). The
+deficit is one-sided: no family reads too much ALT. Random unequal plant contributions would push dosage both ways, so
+something lowers the donor reads systematically. Candidates: dilution (other tissue or B73 DNA in the pool), selection
+against carriers during line development, mapping bias.
+
+## The dilution factor
+
+For each sample and donor-segment state, the dilution factor is the observed ALT read frequency divided by the expected
+one; the expected one is the read-weighted ALT frequency of the families with balanced tissue pools (HET segments
+41.1 %, ALT segments 86.3 %). States with fewer than 100 reads are left out.
+
+- **ALT segments** (donor allele in all six plants): the factor is about 1 in a balanced pool and falls with any
+  admixed tissue. It is the clean dilution measure.
+- **HET segments** (the six plants segregate): the factor varies by segregation inside the pool even without dilution.
+- **Dilution** lowers both by the same factor (the diagonal). Selection and mapping bias act on loci, not on the whole
+  sample, so they do not keep the two equal.
+
+```{r summary}
+knitr::kable(summ,
+  digits = c(0, 0, 2, 2, 1),
+  col.names = c("families", "samples", "HET factor, median", "ALT factor, median", "REF background, median ALT %")
+)
+```
+
+```{r plot}
+ggplot(both, aes(f_het, f_alt, colour = family)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey50") +
+  geom_point(size = 1.6, alpha = 0.7) +
+  scale_colour_manual(
+    values = c(balanced = "#1b9e77", unbalanced = "#d95f02"),
+    labels = c(balanced = "balanced tissue pools", unbalanced = "unbalanced tissue pools"), name = NULL
+  ) +
+  coord_equal(xlim = c(0, 1.65), ylim = c(0, 1.65)) +
+  labs(
+    title = "Dilution factor per BC2S3 sample, mexicana chr10",
+    subtitle = sprintf("%d samples with >= 100 reads in both HET and ALT segments", nrow(both)),
+    x = "HET segments (observed / expected ALT)", y = "ALT segments (observed / expected ALT)"
+  )
+```
+
+## What it shows
+
+- **Balanced families:** ALT factor near 1 (median `r round(summ[family == "balanced", f_alt], 2)`), HET factor
+  spread by segregation; the two are unrelated (r = `r round(corr[family == "balanced", r], 2)`).
+- **Unbalanced families:** both factors lower (medians `r round(summ[family == "unbalanced", f_het], 2)` and
+  `r round(summ[family == "unbalanced", f_alt], 2)`) and moving together (r = `r round(corr[family == "unbalanced", r], 2)`).
+  `r nrow(diag_cluster)` samples sit on the diagonal with an ALT factor below 0.65: diluted pools.
+- **REF background is the same** in both (`r summ[family == "balanced", ref_bg]` %). Tissue from another donor family
+  would raise it; B73 or recurrent-parent tissue would not. So the dilution, where present, is B73-like.
+
+## Limits
+
+- Only `r nrow(both)` of `r nrow(dl)` samples have both factors: many samples carry no ALT segment on chr10.
+- Selection is not tested here; it needs the deficit per region across families (recurring low windows, stronger in
+  ALT than in HET segments).
+- One chromosome, one taxon.

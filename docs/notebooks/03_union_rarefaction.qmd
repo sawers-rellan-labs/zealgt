@@ -1,6 +1,6 @@
 ---
 title: "Marker union rarefaction"
-subtitle: "How the union of donor sites grows with donors: a demographic model of teosinte, the simulations that would complete it, and the curves fitted to the six donors of the eight-donor chr10 test that pass the curve rule (2026-10-11)"
+subtitle: "How the union of donor sites grows with donors: a demographic model of teosinte, the simulations that would complete it, and the curves fitted to the six donors of the eight-donor chr10 test whose families have balanced tissue pools (2026-10-11), and the 24 such families of the 42 mexicana donors (2026-10-16)"
 author: "Fausto Rodríguez-Zapata"
 date: today
 format:
@@ -32,7 +32,7 @@ once the union over all samples exists. The math supplement's Section 5.6 summar
   each new population adds a block of private alleles, and false alleles add a constant number per donor.
 - **Simulations proposed** (section 2): the expected site frequency spectrum of the donors under (S1) mexicana's Ne history,
   (S2) races as demes, (S3) the Zea species tree with ZEAL's donor composition; Eq. 1 turns each into a union curve.
-- **Empirical fits** (six mexicana donors, four races, the ones that pass the curve rule; two families off the curve shown
+- **Empirical fits** (six mexicana donors, four races, families with balanced tissue pools; two families off the curve shown
   apart): Michaelis-Menten ($U_\infty \approx 474$ thousand sites on chr10), Watterson, and Watterson with false alleles
   ($\varepsilon_f \approx 13$ thousand per donor): 245, 225 and 263 thousand sites at 10 donors. The false-allele term's
   linear growth is what sets the last apart (section 3.7). The five-donor fits overshot the sixth donor by 5-11 %
@@ -691,10 +691,10 @@ mx_table <- rbindlist(lapply(names(models), function(k) {
 }))[order(rmse)][, d_aic := aic - min(aic, na.rm = TRUE)]
 ```
 
-The 42 mexicana donors of run 1273053. Each sequenced line is a plant pool: one punch from each of six plants of the
-same NIL. A family has **balanced plant pools** when its lines pass the dosage check of `docs/decisions.md`
-(2026-10-11; per-donor medians, criterion 3 not applied), and **unbalanced plant pools** when its HET segments read low
-ALT, presumed from unequal contributions of the six plants:
+The 42 mexicana donors of run 1273053. Each BC2S3 sample is a tissue pool: one punch from each of six plants of the
+same NIL (`docs/TERMINOLOGY.md`). A family has **balanced tissue pools** when its samples pass the sample introgression
+dosage check of `docs/decisions.md` (2026-10-11; per-donor medians, criterion 3 not applied), and **unbalanced tissue
+pools** when its donor segments read too little ALT:
 `r nrow(mx_donors[status == "pass"])` balanced, `r nrow(mx_donors[status == "fail"])` unbalanced, Zx.0520_P4 has no tier-A
 sites. Too many donors to list every subset (section 3.2), so the curve is the exact mean over all sets of $k$ donors
 from each site's number of carrying donors $d$: $E[U(k)] = \sum_{\text{sites}} 1 - \binom{n-d}{k} / \binom{n}{k}$, the
@@ -753,7 +753,7 @@ ggplot(mx_cv, aes(donors, sites / 1e3, colour = model)) +
   annotate("point", x = 42, y = u_all / 1e3, shape = 23, size = 4, fill = "gold") +
   labs(
     title = "Mexicana chr10: fits on k <= 8 of the balanced-family curve, carried to 42 donors",
-    subtitle = sprintf("black: %d families with balanced plant pools; grey: all %d families with sites; gold: all-42 union",
+    subtitle = sprintf("black: %d families with balanced tissue pools; grey: all %d families with sites; gold: all-42 union",
       n_pass, nrow(mx_all)),
     x = "Donors in the union", y = "Union sites (thousands)", colour = NULL
   )
@@ -767,7 +767,7 @@ holds fewer sites, and they add their sites late.
 - Six donors, four races, all mexicana: every curve in section 3 fits them; the choice between curves rests on section 4,
   not on the fit. Discovery depth differs ninefold between them (9,060-85,952 tier-A sites), and two of the eight donors
   are off the curve.
-- Zx.0500_P2 passes the curve rule on its lines' calls at union sites, but its own tier-A sites read a median 4.5 % ALT inside
+- Zx.0500_P2 passes the sample introgression dosage check on its lines' calls at union sites, but its own tier-A sites read a median 4.5 % ALT inside
   its lines' REF segments, against 1-2 % for the other five (artifacts present in all lines), so some of its sites in the sharing patterns are likely false.
 - The rarefaction mean averages over donors; a donor with few lines or low coverage finds fewer sites and adds fewer.
 - Section 4's numbers mix Chen's discovery (individual genomes, 22x, strict filters) with ours (BC1 pools); $\eta$ and the
