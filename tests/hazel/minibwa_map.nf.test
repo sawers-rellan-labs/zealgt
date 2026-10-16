@@ -1,0 +1,28 @@
+nextflow_process {
+
+    name "MINIBWA_MAP stub (hazel setup check)"
+    script "../../modules/nf-core/minibwa/map/main.nf"
+    process "MINIBWA_MAP"
+    tag "hazel"
+    tag "alignment"
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [[id: 't', single_end: false, library: 'L', lanes: '1'], [file("${projectDir}/tests/fixtures/reads/SI_1_1.fq.gz", checkIfExists: true), file("${projectDir}/tests/fixtures/reads/SI_1_2.fq.gz", checkIfExists: true)]]
+                input[1] = [[id: 'tiny'], [file("${projectDir}/tests/fixtures/ref/tiny.fa.l2b", checkIfExists: true)]]
+                input[2] = [[id: 'tiny'], file("${projectDir}/tests/fixtures/ref/tiny.fa", checkIfExists: true)]
+                input[3] = false
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}

@@ -1,0 +1,25 @@
+nextflow_process {
+
+    name "SEQKIT_HEAD stub (hazel setup check)"
+    script "../../modules/nf-core/seqkit/head/main.nf"
+    process "SEQKIT_HEAD"
+    tag "hazel"
+    tag "alignment"
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [[id: 't', single_end: false, library: 'L', lanes: '1'], [file("${projectDir}/tests/fixtures/reads/SI_1_1.fq.gz", checkIfExists: true), file("${projectDir}/tests/fixtures/reads/SI_1_2.fq.gz", checkIfExists: true)], 10]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}
