@@ -131,7 +131,8 @@ scheduling pass (`SchedulerParameters=defer`, ~50 s), so the GENOTYPE stub (~20 
   `nextflow config` (config, profile), then `nextflow inspect` (every container; it does not check parameters).
   Parameters: the sheet check above and the run's own schema check in its first seconds. No `-preview`: with a
   workflow output block it never exits in Nextflow 26.04.6 (nextflow-io/nextflow#7836).
-- **A pipeline stub** only after changes to the launch scripts or the profiles, as below.
+- **No chained pipeline stub**, also after profile changes: the process checks run under `hpc_prod` with the profile's
+  settings (user, 2026-10-17; stub 1349205 cancelled). A pipeline stub, if ever run, as below.
 
 1. **Check the sheet first** (seconds, no Nextflow):
    - every path is absolute, since Nextflow resolves `--input` from the launch directory (stub 1269132);
