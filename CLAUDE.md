@@ -34,6 +34,7 @@ each line's counts at its donor's markers, then the `ANCESTRY` workflow reads th
 - nf-core modules first; patch them only with `nf-core modules patch`.
 - Established tools (bcftools, bedtools, samtools, ...) before own scripts; an own script only when none fits, with the reason in the commit message.
 - Resources only in config, measured per process; modules read only `task.cpus` and `task.memory`.
+- Head jobs: 16 GB for production, 8 GB for tests; their peak always equals the request, so never raise it unless authentically OOM.
 - Comments: one line saying what the code does; history goes in commits.
 - `workflows/<name>.nf`: the list of stage calls only, <= 100 lines.
 - `subworkflows/local/<stage>/main.nf`: one stage's channel wiring, <= 100 lines; `modules/local/<tool>/main.nf`: one tool call, <= 100 lines.

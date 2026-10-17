@@ -3,6 +3,8 @@ include { CHECK_ALT_RATE                   } from '../../../modules/local/check_
 include { SAMTOOLS_MERGE                   } from '../../../modules/nf-core/samtools/merge/main'
 include { SAMTOOLS_ADDREPLACERG            } from '../../../modules/nf-core/samtools/addreplacerg/main'
 include { SAMTOOLS_INDEX                   } from '../../../modules/nf-core/samtools/index/main'
+include { SAMTOOLS_VIEW as FILTER_BC1      } from '../../../modules/nf-core/samtools/view/main'
+include { SAMTOOLS_VIEW as FILTER_WITNESS  } from '../../../modules/nf-core/samtools/view/main'
 include { CRISP                            } from '../../../modules/local/crisp/main'
 include { BCFTOOLS_VIEW as BED_CLIP        } from '../../../modules/nf-core/bcftools/view/main'
 include { BCFTOOLS_VIEW as WITNESS_VETO    } from '../../../modules/nf-core/bcftools/view/main'
@@ -28,14 +30,13 @@ workflow CRAM_VARIANT_DISCOVERY_CRISP {
         check: meta.role == 'check' && meta.pedigree == 'B73-bulk'
     }
 
-    // B73 check filter: each check's share of ALT reads at the check sites
+    // B73 check filter: each check's share of ALT reads at the check sites; the dropped checks listed with their counts
     CHECK_COUNTS(ch_role.check.map { meta, cram, crai -> [meta, cram, crai, check_sites, []] }, ch_fasta, false)
     CHECK_ALT_RATE(CHECK_COUNTS.out.vcf)
     def ch_check = ch_role.check.join(CHECK_ALT_RATE.out.rate).branch { _meta, _cram, _crai, rate ->
         kept: (rate as double) <= max_check_alt_rate
         dropped: true
     }
-    // the dropped checks with their counts
     def ch_dropped_b73_checks = CHECK_ALT_RATE.out.tsv.join(ch_check.dropped).map { _meta, tsv, _cram, _crai, _rate -> tsv }
         .collectFile(name: 'dropped_b73_checks.tsv', seed: "sample_id\treads\talt_reads\talt_rate\n", sort: true)
 
@@ -52,20 +53,20 @@ workflow CRAM_VARIANT_DISCOVERY_CRISP {
     def ch_fasta_gzi = ch_fasta.map { meta, fasta, fai -> [meta, fasta, fai, []] }
     SAMTOOLS_MERGE(ch_pool, ch_fasta_gzi, '')
     // one read group per pool: CRISP and mpileup see one sample
-    SAMTOOLS_ADDREPLACERG(
-        SAMTOOLS_MERGE.out.cram.map { meta, cram -> [meta, cram, [], "'@RG\\tID:${meta.id}\\tSM:${meta.id}\\tPL:ILLUMINA'"] },
-        ch_fasta_gzi
-    )
-    SAMTOOLS_INDEX(SAMTOOLS_ADDREPLACERG.out.cram)
-    def ch_pool_rg = SAMTOOLS_ADDREPLACERG.out.cram.join(SAMTOOLS_INDEX.out.index, failOnMismatch: true).branch { meta, _cram, _crai ->
-        witness: meta.donor != null
-        control: true
-    }
-
-    // CRISP per donor x region: its BC1 pools and its witness over the region
-    def ch_crisp = ch_role.bc1.map { meta, cram, crai -> [meta.donor, cram, crai] }.groupTuple()
-        .combine(ch_regions).map { donor, crams, crais, region -> [donor, region, crams, crais] }
-        .join(ch_pool_rg.witness.map { meta, cram, crai -> [meta.donor, meta.region, meta.id, cram, crai] }, by: [0, 1])
+    SAMTOOLS_ADDREPLACERG(SAMTOOLS_MERGE.out.cram.map { meta, cram -> [meta, cram, [], "'@RG\\tID:${meta.id}\\tSM:${meta.id}\\tPL:ILLUMINA'"] }, ch_fasta_gzi)
+    def ch_pool_rg = SAMTOOLS_ADDREPLACERG.out.cram.branch { meta, _cram -> witness: meta.donor != null; control: true }
+    SAMTOOLS_INDEX(ch_pool_rg.control)
+    def ch_controls = ch_pool_rg.control.join(SAMTOOLS_INDEX.out.index, failOnMismatch: true)
+    // CRISP reads copies without supplementary records (vibansal/crisp#35): the BC1 CRAMs whole, the witness per region
+    FILTER_BC1(ch_role.bc1.map { meta, cram, _crai -> [meta, cram, []] }, ch_fasta, [[], []], [[], []], 'crai')
+    FILTER_WITNESS(ch_pool_rg.witness.map { meta, cram -> [meta, cram, []] }, ch_fasta, [[], []], [[], []], 'crai')
+    // CRISP per donor x region: its BC1 pools (by name, once all are in: groupKey) and its witness over the region
+    def ch_n_bc1 = ch_role.bc1.map { meta, _cram, _crai -> [meta.donor, 1] }.groupTuple().map { donor, ones -> [donor, ones.size()] }
+    def ch_crisp = FILTER_BC1.out.cram.join(FILTER_BC1.out.crai, failOnMismatch: true).map { meta, cram, crai -> [meta.donor, cram, crai] }
+        .combine(ch_n_bc1, by: 0).map { donor, cram, crai, n -> [groupKey(donor, n), cram, crai] }.groupTuple(sort: { a, b -> a.name <=> b.name })
+        .combine(ch_regions).map { key, crams, crais, region -> [key.getGroupTarget(), region, crams, crais] }
+        .join(FILTER_WITNESS.out.cram.join(FILTER_WITNESS.out.crai, failOnMismatch: true)
+            .map { meta, cram, crai -> [meta.donor, meta.region, meta.id, cram, crai] }, by: [0, 1])
         .map { donor, region, crams, crais, witness, wcram, wcrai -> [[id: donor, witness: witness, region: region], crams, crais, wcram, wcrai] }
     CRISP(ch_crisp, ch_fasta, lowcopy_bed)
     // records inside the low-copy ranges (CRISP also calls the base past each range end), then the witness veto
@@ -74,11 +75,10 @@ workflow CRAM_VARIANT_DISCOVERY_CRISP {
 
     // the B73 controls counted at each donor's kept sites in the same region
     BCFTOOLS_MPILEUP(
-        ch_pool_rg.control.map { meta, cram, crai -> [meta.region, meta, cram, crai] }
+        ch_controls.map { meta, cram, crai -> [meta.region, meta, cram, crai] }
             .combine(WITNESS_VETO.out.vcf.map { meta, vcf -> [meta.region, meta, vcf] }, by: 0)
             .map { _region, meta, cram, crai, donor_meta, vcf -> [meta + [donor: donor_meta.id], cram, crai, vcf, []] },
-        ch_fasta,
-        false
+        ch_fasta, false
     )
     // control pools per region (the B73 controls, plus the check pool if a check is kept): each donor x region goes on once its counts are in
     def ch_n_controls = ch_b73_controls.count().combine(ch_check.kept.count()).map { n, kept -> n + (kept ? 1 : 0) }
@@ -92,7 +92,7 @@ workflow CRAM_VARIANT_DISCOVERY_CRISP {
     vcf                = WITNESS_VETO.out.vcf.join(WITNESS_VETO.out.index) // channel: [ meta, vcf.gz, tbi ], one per donor x region
     sites              = POOLED_LIKELIHOOD_TIERS.out.sites                 // channel: [ meta, sites.tsv.gz ], one per donor x region
     tier_a             = POOLED_LIKELIHOOD_TIERS.out.tier_a                // channel: [ meta, tier_a.vcf ], one per donor x region
-    controls           = ch_pool_rg.control                                // channel: [ meta, cram, crai ], the B73 controls, per region
+    controls           = ch_controls                                       // channel: [ meta, cram, crai ], the B73 controls, per region
     n_controls         = ch_n_controls                                      // channel: value, the control pools per region
     dropped_b73_checks = ch_dropped_b73_checks                             // channel: dropped_b73_checks.tsv
 }

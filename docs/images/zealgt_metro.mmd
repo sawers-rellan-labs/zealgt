@@ -67,6 +67,7 @@ graph LR
     subgraph geno [Variant calling]
         %%metro entry: left | variant_calling
         %%metro exit: right | ancestry
+        filter[no supplementary]
         crisp[CRISP]
         veto[witness veto]
         b73_in[ ]
@@ -80,6 +81,7 @@ graph LR
         count_lines[mpileup lines]
         counts_out[counts]
 
+        filter -->|variant_calling| crisp
         regions_in -->|variant_calling| crisp
         crisp -->|variant_calling| veto
         veto -->|variant_calling| tiers
@@ -105,6 +107,6 @@ graph LR
         grid -->|ancestry| ancestry_out
     end
 
-    cram_out -->|variant_calling| crisp
+    cram_out -->|variant_calling| filter
     counts_out -->|ancestry| rtiger
     fastq_sheet -->|alignment| split
