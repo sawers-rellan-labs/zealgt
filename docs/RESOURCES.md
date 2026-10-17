@@ -285,7 +285,9 @@ start-up; the gap was not examined), RTIGER under
 Two donors (Zh.0020_P3 4 BC1 pools, 26 lines; Zh.0030_P4 5 pools, 35 lines), chr1-chr10 (`hpc_dev`,
 `docs/runs/huehue_genome.md`): variant calling 1 h 41 min wall, 1,114 tasks, 12.0 CPU-h. CRISP peaks at 0.74 GB
 (chr1, 42.5 min); no ZEAL donor has more than 5 BC1 pools, so CRISP gets 2 GB (was 16 GB; `hpc_prod` doubles it on a
-retry). The genome RTIGER fit (one per donor, all ten chromosomes) needs more than `hpc_dev`'s 2 GB: the run config
+retry). `UNION_TIERS` peaked at 1.80 GB on chr10 with 88 donors (727,756 union sites, 2026-10-16,
+`genotype_diplo_parviglumis_mexicana_chr10`); chr1 holds ~2.2 x chr10's union sites, so 8 GB (was 4 GB) for the
+all-donor run. The genome RTIGER fit (one per donor, all ten chromosomes) needs more than `hpc_dev`'s 2 GB: the run config
 gave 16 GB; 1 Mb and 5 Mb rigidity alike (jobs 1343858, 1346168).
 
 | process                   | tasks | max realtime | CPU-h | max peak RSS |
