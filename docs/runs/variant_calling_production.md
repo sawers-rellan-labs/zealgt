@@ -46,8 +46,28 @@ counts; the variant discovery can be done once and then we can fiddle with the H
 ## Runs
 
 One `variant_calling` run over every donor (decision 1); it publishes the counts and one counts sheet.
-Head job on the normal QOS, 16 GB, `NXF_OPTS="-Xms1g -Xmx12g"`; profile per decision 3. Commands written once the
-decisions are made.
+Head job on the normal QOS, 16 GB, `NXF_OPTS="-Xms1g -Xmx12g"`, `hpc_prod` (decision 3), parameters in
+`docs/runs/variant_calling_production/params.yaml` (outputs in `ZEAL/variant_calling`).
+
+- Checkout `ZEAL/zealgt_prod` (a fresh clone; the old one was removed in cleanup) at tag `vc-prod-20261017`; launch
+  folder `nf_work/zealgt_prod` (default).
+- Setup checks (`docs/running.md` "Stubs on hazel"), one job from that checkout:
+  `sbatch --export=ALL,ZEALGT_REPO=$C,PARAMS=$C/docs/runs/variant_calling_production/params.yaml scripts/run_hazel_tests.sbatch`.
+- Stub (9f changed `hpc_prod`): `stub_samplesheet.csv`, per taxon its first donor with one BC1 pool and one line over
+  0.05x, plus one `B73-bulk` check (5 donors, 11 rows), chr1 and chr10, its own launch folder and outdir on `/share`:
+  ```
+  sbatch --partition=compute --qos=normal --time=02:00:00 --mem=16G \
+    --export=ALL,ZEALGT_REPO=$C,ZEALGT_LAUNCH=/share/maize/frodrig4/nf_work/zealgt_prod_vc_stub,NXF_OPTS="-Xms1g -Xmx12g" \
+    $C/scripts/submit_head_job.sbatch hpc_prod -params-file $C/docs/runs/variant_calling_production/params.yaml \
+    --input $C/docs/runs/variant_calling_production/stub_samplesheet.csv --regions chr1,chr10 \
+    --outdir /share/maize/frodrig4/nf_work/zealgt_prod_vc_stub/results -stub -c $C/conf/stub_hazel.config
+  ```
+- The run (`C=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt_prod`):
+  ```
+  sbatch --partition=compute --qos=normal --time=1-00:00:00 --mem=16G --no-requeue \
+    --export=ALL,ZEALGT_REPO=$C,NXF_OPTS="-Xms1g -Xmx12g" \
+    $C/scripts/submit_head_job.sbatch hpc_prod -params-file $C/docs/runs/variant_calling_production/params.yaml
+  ```
 
 ## Estimates
 
