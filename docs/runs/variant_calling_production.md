@@ -159,4 +159,5 @@ huehuetenangensis genome run, job 1343856: 1,168,623 vs 68,177); ~15 below.
    1365010). Reported upstream: https://github.com/vibansal/crisp/issues/35. Fix: Milestone 9g (no supplementary
    records in variant calling); the run restarts cold after it merges (`work/` deleted in cleanup).
 5. Job 1367152 (2026-10-17, tag `vc-prod-9g-20261017`, cold: `work/` deleted): Milestone 9g (PR #66), no
-   supplementary records in variant calling; run config `queueSize = 400` only; head job 16 GB, `-Xmx12g`.
+   supplementary records in variant calling; run config `queueSize = 400` only; head job 16 GB, `-Xmx12g`. Started
+   12:28 (node c207n01, session `9a313da1`).
