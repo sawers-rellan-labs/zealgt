@@ -73,8 +73,9 @@ already in the mount point list` in the task's `.command.err`, skips the duplica
 
 - `hpc_dev` and `hpc_prod` name each task's job by its process and tag (`executor.jobName`), e.g.
   `CRISP_Zh.0030_P4_chr3`; VARIANT_CALLING tags carry the region (`conf/modules.config`).
-- A job array (`array` in the profiles: `COUNT_UNION`, `COUNT_LINES`, alignment steps in `hpc_prod`) has one name for
-  all its tasks (job 1343856: `..._COUNT_UNION_(1)` for 20 tasks). Which task is which: `.nextflow.log` (`Submitted process`, task
+- A job array (`array` in the profiles: `COUNT_UNION`, alignment steps in `hpc_prod`) keeps Nextflow's own long name
+  for all its tasks, `executor.jobName` aside (`nf-ZEALGT_..._COUNT_UNION_(1)`, Milestone 9f test 6). An array also
+  waits until it holds `array` tasks or its input ends. Which task is which: `.nextflow.log` (`Submitted process`, task
   name and tag) or the trace (`name`, `native_id` = array job ID and index).
 
 ## What reruns a step on `-resume`
