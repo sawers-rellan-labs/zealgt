@@ -129,3 +129,12 @@ huehuetenangensis genome run, job 1343856: 1,168,623 vs 68,177); ~15 below.
 ## Done when
 
 - Every run succeeds; checks 1-4 in an Attempts section here; the counts sheets' paths in this plan.
+
+## Attempts
+
+1. Job 1349242 (2026-10-17 01:58, tag `vc-prod-20261017`, session `f9ec7cac`): cancelled by the user at 02:04
+   (Nextflow exit 1). `hpc_prod` had no job arrays for variant calling: with `submitRateLimit` 20/1min the ~17,500
+   single jobs would have taken ~14.5 h to submit.
+2. Job 1349425 (2026-10-17 02:14, tag `vc-prod-arrays-20261017`, `-resume f9ec7cac`): job arrays of 20 for the
+   per-donor and per-sample variant-calling processes in `hpc_prod` (PR #65; user: "I want the array jobs
+   implemented"). Setup checks at the tag, job 1349371: 26 of 26 process tests, config and `inspect` passed (4 min 38 s).
