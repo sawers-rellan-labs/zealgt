@@ -125,7 +125,7 @@ scheduling pass (`SchedulerParameters=defer`, ~50 s), so the GENOTYPE stub (~20 
 - **Process checks**: every process's stub runs alone from ready inputs, all at once, one Slurm wait in all.
   `tests/hazel/*.nf.test` (one per module, inputs from `tests/fixtures/`; the nf-core modules' own tests download
   theirs) run from one job: `sbatch --export=ALL,ZEALGT_REPO=<checkout> scripts/run_hazel_tests.sbatch`, with nf-test
-  under the Nextflow image's java and `conf/stub_hazel.config`. 26 tests in 6 min (job 1317802). Parallel tasks cannot
+  under the Nextflow image's java and `conf/stub_hazel.config`. 26 tests in 6 min (job 1317802); 12 at a time in 8 GB, ~0.5-0.6 GB each (jobs 1317265, 1317802). Parallel tasks cannot
   race: each task writes only in its own work directory. A process test applies settings under the module's own name
   only, not under its aliases (`COUNT_LINES`, `.*FASTQ_ALIGN_MINIBWA:SAMTOOLS_MERGE`).
 - **The run's setup**, with `PARAMS=<the run's params file>` (and `PROFILE`) on the same job, beside the tests:
