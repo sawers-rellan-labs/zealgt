@@ -141,3 +141,16 @@ huehuetenangensis genome run, job 1343856: 1,168,623 vs 68,177); ~15 below.
 2. Job 1349425 (2026-10-17 02:14, tag `vc-prod-arrays-20261017`, `-resume f9ec7cac`): job arrays of 20 for the
    per-donor and per-sample variant-calling processes in `hpc_prod` (PR #65; user: "I want the array jobs
    implemented"). Setup checks at the tag, job 1349371: 26 of 26 process tests, config and `inspect` passed (4 min 38 s).
+3. Job 1350342 (2026-10-17 02:38, tag `vc-prod-arrays-20261017b`, `-resume f9ec7cac`): attempt 2 stopped to rerun with
+   `queueSize = 400` in `docs/runs/variant_calling_production/run.config` (`hpc_prod`'s 80 held the run at ~100-170
+   CPUs; hazel allows ~768 running CPUs per user). Failed at 03:42 (1 h 05 min): CRISP `Zl.0020_P3_chr1` segfaulted at
+   1.79 of 2 GB (job 1353412_10); exit 1, so not retried.
+4. Job 1358990 (2026-10-17 03:50, tag `vc-prod-arrays-20261017c`, `-resume f9ec7cac`): CRISP 6 GB in the run config.
+   Failed at 04:32 (43 min): the same task segfaulted at 1.83 GB (job 1359025_14), so memory was not the cause.
+   Diagnosis (`agent/crisp_debug/`): a use-after-free in CRISP 1a9027e. `evaluate_OPE_readpair`
+   (`parsebam/variant.c:148`) lets a primary R1 and its supplementary record (0x800) both claim R2, and
+   `free_read_queue` then writes into the freed R2 (valgrind). Such reads are in every CRAM checked (108 in this
+   witness on chr1, 4-20 per BC1 CRAM); the other tasks survived by luck. `samtools view -F 0x800` on the five CRAMs
+   let the full chr1 task finish (229,627 calls vs 234,635; the lost calls have lower QUAL and sit nearer TE edges, job
+   1365010). Reported upstream: https://github.com/vibansal/crisp/issues/35. Fix: Milestone 9g (no supplementary
+   records in variant calling); the run restarts cold after it merges (`work/` deleted in cleanup).
