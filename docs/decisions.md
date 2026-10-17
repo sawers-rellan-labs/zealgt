@@ -1,6 +1,7 @@
 # Decisions
 
-One entry per decision, newest last. Terms as in `TERMINOLOGY.md`.
+One entry per decision, newest last. Terms as in `TERMINOLOGY.md`. An entry marked **Superseded** no longer holds:
+follow its pointer.
 
 ## 2026-10-02 Workflows
 
@@ -30,6 +31,8 @@ downsampling in genotyping. `--step alignment` takes the first N pairs per sampl
 - Open: the base quality of read-through bases, i.e. whether `-Q 20` alone would drop them.
 
 ## 2026-10-02 Allele counting
+
+**Superseded** (base quality) by "2026-10-17 VARIANT_CALLING discovery (Milestone 9h)".
 
 `bcftools mpileup -I -a AD -q 20 -Q 20`, default depth cap (250), default mate-overlap removal.
 
@@ -220,6 +223,8 @@ fqtk runs once per lane, and `CAT_FASTQ` joins each sample's lanes (user). Reaso
 
 ## 2026-10-05 CRISP pool size: -p 12 for every pool
 
+**Superseded** by "2026-10-17 VARIANT_CALLING discovery (Milestone 9h)".
+
 - `-p 12` (6 plants x 2 haplotypes) is what matters for the BC1 pools. The witness pool gets the same 12: at its low
   coverage the number of lines would not change the calls, so no per-pool sizes in the `--bams` file (user).
 
@@ -244,6 +249,8 @@ fqtk runs once per lane, and `CAT_FASTQ` joins each sample's lanes (user). Reaso
   and the witness veto and the pooled likelihood use many reads per site.
 
 ## 2026-10-05 GENOTYPE inputs and discovery outputs (Milestone 7 build choices)
+
+**Superseded** (the witness veto, the B73 check filter) by "2026-10-17 VARIANT_CALLING discovery (Milestone 9h)".
 
 Confirmed by the user from the Milestone 7 report; item 11 for now, open to change.
 
@@ -344,3 +351,25 @@ the variant-calling input; the `/rsstu` CRAMs stay whole. CRISP 1a9027e has a us
   copies of every CRAM (about the alignment archive's size on `/share`).
 - Accepted (user, 2026-10-17: "the losses are ok"): ~2 % fewer discovery records and tier-A sites (pilot slice, chr10:1-5
   Mb; full chr1 of Zl.0020_P3: 229,627 vs 234,635 CRISP calls), counts at most 4 reads per cell.
+
+## 2026-10-17 VARIANT_CALLING discovery (Milestone 9h)
+
+User, 2026-10-17, in their words: "I need the variant to be present in a BC1 and the segregating population. That was my
+intent." CRISP "should go over the 3 pools: BC1s: NILs: Checks", the checks only those not contaminated; the donor's own
+pools share almost all its variants, so they give CRISP poor contrast. The intent dates from 2026-09-18 to 2026-09-21
+(zealbc1): the NIL in silico pool was added so every donor has at least two pools; "witness" and the veto were an
+agent's construction, never the user's choice.
+
+| existing entry                                                                | what it says                                                                        | overruled by (VARIANT_CALLING, Milestone 9h)                                                                                                   |
+| ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Milestone 7 spec; math supplement Section 4.1                                 | tier A needs ALT reads in >= 2 BC1 pools                                            | a variant must be in a BC1 and in the segregating population (the NIL in silico pool)                                                          |
+| 2026-10-05 GENOTYPE inputs and discovery outputs; math supplement Section 4.2 | the witness veto: keep a site only with >= 1 ALT read in the witness pool           | the same rule, with the NIL in silico pool as one of CRISP's pools; no separate veto, no "witness"                                             |
+| 2026-10-05 CRISP pool size                                                    | `-p 12` for every pool, the witness pool included                                   | three pool kinds: the donor's BC1s, its NIL in silico pool, one pool of QC-PASS B73 checks; pool sizes set per pool                            |
+| zealbc1 DECISIONS 2026-09-23                                                  | CRISP = BC1s + BC2S3 pool only; B73 enters after CRISP (step 4)                     | the QC-PASS B73 checks go into CRISP as a pool                                                                                                 |
+| 2026-10-02 Allele counting; Milestone 7 (CRISP)                               | mpileup `-Q 20`; CRISP `--mbq 20`                                                   | base quality >= 30 in discovery and counting (user: "after that filter the B73 selection was less dependent on the batch")                     |
+| 2026-10-05 GENOTYPE inputs and discovery outputs                              | B73 check filter: < 1 % ALT share at the check sites (SNP50K), B73-bulk checks only | QC-PASS B73 checks: mismatch rate < 0.1 % on bases of quality >= 30, whole genome, no genotypes (21 of 23; `docs/notebooks/08_b73_checks.qmd`) |
+| none                                                                          |                                                                                     | to measure, not decided: filter sites with the wideseq panel (Schnable 2023)                                                                   |
+
+- The B73 checks: all 23 of the run's sheet (12 batch-1 B73-bulk, 11 batch-2 B73) are candidates; batch 1 has lower
+  base quality (average 35 vs 40), which inflates its mismatches and ALT reads unless the quality cut is applied.
+- Variant-calling production run 1367152 (2026-10-17) used the overruled rules; its outputs are a baseline only.
