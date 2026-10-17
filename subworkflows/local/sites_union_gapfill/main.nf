@@ -18,11 +18,12 @@ workflow SITES_UNION_GAPFILL {
     fill_tool   // file: bin/fill_donor_alleles.py
 
     main:
-    // group sizes from the samplesheet, so each region goes on once its own files are in (groupKey): BC1 samples per
-    // donor, and the donors with BC1 samples and lines (one CRISP call each)
+    // group sizes from the samplesheet, so each region goes on once its own files are in (groupKey): the donors with BC1
+    // samples and lines (one CRISP call each; a donor without lines has no tier-A sites) and their BC1 samples
     def n_pools = ch_cram.filter { meta, _cram, _crai -> meta.role == 'bc1_sample' }.map { meta, _cram, _crai -> [meta.donor, 1] }
         .groupTuple().map { donor, ones -> [donor, ones.size()] }
-    def n_donors = n_pools.join(ch_cram.filter { meta, _cram, _crai -> meta.role == 'nil' }.map { meta, _cram, _crai -> [meta.donor] }.unique()).count()
+        .join(ch_cram.filter { meta, _cram, _crai -> meta.role == 'nil' }.map { meta, _cram, _crai -> [meta.donor] }.unique())
+    def n_donors = n_pools.count()
 
     // MARKER_UNION: the donors' tier-A sites in one VCF per region; a position with two ALT alleles becomes one record, then dropped
     BCFTOOLS_MERGE(
@@ -35,9 +36,10 @@ workflow SITES_UNION_GAPFILL {
     def ch_union = BIALLELIC_UNION.out.vcf.join(BIALLELIC_UNION.out.index, failOnMismatch: true)
     def ch_union_vcf = ch_union.map { meta, vcf, _tbi -> [meta.region, vcf] }
 
-    // each BC1 sample and each B73 control counted at every union site of each region
+    // each BC1 sample of those donors and each B73 control counted at every union site of each region
     COUNT_UNION(
-        ch_cram.filter { meta, _cram, _crai -> meta.role == 'bc1_sample' }
+        ch_cram.filter { meta, _cram, _crai -> meta.role == 'bc1_sample' }.map { meta, cram, crai -> [meta.donor, meta, cram, crai] }
+            .combine(n_pools, by: 0).map { _donor, meta, cram, crai, _n -> [meta, cram, crai] }
             .combine(ch_union_vcf)
             .map { meta, cram, crai, region, vcf -> [meta + [region: region], cram, crai, vcf, []] }
             .mix(ch_controls.map { meta, cram, crai -> [meta.region, meta, cram, crai] }.combine(ch_union_vcf, by: 0)

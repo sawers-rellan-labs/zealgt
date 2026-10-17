@@ -315,3 +315,14 @@ Spec approved by the user, 2026-10-16 (`docs/milestones/09e_variant_calling_ance
 - RTIGER rigidity as a window in Mb, replacing 0.5 % of the markers (user, 2026-10-16: "the per Mb rule seems to work
   the best everywhere for now"; "1 Mb default, add it to 9e"): r = `--rigidity_mb` (default 1) x the median line's
   covered markers per Mb of the markers' span, per chromosome and per genome alike.
+
+## 2026-10-16 Efficiency before production (Milestone 9f)
+
+Spec approved by the user, 2026-10-16 (`docs/milestones/09f_efficiency_before_production.md`).
+
+- Group sizes read from the samplesheet (`groupKey`), so each donor and region goes on once its own files are in.
+- One count VCF per donor and region (a sample per line), published as the counts; the counts sheet one row per donor
+  and region. Rejected: splitting it back to one file per line.
+- `COUNT_LINES` with full BAQ (`-D`; user: "go with -D"): partial BAQ looks at every sample in the call, so a line's
+  counts depended on its siblings (slice: 60 of 82 lines moved by 1-2 reads). Rejected: no BAQ (`-B`); one call per line.
+- CRISP log timestamps left to a PR upstream (`vibansal/crisp`). Rejected: `gawk` in the CRISP image.
