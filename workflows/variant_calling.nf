@@ -38,6 +38,7 @@ workflow VARIANT_CALLING {
         CRAM_VARIANT_DISCOVERY_CRISP.out.tier_a,
         ch_cram,
         CRAM_VARIANT_DISCOVERY_CRISP.out.controls,
+        CRAM_VARIANT_DISCOVERY_CRISP.out.n_controls,
         ch_fasta,
         file("${projectDir}/bin/score_pooled_likelihood.py", checkIfExists: true),
         file("${projectDir}/bin/fill_donor_alleles.py", checkIfExists: true),
@@ -57,5 +58,5 @@ workflow VARIANT_CALLING {
     dropped_b73_checks = CRAM_VARIANT_DISCOVERY_CRISP.out.dropped_b73_checks // channel: dropped_b73_checks.tsv
     union              = SITES_UNION_GAPFILL.out.union                       // channel: [ meta, vcf.gz, tbi ], one per region
     donor_alleles      = SITES_UNION_GAPFILL.out.donor_alleles               // channel: [ meta, vcf.gz, tbi ], one per region
-    counts             = LINE_COUNTS.out.counts                              // channel: [ sample_id:, donor:, region:, counts:, markers:, union: ], one per line x region
+    counts             = LINE_COUNTS.out.counts                              // channel: [ donor:, region:, counts:, markers:, union: ], one per donor x region
 }

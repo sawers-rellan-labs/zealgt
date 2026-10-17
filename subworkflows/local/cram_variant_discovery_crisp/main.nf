@@ -36,14 +36,11 @@ workflow CRAM_VARIANT_DISCOVERY_CRISP {
         dropped: true
     }
     // the dropped checks with their counts
-    def ch_dropped_b73_checks = CHECK_ALT_RATE.out.tsv.join(ch_check.dropped)
-        .map { _meta, tsv, _cram, _crai, _rate -> tsv }
+    def ch_dropped_b73_checks = CHECK_ALT_RATE.out.tsv.join(ch_check.dropped).map { _meta, tsv, _cram, _crai, _rate -> tsv }
         .collectFile(name: 'dropped_b73_checks.tsv', seed: "sample_id\treads\talt_reads\talt_rate\n", sort: true)
 
     // one pool per donor's lines (the witness), one of the kept B73 checks, one per B73 control; each per region
-    def ch_pool = ch_role.nil
-        .map { meta, cram, crai -> [meta.donor, cram, crai] }
-        .groupTuple()
+    def ch_pool = ch_role.nil.map { meta, cram, crai -> [meta.donor, cram, crai] }.groupTuple()
         .map { donor, crams, crais -> [[id: "${donor.replace('.', '')}_witness", donor: donor], crams, crais] }
         .mix(
             ch_check.kept.map { _meta, cram, crai, _rate -> ['B73_checks', cram, crai] }.groupTuple()
@@ -66,11 +63,8 @@ workflow CRAM_VARIANT_DISCOVERY_CRISP {
     }
 
     // CRISP per donor x region: its BC1 pools and its witness over the region
-    def ch_crisp = ch_role.bc1
-        .map { meta, cram, crai -> [meta.donor, cram, crai] }
-        .groupTuple()
-        .combine(ch_regions)
-        .map { donor, crams, crais, region -> [donor, region, crams, crais] }
+    def ch_crisp = ch_role.bc1.map { meta, cram, crai -> [meta.donor, cram, crai] }.groupTuple()
+        .combine(ch_regions).map { donor, crams, crais, region -> [donor, region, crams, crais] }
         .join(ch_pool_rg.witness.map { meta, cram, crai -> [meta.donor, meta.region, meta.id, cram, crai] }, by: [0, 1])
         .map { donor, region, crams, crais, witness, wcram, wcrai -> [[id: donor, witness: witness, region: region], crams, crais, wcram, wcrai] }
     CRISP(ch_crisp, ch_fasta, lowcopy_bed)
@@ -86,8 +80,11 @@ workflow CRAM_VARIANT_DISCOVERY_CRISP {
         ch_fasta,
         false
     )
+    // control pools per region (the B73 controls, plus the check pool if a check is kept): each donor x region goes on once its counts are in
+    def ch_n_controls = ch_b73_controls.count().combine(ch_check.kept.count()).map { n, kept -> n + (kept ? 1 : 0) }
     def ch_score = WITNESS_VETO.out.vcf.map { meta, vcf -> [meta.id, meta.region, meta, vcf] }
-        .join(BCFTOOLS_MPILEUP.out.vcf.map { meta, vcf -> [meta.donor, meta.region, vcf] }.groupTuple(by: [0, 1]), by: [0, 1])
+        .join(BCFTOOLS_MPILEUP.out.vcf.combine(ch_n_controls).map { meta, vcf, n -> [groupKey([meta.donor, meta.region], n), vcf] }
+            .groupTuple().map { key, vcfs -> key.getGroupTarget() + [vcfs] }, by: [0, 1])
         .map { _donor, _region, meta, vcf, controls -> [meta, vcf, controls, []] }
     POOLED_LIKELIHOOD_TIERS(ch_score, score_tool)
 
@@ -96,5 +93,6 @@ workflow CRAM_VARIANT_DISCOVERY_CRISP {
     sites              = POOLED_LIKELIHOOD_TIERS.out.sites                 // channel: [ meta, sites.tsv.gz ], one per donor x region
     tier_a             = POOLED_LIKELIHOOD_TIERS.out.tier_a                // channel: [ meta, tier_a.vcf ], one per donor x region
     controls           = ch_pool_rg.control                                // channel: [ meta, cram, crai ], the B73 controls, per region
+    n_controls         = ch_n_controls                                      // channel: value, the control pools per region
     dropped_b73_checks = ch_dropped_b73_checks                             // channel: dropped_b73_checks.tsv
 }
