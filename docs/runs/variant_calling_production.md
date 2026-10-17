@@ -95,7 +95,9 @@ huehuetenangensis genome run, job 1343856: 1,168,623 vs 68,177); ~15 below.
    discovery and union barriers, CRISP memory, one count VCF per donor and region, short Slurm job names; its test 6
    reruns huehuetenangensis genome-wide on `hpc_dev`.
 3. The sheet written and checked (every donor, luxurians included).
-4. Hazel setup checks at the production tag (parallel process stubs, config, containers).
+4. Hazel setup checks at the production tag (parallel process stubs, config, containers). Done: job 1349204
+   (2026-10-17, `ZEAL/zealgt_prod` at `vc-prod-20261017`), 26 of 26 process tests, config and `inspect` (29 containers)
+   passed in 4 min 20 s. No slice: the tag adds docs and sheets only to `dev`; 9f test 6 ran real data genome-wide.
 5. The run, one submission, unattended.
 
 ## Checks after the runs (bugs, not accuracy)
