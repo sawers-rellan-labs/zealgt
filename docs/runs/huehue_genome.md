@@ -73,8 +73,9 @@ by its low-copy Mb (`lowcopy_chr1-10.bed`: chr1 55.7, chr10 26.1, all ten 367.1 
 | the other 19 processes   | < 1 min             | < 1.5 min                 | 1.0           | < 0.7 GB           |
 
 - Variant calling: ~11 CPU-h, ~1,100 tasks at 40 at a time; chr1's chain ~42 min of compute plus the Slurm scheduling
-  waits (run A: 48 min wall on a ~20 min chain): Slurm's scheduling pass (~50 s per step, the cluster's) and Nextflow's
-  status poll (up to 1 min per step; 10 s in this run's config, as the hazel stubs: 9d stub 24 -> 19 min), so ~1-1.5 h. Every process stays under its `hpc_dev` limits. Head job
+  waits (run A: 48 min wall on a ~20 min chain): mostly Slurm's scheduling pass (~50 s per step, the cluster's).
+  Nextflow finds a finished task within 5 s (grid `pollInterval` default, `AbstractGridExecutor.groovy:63` in
+  26.04.6) and reads the queue every 1 min (`queueStatInterval`), 10 s in this run's config as in the hazel stubs; so ~1-1.5 h. Every process stays under its `hpc_dev` limits. Head job
   on the normal QOS, 12 h: a run that outlives the short QOS's 2 h is killed with its head job
   (`scripts/submit_head_job.sbatch`).
 - Ancestry, chromosome: 20 fits as chr10's (< 1.5 min, < 1 GB each).
