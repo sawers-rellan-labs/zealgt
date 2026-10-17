@@ -326,3 +326,8 @@ Spec approved by the user, 2026-10-16 (`docs/milestones/09f_efficiency_before_pr
 - `COUNT_LINES` with full BAQ (`-D`; user: "go with -D"): partial BAQ looks at every sample in the call, so a line's
   counts depended on its siblings (slice: 60 of 82 lines moved by 1-2 reads). Rejected: no BAQ (`-B`); one call per line.
 - CRISP log timestamps left to a PR upstream (`vibansal/crisp`). Rejected: `gawk` in the CRISP image.
+
+## 2026-10-17 Job arrays for variant calling in `hpc_prod`
+
+User, 2026-10-17: "I want the array jobs implemented": arrays of 20 for the per-donor and per-sample variant-calling
+processes; `submitRateLimit` 20/1min would take ~14 h to submit ~17,500 single jobs (run 1349242, cancelled).
