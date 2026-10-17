@@ -20,25 +20,23 @@ workflow LINE_COUNTS {
     DONOR_ALT_SITES(DONOR_SUBSET.out.vcf.map { meta, vcf -> [meta, vcf, []] }, [], [], [])
     def ch_donor_sites = DONOR_ALT_SITES.out.vcf.map { meta, vcf -> [meta.id, meta.region, vcf] }
 
-    // each line counted at its donor's markers, per region
+    // a donor's lines counted together at its markers, one VCF per region with a sample per line (named by sample_id)
     COUNT_LINES(
         ch_cram.filter { meta, _cram, _crai -> meta.role == 'nil' }
-            .map { meta, cram, crai -> [meta.donor, meta, cram, crai] }
+            .map { meta, cram, crai -> [meta.donor, meta.id, cram, crai] }.groupTuple()
             .combine(ch_donor_sites, by: 0)
-            .map { _donor, meta, cram, crai, region, vcf -> [meta + [region: region], cram, crai, vcf, []] },
+            .map { donor, ids, crams, crais, region, vcf -> [[id: donor, region: region, samples: ids], crams, crais, vcf, []] },
         ch_fasta,
         false
     )
 
-    // one record per line and region: its counts, its donor's markers and the region's union, the rows of the counts sheet
-    def ch_counts = COUNT_LINES.out.vcf.map { meta, vcf -> [meta.donor, meta.region, meta, vcf] }
-        .combine(ch_donor_sites, by: [0, 1])
-        .map { _donor, region, meta, vcf, markers -> [region, meta, vcf, markers] }
+    // one record per donor and region: its lines' counts, its markers and the region's union, the rows of the counts sheet
+    def ch_counts = COUNT_LINES.out.vcf.map { meta, vcf -> [meta.id, meta.region, vcf] }
+        .join(ch_donor_sites, by: [0, 1], failOnMismatch: true)
+        .map { donor, region, vcf, markers -> [region, donor, vcf, markers] }
         .combine(ch_union.map { meta, vcf, _tbi -> [meta.region, vcf] }, by: 0)
-        .map { region, meta, vcf, markers, union ->
-            [sample_id: meta.id, donor: meta.donor, region: region, counts: vcf, markers: markers, union: union]
-        }
+        .map { region, donor, vcf, markers, union -> [donor: donor, region: region, counts: vcf, markers: markers, union: union] }
 
     emit:
-    counts = ch_counts // channel: [ sample_id:, donor:, region:, counts:, markers:, union: ], one per line x region
+    counts = ch_counts // channel: [ donor:, region:, counts:, markers:, union: ], one per donor x region
 }

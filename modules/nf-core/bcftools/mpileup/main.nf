@@ -41,7 +41,7 @@ process BCFTOOLS_MPILEUP {
                     ? "vcf"
                     : "vcf"
     """
-    echo "${meta.id}" > sample_name.list
+    printf '%s\\n' ${(meta.samples ?: [meta.id]).join(' ')} > sample_name.list
 
     bcftools \\
         mpileup \\

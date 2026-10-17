@@ -1,3 +1,3 @@
-sample_id,donor,region,counts,markers,union
-L_1,Zx.9001_P1,chrA:1-5000,tests/fixtures/ancestry/whole/Zx.9001_P1/chrA_1-5000/L_1.vcf.gz,tests/fixtures/ancestry/whole/Zx.9001_P1/chrA_1-5000/Zx.9001_P1.chrA_1-5000.union_alt.vcf,tests/fixtures/ancestry/whole/chrA_1-5000.union.vcf.gz
-M_1,Zx.9002_P1,chrA:1-5000,tests/fixtures/ancestry/whole/Zx.9002_P1/chrA_1-5000/M_1.vcf.gz,tests/fixtures/ancestry/whole/Zx.9002_P1/chrA_1-5000/Zx.9002_P1.chrA_1-5000.union_alt.vcf,tests/fixtures/ancestry/whole/chrA_1-5000.union.vcf.gz
+donor,region,counts,markers,union
+Zx.9001_P1,chrA:1-5000,tests/fixtures/ancestry/whole/Zx.9001_P1/chrA_1-5000/L_1.vcf.gz,tests/fixtures/ancestry/whole/Zx.9001_P1/chrA_1-5000/Zx.9001_P1.chrA_1-5000.union_alt.vcf,tests/fixtures/ancestry/whole/chrA_1-5000.union.vcf.gz
+Zx.9002_P1,chrA:1-5000,tests/fixtures/ancestry/whole/Zx.9002_P1/chrA_1-5000/M_1.vcf.gz,tests/fixtures/ancestry/whole/Zx.9002_P1/chrA_1-5000/Zx.9002_P1.chrA_1-5000.union_alt.vcf,tests/fixtures/ancestry/whole/chrA_1-5000.union.vcf.gz

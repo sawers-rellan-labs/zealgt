@@ -279,3 +279,27 @@ start-up; the gap was not examined), RTIGER under
 | `CALL_ANCESTRY`      | 8     | 1 min 52 s   | 856 MB       |
 | `ANCESTRY_GRID`      | 1     | 5.3 s        | 183 MB       |
 | `ANCESTRY_VCF_INDEX` | 8     | 0.6 s        | 13.9 MB      |
+
+## VARIANT_CALLING and ANCESTRY genome-wide, measured (2026-10-16, huehuetenangensis, jobs 1343856-1343858)
+
+Two donors (Zh.0020_P3 4 BC1 pools, 26 lines; Zh.0030_P4 5 pools, 35 lines), chr1-chr10 (`hpc_dev`,
+`docs/runs/huehue_genome.md`): variant calling 1 h 41 min wall, 1,114 tasks, 12.0 CPU-h. CRISP peaks at 0.74 GB
+(chr1, 42.5 min); no ZEAL donor has more than 5 BC1 pools, so CRISP gets 2 GB (was 16 GB; `hpc_prod` doubles it on a
+retry). `UNION_TIERS` peaked at 1.80 GB on chr10 with 88 donors (727,756 union sites, 2026-10-16,
+`genotype_diplo_parviglumis_mexicana_chr10`); chr1 holds ~2.2 x chr10's union sites, so 8 GB (was 4 GB) for the
+all-donor run. Milestone 9f test 6 (same samples, jobs 1346739-41; 57 min 54 s, 524 tasks): `COUNT_LINES` as one
+task per donor and region peaked at 0.84 GB with 35 lines (2.9 min), so 4 GB for donors of up to 64 lines; no job array
+for it (an array of 20 waited for chr1's last task). The genome RTIGER fit (one per donor, all ten chromosomes) needs more than `hpc_dev`'s 2 GB: the run config
+gave 16 GB; 1 Mb and 5 Mb rigidity alike (jobs 1343858, 1346168).
+
+| process                   | tasks | max realtime | CPU-h | max peak RSS |
+| ------------------------- | ----- | ------------ | ----- | ------------ |
+| `CRISP`                   | 20    | 42.5 min     | 6.40  | 0.74 GB      |
+| `SAMTOOLS_MERGE` (pools)  | 40    | 2.1 min      | 1.72  | 0.87 GB      |
+| `SAMTOOLS_ADDREPLACERG`   | 40    | 4.0 min      | 1.52  | 0.71 GB      |
+| `COUNT_UNION`             | 110   | 1.8 min      | 1.18  | 0.40 GB      |
+| `COUNT_LINES` (per line)  | 610   | 0.2 min      | 0.44  | 0.40 GB      |
+| `BCFTOOLS_MPILEUP`        | 40    | 1.2 min      | 0.36  | 0.40 GB      |
+| `UNION_TIERS`             | 20    | 0.6 min      | 0.12  | 0.39 GB      |
+| `POOLED_LIKELIHOOD_TIERS` | 20    | 0.6 min      | 0.09  | 0.48 GB      |
+| `CALL_ANCESTRY`, genome   | 2     | 8.6 min      | -     | 8.6 GB       |

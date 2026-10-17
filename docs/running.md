@@ -69,6 +69,15 @@ already in the mount point list` in the task's `.command.err`, skips the duplica
   change on our side.
 - To check a run: compare each job's `Task completed` time in `.nextflow.log` with `sacct -j <ids> -X --format=JobID,End`.
 
+## Slurm job names (hazel)
+
+- `hpc_dev` and `hpc_prod` name each task's job by its process and tag (`executor.jobName`), e.g.
+  `CRISP_Zh.0030_P4_chr3`; VARIANT_CALLING tags carry the region (`conf/modules.config`).
+- A job array (`array` in the profiles: `COUNT_UNION`, alignment steps in `hpc_prod`) keeps Nextflow's own long name
+  for all its tasks, `executor.jobName` aside (`nf-ZEALGT_..._COUNT_UNION_(1)`, Milestone 9f test 6). An array also
+  waits until it holds `array` tasks or its input ends. Which task is which: `.nextflow.log` (`Submitted process`, task
+  name and tag) or the trace (`name`, `native_id` = array job ID and index).
+
 ## What reruns a step on `-resume`
 
 - Reruns: a change to the step's script, inputs, container, the `ext` values its script uses, or its process or calling

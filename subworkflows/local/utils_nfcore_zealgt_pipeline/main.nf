@@ -87,7 +87,7 @@ workflow PIPELINE_INITIALISATION {
     //
 
     // library rows for demultiplex, per-sample FASTQ rows for alignment, per-sample CRAM rows for variant_calling,
-    // per line and region count rows for ancestry
+    // per donor and region count rows for ancestry
     def schema = [demultiplex: 'schema_input.json', alignment: 'schema_fastq.json', variant_calling: 'schema_cram.json', ancestry: 'schema_counts.json'][step]
     channel
         .fromList(samplesheetToList(input, "${projectDir}/assets/${schema}"))
