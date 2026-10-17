@@ -50,7 +50,7 @@ for fit in chromosome genome; do
   sbatch --parsable --dependency=afterok:$vc --qos=short --time=02:00:00 --mem=8G \
     --export=ALL,ZEALGT_LAUNCH=${V}_anc_$fit \
     scripts/submit_head_job.sbatch hpc_dev --step ancestry --input $V/results/samplesheets/huehue.counts.csv \
-    --ancestry_fit $fit --outdir ${V}_anc_$fit/results
+    --ancestry_fit $fit --outdir ${V}_anc_$fit/results -c $B/ZEAL/zealgt/docs/runs/huehue_genome.config
 done
 ```
 
@@ -58,14 +58,28 @@ Logs: `nf_work/zealgt_head_<job id>.log` per run; `.nextflow.log` in each launch
 
 ## Estimates
 
-| run                  | from                                                                                                                                  | time    |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| variant calling      | run A, chr10 alone: 48 min (job 1323812); ten regions in one run, discovery per donor x region in parallel, chr1 twice chr10's length | ~2-4 h  |
-| ancestry, chromosome | 20 RTIGER fits (2 donors x 10), as chr10's                                                                                            | minutes |
-| ancestry, genome     | 2 fits over ~10x chr10's markers; `CALL_ANCESTRY` 1 cpu, 2 GB, 1 h are placeholders; a failure on memory or time is the measurement   | <1 h    |
+Run A's chr10 trace (job 1323812, `execution_trace_2026-10-16_09-22-06.txt`) per process, each chromosome's work scaled
+by its low-copy Mb (`lowcopy_chr1-10.bed`: chr1 55.7, chr10 26.1, all ten 367.1 Mb; chr1 = 2.13 x chr10, genome =
+14.1 x chr10), the B73 check filter once (`agent/hue_genome/estimate_genome.py`):
 
-- `/share`: run A 3.9 GB for chr10, so ~40 GB in `work/`; published counts ~0.3 GB (61 lines x ~4.5 MB compressed).
-- Submitted at ~09:00: all done by ~13:00.
+| process                  | longest task, chr10 | longest task, chr1 (est.) | CPU-h, genome | peak memory, chr10 |
+| ------------------------ | ------------------- | ------------------------- | ------------- | ------------------ |
+| `CRISP`                  | 14.7 min            | 31 min                    | 5.4           | 0.46 GB            |
+| `SAMTOOLS_ADDREPLACERG`  | 1.8 min             | 3.8 min                   | 1.4           | 0.42 GB            |
+| `SAMTOOLS_MERGE`         | 0.9 min             | 1.9 min                   | 1.5           | 0.69 GB            |
+| `COUNT_UNION`            | 1.0 min             | 2.1 min                   | 1.2           | 0.24 GB            |
+| `COUNT_LINES` (61 lines) | 0.1 min             | 0.2 min                   | 0.5           | 0.25 GB            |
+| the other 19 processes   | < 1 min             | < 1.5 min                 | 1.0           | < 0.7 GB           |
+
+- Variant calling: ~11 CPU-h, ~1,100 tasks at 40 at a time; chr1's chain ~42 min of compute plus the Slurm scheduling
+  waits (run A: 48 min wall on a ~20 min chain), so ~1-1.5 h. Every process stays under its `hpc_dev` limits. Head job
+  on the normal QOS, 12 h: a run that outlives the short QOS's 2 h is killed with its head job
+  (`scripts/submit_head_job.sbatch`).
+- Ancestry, chromosome: 20 fits as chr10's (< 1.5 min, < 1 GB each).
+- Ancestry, genome: 2 fits of ~750k markers each, rigidity ~150 at 1 Mb (chr10 at 0.5 %: 259-280); ~5-10 min and
+  several GB per donor. `hpc_dev`'s 2 GB would fail twice (a retry keeps the memory), so this run's config
+  `docs/runs/huehue_genome.config` gives `CALL_ANCESTRY` 16 GB and 2 h; the trace is the measurement.
+- `/share`: run A 3.9 GB for chr10, so ~40-55 GB in `work/`; published counts ~0.3 GB (61 lines x ~4.5 MB compressed).
 
 ## Checks after the runs (bugs, not accuracy)
 
