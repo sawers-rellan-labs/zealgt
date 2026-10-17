@@ -9,7 +9,7 @@
 # 2 donor/donor. Line checks (curve rule, docs/decisions.md 2026-10-11): per called line, its donor (state 1-2)
 # segments, their bp, and the reads and ALT % of its markers inside the segments of each state.
 #
-# Usage: call_ancestry.R --markers MARKERS.vcf [...] --counts LINE.vcf [...] --rigidity-mb MB
+# Usage: call_ancestry.R --markers MARKERS.vcf [...] --counts LINE.vcf.gz [...] --rigidity-mb MB
 #        --segments OUT.bed --dropped OUT.tsv --line-checks OUT.tsv [--seed S]
 suppressPackageStartupMessages({
   library(data.table)

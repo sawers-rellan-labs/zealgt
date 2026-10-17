@@ -2,7 +2,7 @@ include { ANCESTRY_RTIGER } from '../subworkflows/local/ancestry_rtiger/main'
 
 workflow ANCESTRY {
     take:
-    ch_samplesheet // channel: [ meta, counts.vcf, markers.vcf, union.vcf.gz ], one per line x region (a VARIANT_CALLING counts sheet)
+    ch_samplesheet // channel: [ meta, counts.vcf.gz, markers.vcf, union.vcf.gz ], one per line x region (a VARIANT_CALLING counts sheet)
     fit            // string: chromosome | genome, the RTIGER fit unit
     genetic_map    // string or null: TSV chr, bp, cm for the ancestry grid; null = nilHMM's bundled v5 map
 

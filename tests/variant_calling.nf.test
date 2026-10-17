@@ -50,7 +50,7 @@ nextflow_pipeline {
                     ["variant_calling/discovery/${d}.chrA.vcf.gz", "variant_calling/discovery/${d}.chrA.vcf.gz.tbi", "variant_calling/discovery/${d}.chrA.sites.tsv.gz"]
                 } + ['union', 'donor_alleles'].collectMany { f -> ["variant_calling/union/chrA.${f}.vcf.gz", "variant_calling/union/chrA.${f}.vcf.gz.tbi"] }
                   + [['Zx.9001_P1', 'L_1'], ['Zx.9002_P1', 'M_1']].collectMany { d, l ->
-                    ["variant_calling/counts/${d}/chrA/${l}.vcf", "variant_calling/counts/${d}/chrA/${d}.chrA.union_alt.vcf"]
+                    ["variant_calling/counts/${d}/chrA/${l}.vcf.gz", "variant_calling/counts/${d}/chrA/${d}.chrA.union_alt.vcf"]
                 })*.toString().sort() },
                 // the counts sheet: one row per line, its files where they were published
                 { assert path("$outputDir/samplesheets/samplesheet_cram.counts.csv").readLines()*.replace('"', '')*.tokenize(',').with { s ->
@@ -100,7 +100,7 @@ nextflow_pipeline {
                         ["variant_calling/discovery/${d}.${r}.vcf.gz", "variant_calling/discovery/${d}.${r}.vcf.gz.tbi", "variant_calling/discovery/${d}.${r}.sites.tsv.gz"]
                     } + ['union', 'donor_alleles'].collectMany { f -> ["variant_calling/union/${r}.${f}.vcf.gz", "variant_calling/union/${r}.${f}.vcf.gz.tbi"] }
                       + [['Zx.9001_P1', 'L_1'], ['Zx.9002_P1', 'M_1']].collectMany { d, l ->
-                        ["variant_calling/counts/${d}/${r}/${l}.vcf", "variant_calling/counts/${d}/${r}/${d}.${r}.union_alt.vcf"]
+                        ["variant_calling/counts/${d}/${r}/${l}.vcf.gz", "variant_calling/counts/${d}/${r}/${d}.${r}.union_alt.vcf"]
                     })
                 }*.toString().sort() }
             )
@@ -148,7 +148,7 @@ nextflow_pipeline {
                 { assert alleles*.getAt(1) == ['2000', '4000'] && alleles.every { r -> r[9..10].every { c -> c ==~ /1:[0-9.]+:0\.66666?7:1:own/ } } },
                 // Zx.9001_P1's markers: both union-ALT sites; L_1 counted there with ALT reads at both (the witness reads)
                 { assert path("$cdir/Zx.9001_P1.chrA_1-5000.union_alt.vcf").readLines().findAll { l -> !l.startsWith('#') }*.tokenize('\t')*.getAt(1) == ['2000', '4000'] },
-                { assert path("$cdir/L_1.vcf").readLines().findAll { l -> !l.startsWith('#') }*.tokenize('\t').collect { r -> [r[1], r[4] != '.'] } == [['2000', true], ['4000', true]] },
+                { assert path("$cdir/L_1.vcf.gz").linesGzip.findAll { l -> !l.startsWith('#') }*.tokenize('\t').collect { r -> [r[1], r[4] != '.'] } == [['2000', true], ['4000', true]] },
                 // the counts sheet points at the published files
                 { assert path("$outputDir/samplesheets/samplesheet_cram.counts.csv").readLines()*.replace('"', '')*.tokenize(',').with { s ->
                     s.size() == 3 && s.drop(1).every { r -> r[3..5].every { f -> new File(f).exists() } } } }

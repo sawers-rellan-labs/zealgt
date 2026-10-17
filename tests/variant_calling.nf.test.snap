@@ -189,9 +189,9 @@
                 }
             },
             [
-                "variant_calling/counts/Zx.9001_P1/chrA/L_1.vcf",
+                "variant_calling/counts/Zx.9001_P1/chrA/L_1.vcf.gz",
                 "variant_calling/counts/Zx.9001_P1/chrA/Zx.9001_P1.chrA.union_alt.vcf",
-                "variant_calling/counts/Zx.9002_P1/chrA/M_1.vcf",
+                "variant_calling/counts/Zx.9002_P1/chrA/M_1.vcf.gz",
                 "variant_calling/counts/Zx.9002_P1/chrA/Zx.9002_P1.chrA.union_alt.vcf",
                 "variant_calling/discovery/Zx.9001_P1.chrA.sites.tsv.gz",
                 "variant_calling/discovery/Zx.9001_P1.chrA.vcf.gz",
@@ -205,7 +205,7 @@
                 "variant_calling/union/chrA.union.vcf.gz.tbi"
             ]
         ],
-        "timestamp": "2026-10-16T19:05:06.523612",
+        "timestamp": "2026-10-16T20:02:38.226998",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

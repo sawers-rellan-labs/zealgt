@@ -4,7 +4,7 @@ include { BCFTOOLS_VIEW as ANCESTRY_VCF_INDEX } from '../../../modules/nf-core/b
 
 workflow ANCESTRY_RTIGER {
     take:
-    ch_counts   // channel: [ meta, counts.vcf, markers.vcf, union.vcf.gz ], meta.id (line), meta.donor, meta.region
+    ch_counts   // channel: [ meta, counts.vcf.gz, markers.vcf, union.vcf.gz ], meta.id (line), meta.donor, meta.region
     fit         // string: chromosome (one RTIGER fit per donor x region) | genome (one per donor over its regions)
     genetic_map // file or []: chr, bp, cm; [] = nilHMM's bundled v5 map
     call_tool   // file: bin/call_ancestry.R

@@ -29,8 +29,8 @@
                 "type": "string",
                 "format": "file-path",
                 "exists": true,
-                "pattern": "^\\S+\\.vcf$",
-                "errorMessage": "counts must be an existing .vcf file"
+                "pattern": "^\\S+\\.vcf\\.gz$",
+                "errorMessage": "counts must be an existing .vcf.gz file"
             },
             "markers": {
                 "type": "string",
