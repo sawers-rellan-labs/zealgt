@@ -160,4 +160,62 @@ huehuetenangensis genome run, job 1343856: 1,168,623 vs 68,177); ~15 below.
    records in variant calling); the run restarts cold after it merges (`work/` deleted in cleanup).
 5. Job 1367152 (2026-10-17, tag `vc-prod-9g-20261017`, cold: `work/` deleted): Milestone 9g (PR #66), no
    supplementary records in variant calling; run config `queueSize = 400` only; head job 16 GB, `-Xmx12g`. Started
-   12:28 (node c207n01, session `9a313da1`).
+   12:28 (node c207n01, session `9a313da1`). **Succeeded**: pipeline completed 15:19:49 (2 h 51 min), cleanup of `work/`
+   until 15:33 (head job 3 h 04 min, exit 0, MaxRSS 16.0 GB = the request). 17,678 tasks, all COMPLETED at the first
+   attempt (no retry, no failure), 606 CPU-h. Peak on `/share`: 3.22 TB for `frodrig4` in all (`work/` 2.67 TB at 1 h,
+   when `du` still finished); group file count peaked at 817,053 of 1 M; after cleanup 23 GB.
+
+## Results
+
+- Outputs in `ZEAL/variant_calling/` (`/rsstu/users/r/rrellan/BZea/ZEAL/variant_calling`): counts sheet
+  `samplesheets/samplesheet.counts.csv` (950 rows = 95 donors x 10 chromosomes; columns donor, region, counts,
+  markers, union), count VCFs and markers in `variant_calling/counts/<donor>/<chr>/`, unions and donor alleles in
+  `variant_calling/union/`, discovery in `variant_calling/discovery/`; trace
+  `pipeline_info/execution_trace_2026-10-17_12-28-34.txt`.
+- Checks 1 and 3 (job 1387272, table `variant_calling_production/checks_per_donor_region.tsv`): every region of the
+  run succeeded; the counts sheet has a row for every donor and region and no other; every count VCF holds exactly the
+  donor's lines at or above 0.05x (1,749 = 1,766 - the 17 under the floor; none missing, none extra); every donor and
+  region has union-ALT markers. `Zx.0520_P4` has no tier-A site on any chromosome: it has one BC1 pool (as in
+  `genotype_mexicana_chr10.md` and notebook 03); its markers (15,305-90,517 per chromosome) are all gap-filled.
+
+  | chromosome | union sites | tier-A, donor median | union-ALT markers, donor median (min-max) | lines counted |
+  | ---------- | ----------- | -------------------- | ----------------------------------------- | ------------- |
+  | chr1       | 1,550,021   | 21,142               | 196,681 (50,448-373,398)                  | 1,749         |
+  | chr2       | 1,489,395   | 23,572               | 206,524 (57,289-353,367)                  | 1,749         |
+  | chr3       | 1,358,490   | 19,713               | 163,080 (71,259-341,612)                  | 1,749         |
+  | chr4       | 1,202,608   | 15,640               | 164,546 (20,944-326,164)                  | 1,749         |
+  | chr5       | 1,073,013   | 13,879               | 138,465 (19,379-258,658)                  | 1,749         |
+  | chr6       | 734,301     | 10,208               | 73,698 (15,305-163,317)                   | 1,749         |
+  | chr7       | 971,253     | 16,640               | 121,351 (34,334-245,316)                  | 1,749         |
+  | chr8       | 913,816     | 11,234               | 104,009 (21,226-241,583)                  | 1,749         |
+  | chr9       | 905,753     | 13,163               | 114,437 (17,790-208,312)                  | 1,749         |
+  | chr10      | 779,916     | 11,719               | 107,973 (20,290-198,485)                  | 1,749         |
+
+  | taxon             | donors | tier-A per donor, genome median | union-ALT markers per donor, genome median | lines counted |
+  | ----------------- | ------ | ------------------------------- | ------------------------------------------ | ------------- |
+  | mexicana          | 42     | 185,336                         | 1,464,234                                  | 715           |
+  | parviglumis       | 40     | 108,368                         | 1,356,064                                  | 601           |
+  | diploperennis     | 6      | 538,054                         | 1,419,232                                  | 253           |
+  | luxurians         | 5      | 300,175                         | 1,333,147                                  | 119           |
+  | huehuetenangensis | 2      | 631,761                         | 1,852,254                                  | 61            |
+
+- Check 4: `docs/RESOURCES.md` "VARIANT_CALLING production, measured".
+- Check 2 (approved by the user 2026-10-17, not yet submitted): sheets `variant_calling_production/chr10_<taxon>.csv`
+  (each taxon's rows of the production sheet plus the 23 B73 checks; mexicana 908 rows, parviglumis 797,
+  diploperennis 304, luxurians 163, huehuetenangensis 93), tag `vc-prod-9g-20261017-chr10` (the run's tag plus these
+  sheets, docs only; checked out in `ZEAL/zealgt_prod`). Each run its own launch directory, `hpc_dev`, head 16 GB:
+  ```
+  C=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt_prod; B=/rsstu/users/r/rrellan/BZea; N=/share/maize/frodrig4/nf_work
+  for t in mexicana parviglumis diploperennis luxurians huehuetenangensis; do
+    L=$N/zealgt_dev_chr10_$t; mkdir -p $L
+    sbatch --parsable --partition=compute --qos=normal --time=12:00:00 --mem=16G --no-requeue \
+      --export=ALL,ZEALGT_REPO=$C,ZEALGT_LAUNCH=$L,NXF_OPTS="-Xms1g -Xmx12g" \
+      $C/scripts/submit_head_job.sbatch hpc_dev --step variant_calling \
+      --input $C/docs/runs/variant_calling_production/chr10_$t.csv \
+      --b73_controls $C/docs/runs/variant_calling_production/b73_controls.csv \
+      --lowcopy_bed $B/ZEAL/reference/lowcopy_chr1-10.bed --check_sites $B/bzeaseq/nilhmm/vcf/HQ_BZEA.vcf.gz \
+      --regions chr10 --outdir $L/results
+  done
+  ```
+  Comparison afterwards per donor: tier-A shared, union-ALT markers of the taxon run kept, lost (site absent from the
+  all-donor union, or present but not called ALT) and gained.
