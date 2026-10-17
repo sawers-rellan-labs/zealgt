@@ -18,11 +18,16 @@ library(data.table)
 library(ggplot2)
 # inputs: the ancestry run's genome-fit segments (agent/nb08/submit_anc_dip.sh) and zealhmm data/zeal/rtiger_50K_calls.csv
 d <- "diploperennis_painting"
-srcs <- c("SNP50K", "zealgt")
-ours <- rbindlist(lapply(Sys.glob(file.path(d, "*.genome.segments.bed")), function(f) {
-  fread(f, col.names = c("chrom", "start", "end", "line", "state"))[
-    , .(donor = sub("\\.genome\\..*", "", basename(f)), chrom, line, start, end, state, source = srcs[2])]
-}))
+srcs <- c("SNP50K", "zealgt", "zealgt, wideseq")
+read_beds <- function(glob, src) {
+  rbindlist(lapply(Sys.glob(glob), function(f) {
+    fread(f, col.names = c("chrom", "start", "end", "line", "state"))[
+      , .(donor = sub("\\.genome\\..*", "", basename(f)), chrom, line, start, end, state, source = src)]
+  }))
+}
+ours <- rbind(read_beds(file.path(d, "*.genome.segments.bed"), srcs[2]),
+              read_beds(file.path(d, "wideseq", "*.genome.segments.bed"), srcs[3]))
+srcs <- srcs[srcs %in% c("SNP50K", unique(ours$source))]
 snp <- fread(file.path(d, "snp50k_calls_diploperennis.csv"))
 snp <- merge(snp[, .(line = name, chrom = paste0("chr", chr), start = start_bp, end = end_bp, state, source = srcs[1])],
              unique(ours[, .(line, donor)]), by = "line")
@@ -35,7 +40,9 @@ dt[, label := paste0(donor, "\n", uniqueN(line), " samples"), by = donor]
 
 Per donor, the same lines in the same order in each block: SNP50K RTIGER calls on top, zealgt below. zealgt here is
 RTIGER on the counts of variant-calling production run 1367152, fitted per donor over the whole genome at 1 Mb rigidity
-(ancestry jobs 1387871, 1388677). `r uniqueN(ours$donor)` donors, `r uniqueN(ours$line)` lines.
+(ancestry jobs 1387871, 1388677). zealgt, wideseq: the same fit on only the markers whose position, REF and ALT are in the
+wideseq teosinte-vs-B73 panel (`bzeaseq/wideseq_ref`; filter job 1389323). `r uniqueN(ours$donor)` donors,
+`r uniqueN(ours$line)` lines.
 
 ## Donor segments per line
 
