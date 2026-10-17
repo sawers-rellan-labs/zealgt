@@ -300,3 +300,18 @@ User, 2026-10-16 ("keep 9b as a record, record the decision"), on the chr10 diag
   introgressions per line).
 - Milestone 9c (the dosage check deciding a second union pass) is dropped; draft spec on branch `m09c-curve-rule` only.
 - Lines and families are flagged, never dropped; the sample introgression dosage check stays a check applied downstream of the line checks.
+
+## 2026-10-16 Steps variant_calling and ancestry (Milestone 9e)
+
+Spec approved by the user, 2026-10-16 (`docs/milestones/09e_variant_calling_ancestry_split.md`).
+
+- `--step genotype` becomes `variant_calling` (discovery, union, gap filling, each line's counts at its donor's
+  markers) and `ancestry` (RTIGER and the grid). Reason (user): "the only thing that I need genome-wide are the
+  counts; the variant discovery can be done once and then we can fiddle with the HMM", as alignment was separated.
+- `variant_calling` publishes the counts and a counts sheet (`samplesheets/<input name>.counts.csv`); `ancestry` reads it.
+- `--ancestry_fit chromosome` (default, outputs as before) or `genome` (one RTIGER fit per donor over its regions).
+- Short task names: stages `LINE_COUNTS` and `ANCESTRY_RTIGER`; the pipeline workflow `ZEALGT`.
+- Published folders `variant_calling/` and `ancestry/` (were `genotype/`); results already on `/rsstu` stay where they are.
+- RTIGER rigidity as a window in Mb, replacing 0.5 % of the markers (user, 2026-10-16: "the per Mb rule seems to work
+  the best everywhere for now"; "1 Mb default, add it to 9e"): r = `--rigidity_mb` (default 1) x the median line's
+  covered markers per Mb of the markers' span, per chromosome and per genome alike.

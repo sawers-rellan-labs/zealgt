@@ -1,0 +1,53 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/sawers-rellan-labs/zealgt/main/assets/schema_counts.json",
+    "title": "sawers-rellan-labs/zealgt pipeline - params.input schema for --step ancestry",
+    "description": "One row per line and region: the samplesheets/<name>.counts.csv a --step variant_calling run published",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "sample_id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_]+$",
+                "errorMessage": "sample_id must be letters, digits and underscores",
+                "meta": ["id"]
+            },
+            "donor": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_.]+$",
+                "errorMessage": "donor must be letters, digits, dots and underscores",
+                "meta": ["donor"]
+            },
+            "region": {
+                "type": "string",
+                "pattern": "^[^:,\\s]+(:\\d+-\\d+)?$",
+                "errorMessage": "region must be a chromosome or a window (chr10 or chr10:1-20000000)",
+                "meta": ["region"]
+            },
+            "counts": {
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^\\S+\\.vcf\\.gz$",
+                "errorMessage": "counts must be an existing .vcf.gz file"
+            },
+            "markers": {
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^\\S+\\.vcf$",
+                "errorMessage": "markers must be an existing .vcf file"
+            },
+            "union": {
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^\\S+\\.vcf\\.gz$",
+                "errorMessage": "union must be an existing .vcf.gz file"
+            }
+        },
+        "required": ["sample_id", "donor", "region", "counts", "markers", "union"]
+    },
+    "uniqueEntries": ["sample_id", "region"]
+}

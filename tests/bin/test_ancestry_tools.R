@@ -23,19 +23,19 @@ run_tool <- function(tool, args, dir) {
   list(status = if (is.null(status)) 0L else status, log = out)
 }
 
-write_sites_vcf <- function(sites, path) {
+write_sites_vcf <- function(sites, path, chrom = "chr10") {
   writeLines(c(
-    "##fileformat=VCFv4.2", "##contig=<ID=chr10,length=152435371>",
+    "##fileformat=VCFv4.2", sprintf("##contig=<ID=%s,length=152435371>", chrom),
     "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO"
   ), path)
-  fwrite(sites[, .(CHROM = "chr10", POS = pos, ID = ".", REF = ref, ALT = alt, ".", ".", ".")], path,
+  fwrite(sites[, .(CHROM = chrom, POS = pos, ID = ".", REF = ref, ALT = alt, ".", ".", ".")], path,
     sep = "\t", col.names = FALSE, append = TRUE
   )
 }
 
 # a line's counts as bcftools mpileup | call -m -A writes them: no record without reads; without ALT reads ALT '.',
 # FORMAT GT:AD and one depth; with ALT reads GT:PL:AD, the donor ALT first or second among the ALT alleles
-write_counts_vcf <- function(obs, sites, line, path) {
+write_counts_vcf <- function(obs, sites, line, path, chrom = "chr10") {
   name <- line
   o <- obs[obs$name == line][sites, on = "pos"][n_ref + n_alt > 0]
   swap <- o$pos %% 3L == 0L
@@ -46,11 +46,11 @@ write_counts_vcf <- function(obs, sites, line, path) {
     fifelse(swap, sprintf("0/1:0,3,30,9,40,50:%d,0,%d", n_ref, n_alt), sprintf("0/1:30,0,30:%d,%d", n_ref, n_alt))
   )]
   writeLines(c(
-    "##fileformat=VCFv4.2", "##contig=<ID=chr10,length=152435371>",
+    "##fileformat=VCFv4.2", sprintf("##contig=<ID=%s,length=152435371>", chrom),
     "##FORMAT=<ID=AD,Number=R,Type=Integer,Description=\"Allelic depths\">",
     paste0("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t", name)
   ), path)
-  fwrite(o[, .("chr10", pos, ".", ref, alt_field, ".", ".", ".", fmt, cell)], path,
+  fwrite(o[, .(chrom, pos, ".", ref, alt_field, ".", ".", ".", fmt, cell)], path,
     sep = "\t", col.names = FALSE, append = TRUE
   )
 }
@@ -79,9 +79,15 @@ counts <- vapply(lines, function(l) {
   system2("gzip", p)
   paste0(p, ".gz")
 }, "")
-rigidity <- max(1L, round(0.005 * nrow(sites)))
+# the rigidity call_ancestry.R derives from a 1 Mb window: the median line's covered markers per Mb of the markers' span
+r_of <- function(o, s, mb) {
+  span_mb <- sum(s[, diff(range(pos)), by = chrom]$V1) / 1e6
+  per_mb <- median(o[, .(n = sum(n_ref + n_alt > 0L)), by = name]$n) / span_mb
+  max(1L, as.integer(round(mb * per_mb)))
+}
+rigidity <- r_of(obs, sites[, .(chrom = "chr10", pos)], 1)
 res <- run_tool("call_ancestry.R", c(
-  "--markers", file.path(dir, "markers.vcf"), "--counts", counts, "--rigidity-fraction", "0.005",
+  "--markers", file.path(dir, "markers.vcf"), "--counts", counts, "--rigidity-mb", "1",
   "--segments", file.path(dir, "D.bed"), "--dropped", file.path(dir, "D.dropped.tsv"),
   "--line-checks", file.path(dir, "D.line_checks.tsv")
 ), dir)
@@ -91,13 +97,13 @@ test_that("call_ancestry.R runs and logs with timestamps", {
   expect_match(res$log[1], "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9:]{8} INFO call_ancestry: ")
 })
 
-test_that("each line's REF and donor-ALT counts are read back exactly, whatever the record's FORMAT", {
+test_that("each line's REF and donor-ALT counts at its records are read back exactly, whatever the record's FORMAT", {
   tool <- new.env()
   sys.source(file.path(root, "bin", "call_ancestry.R"), envir = tool)
   markers <- tool$read_vcf(file.path(dir, "markers.vcf"))[, .(CHROM, POS, REF, ALT)]
   for (l in lines[2:4]) {
-    got <- tool$read_line_counts(counts[[l]], markers)
-    want <- obs[name == l][order(pos)]
+    got <- tool$read_line_counts(counts[[l]], markers)$counts
+    want <- obs[name == l & n_ref + n_alt > 0L][order(pos)]
     expect_equal(got[order(pos)]$n_ref, want$n_ref)
     expect_equal(got[order(pos)]$n_alt, want$n_alt)
   }
@@ -129,6 +135,73 @@ test_that("the line checks list every called line, and their reads are the count
   expect_equal(inside$reads, inside$i.reads)
 })
 
+# two chromosomes in one fit, as --ancestry_fit genome: chr9 is a second simulation, each chromosome its own markers
+# file and count files; lines[1] covered at 10 markers on chr9 only, so dropped on its least covered chromosome
+truth9 <- as.data.table(nilHMM::simulate_nil("BC2S2", n = 12, chr = 10L, n_markers = 4000L, seed = 9))
+truth9 <- truth9[!duplicated(truth9[, .(name, pos)])]
+obs9 <- as.data.table(nilHMM::simulate_counts(truth9, depth = 2, error = 0.01, seed = 9))
+sites9 <- unique(truth9[, .(pos)])[, `:=`(ref = "A", alt = "G")]
+obs10 <- as.data.table(nilHMM::simulate_counts(truth, depth = 2, error = 0.01, seed = 7))
+obs9[name == lines[1] & !pos %in% sites9$pos[seq(1, by = 7, length.out = 10)], `:=`(n_ref = 0L, n_alt = 0L)]
+write_sites_vcf(sites9, file.path(dir, "markers9.vcf"), "chr9")
+counts9 <- vapply(lines, function(l) {
+  p <- file.path(dir, paste0(l, ".chr9.vcf"))
+  write_counts_vcf(obs9, sites9, l, p, "chr9")
+  system2("gzip", p)
+  paste0(p, ".gz")
+}, "")
+counts10 <- vapply(lines, function(l) {
+  p <- file.path(dir, paste0(l, ".chr10.full.vcf"))
+  write_counts_vcf(obs10, sites, l, p)
+  system2("gzip", p)
+  paste0(p, ".gz")
+}, "")
+res2 <- run_tool("call_ancestry.R", c(
+  "--markers", file.path(dir, "markers9.vcf"), file.path(dir, "markers.vcf"), "--counts", counts9, counts10,
+  "--rigidity-mb", "1", "--segments", file.path(dir, "G.bed"), "--dropped", file.path(dir, "G.dropped.tsv"),
+  "--line-checks", file.path(dir, "G.line_checks.tsv")
+), dir)
+
+test_that("two chromosomes: one fit, rigidity from both spans, the cut on the least covered chromosome", {
+  expect_equal(res2$status, 0L, info = paste(res2$log, collapse = "\n"))
+  r2 <- r_of(rbind(obs9, obs10), rbind(sites9[, .(chrom = "chr9", pos)], sites[, .(chrom = "chr10", pos)]), 1)
+  expect_match(paste(res2$log, collapse = "\n"), sprintf("on 2 chromosome\\(s\\).*rigidity %d \\(1 Mb\\)", r2))
+  dropped <- fread(file.path(dir, "G.dropped.tsv"))
+  expect_equal(dropped$line, lines[1])
+  # its covered markers on chr9, the least covered chromosome (the 10 kept markers, less those simulated without reads)
+  expect_equal(dropped$covered_markers, obs9[name == lines[1], sum(n_ref + n_alt > 0L)])
+})
+
+test_that("two chromosomes: each chromosome's mosaic matches its truth", {
+  seg <- fread(file.path(dir, "G.bed"))
+  setnames(seg, "#chrom", "chrom")
+  expect_setequal(unique(seg$chrom), c("chr9", "chr10"))
+  # chromosomes in the markers' order within each line
+  expect_true(all(seg[, all(diff(match(chrom, c("chr9", "chr10"))) >= 0), by = line]$V1))
+  for (k in list(list("chr9", truth9), list("chr10", truth))) {
+    s <- seg[chrom == k[[1]]]
+    called <- k[[2]][name != lines[1]][, .(called = state_at(s[line == .BY$name], pos), state), by = name]
+    expect_gt(mean(called$called == called$state, na.rm = TRUE), 0.97)
+  }
+})
+
+test_that("two chromosomes: a line's donor segments are counted per chromosome", {
+  tool <- new.env()
+  sys.source(file.path(root, "bin", "call_ancestry.R"), envir = tool)
+  # HET at the end of chr9 and at the start of chr10: two segments, not one run across the chromosomes
+  bed <- data.table(
+    chrom = c("chr9", "chr9", "chr10", "chr10"), start = c(0L, 100L, 0L, 100L), end = c(100L, 200L, 100L, 200L),
+    line = "L1", state = c(0L, 1L, 1L, 0L)
+  )
+  counts <- data.table(
+    name = "L1", chrom = c("chr9", "chr10"), pos = c(150L, 50L), n_ref = c(5L, 5L), n_alt = c(5L, 5L)
+  )
+  got <- tool$check_lines(bed, counts)
+  expect_equal(got$n_donor_segments, 2L)
+  expect_equal(got$donor_bp, 200L)
+  expect_equal(got$het_reads, 20L)
+})
+
 test_that("line checks on a hand-made pair of lines", {
   tool <- new.env()
   sys.source(file.path(root, "bin", "call_ancestry.R"), envir = tool)
@@ -140,7 +213,7 @@ test_that("line checks on a hand-made pair of lines", {
   )
   # markers at 50 (REF), 150 (HET), 250 (ALT), 450 (HET) and 100 (the REF segment's end, BED start < pos <= end)
   counts <- data.table(
-    name = c(rep("L1", 5), rep("L2", 2)), pos = c(50L, 100L, 150L, 250L, 450L, 50L, 450L),
+    name = c(rep("L1", 5), rep("L2", 2)), chrom = "chr10", pos = c(50L, 100L, 150L, 250L, 450L, 50L, 450L),
     n_ref = c(9L, 1L, 3L, 1L, 1L, 10L, 4L), n_alt = c(1L, 0L, 3L, 9L, 3L, 0L, 0L)
   )
   got <- tool$check_lines(bed, counts)
@@ -214,7 +287,11 @@ bed <- function(rows, path) {
 }
 # L1: 0 at 1000, 2 over 1250-1500; the grid marker 1100 lies between the two. L2: 1 over all.
 bed(
-  data.table("chrA", c(999L, 1249L, 999L), c(1000L, 1500L, 1500L), c("L1", "L1", "L2"), c(0L, 2L, 1L)),
+  # chrB's segments (a genome-wide fit) overlap chrA's positions and must not be read at chrA's grid
+  data.table(
+    c("chrA", "chrA", "chrA", "chrB", "chrB"), c(999L, 1249L, 999L, 0L, 0L), c(1000L, 1500L, 1500L, 5000L, 5000L),
+    c("L1", "L1", "L2", "L1", "L2"), c(0L, 2L, 1L, 1L, 2L)
+  ),
   file.path(dir, "X.bed")
 )
 bed(data.table(character(), integer(), integer(), character(), integer()), file.path(dir, "Y.bed"))

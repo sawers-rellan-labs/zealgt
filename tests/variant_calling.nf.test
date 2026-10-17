@@ -1,13 +1,13 @@
 nextflow_pipeline {
 
-    name "Test --step genotype"
+    name "Test --step variant_calling"
     script "../main.nf"
     tag "pipeline"
-    tag "genotype"
+    tag "variant_calling"
 
     profile "test,docker"
 
-    test("--step genotype - stub") {
+    test("--step variant_calling - stub") {
 
         options "-stub"
 
@@ -22,45 +22,46 @@ nextflow_pipeline {
             params {
                 outdir = "$outputDir"
                 input        = cram_sheet
-                step         = 'genotype'
+                step         = 'variant_calling'
                 b73_controls = controls_sheet
                 lowcopy_bed  = "$baseDir/tests/fixtures/genotype/lowcopy.bed"
                 check_sites  = "$baseDir/tests/fixtures/genotype/check_sites.vcf.gz"
-                genetic_map  = "$baseDir/tests/fixtures/genotype/chrA_map.tsv"
                 regions      = 'chrA'
             }
         }
 
         then {
             def tasks = workflow.trace.tasks().countBy { t -> t.name.tokenize(':')[-1].tokenize(' ')[0] }
-            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: false, ignore: ['pipeline_info/**', '*.csv'])*.toString()
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: false, ignore: ['pipeline_info/**', '*.csv', 'samplesheets/**'])*.toString()
             assert workflow.success
             assertAll(
                 // 2 donors; B73-bulk checks C_1, C_2 (C_3 is a Purple check); pools: 2 witnesses (L_low under 0.05x,
                 // L_excl excluded), the check pool, the B73 control; one mpileup per donor and B73 control;
                 // one union; one union count per BC1 sample (4) and B73 control (the check pool, B73_ctrl); one site count,
                 // one gap filling per donor, one merge;
-                // two views per donor (its column, its ALT sites), one count per line (L_1, M_1), one RTIGER call per donor,
-                // one grid, one VCF per donor
+                // two views per donor (its column, its ALT sites), one count per line (L_1, M_1)
                 { assert tasks == [CHECK_COUNTS: 2, CHECK_ALT_RATE: 2, SAMTOOLS_MERGE: 4, SAMTOOLS_ADDREPLACERG: 4, SAMTOOLS_INDEX: 4, CRISP: 2,
                                    BED_CLIP: 2, WITNESS_VETO: 2, BCFTOOLS_MPILEUP: 4, POOLED_LIKELIHOOD_TIERS: 2,
                                    BCFTOOLS_MERGE: 1, BCFTOOLS_NORM: 1, BIALLELIC_UNION: 1, COUNT_UNION: 6, UNION_TIERS: 2,
-                                   UNION_SITE_COUNTS: 1, FILL_DONOR_ALLELES: 2, DONOR_ALLELES_MERGE: 1, DONOR_SUBSET: 2, DONOR_ALT_SITES: 2, COUNT_LINES: 2, CALL_ANCESTRY: 2, ANCESTRY_GRID: 1, ANCESTRY_VCF_INDEX: 2] },
+                                   UNION_SITE_COUNTS: 1, FILL_DONOR_ALLELES: 2, DONOR_ALLELES_MERGE: 1, DONOR_SUBSET: 2, DONOR_ALT_SITES: 2, COUNT_LINES: 2] },
                 // the stub drops no check, so no dropped_b73_checks.tsv
+                // each line's counts and its donor's markers under counts/<donor>/<region>/ (L_1 of Zx.9001_P1, M_1 of Zx.9002_P1)
                 { assert stable_path.sort() == (['Zx.9001_P1', 'Zx.9002_P1'].collectMany { d ->
-                    ["genotype/discovery/${d}.chrA.vcf.gz", "genotype/discovery/${d}.chrA.vcf.gz.tbi", "genotype/discovery/${d}.chrA.sites.tsv.gz"]
-                } + ['union', 'donor_alleles'].collectMany { f -> ["genotype/union/chrA.${f}.vcf.gz", "genotype/union/chrA.${f}.vcf.gz.tbi"] }
-                  + ['Zx.9001_P1', 'Zx.9002_P1'].collectMany { d ->
-                    ['segments.bed', 'dropped_lines.tsv', 'line_checks.tsv', 'rqtl.csv', 'ancestry.vcf.gz', 'ancestry.vcf.gz.tbi'].collect { f -> "genotype/ancestry/${d}.chrA.${f}" }
-                } + ['genotype/ancestry/chrA.grid.tsv']
-                )*.toString().sort() },
+                    ["variant_calling/discovery/${d}.chrA.vcf.gz", "variant_calling/discovery/${d}.chrA.vcf.gz.tbi", "variant_calling/discovery/${d}.chrA.sites.tsv.gz"]
+                } + ['union', 'donor_alleles'].collectMany { f -> ["variant_calling/union/chrA.${f}.vcf.gz", "variant_calling/union/chrA.${f}.vcf.gz.tbi"] }
+                  + [['Zx.9001_P1', 'L_1'], ['Zx.9002_P1', 'M_1']].collectMany { d, l ->
+                    ["variant_calling/counts/${d}/chrA/${l}.vcf.gz", "variant_calling/counts/${d}/chrA/${d}.chrA.union_alt.vcf"]
+                })*.toString().sort() },
+                // the counts sheet: one row per line, its files where they were published
+                { assert path("$outputDir/samplesheets/samplesheet_cram.counts.csv").readLines()*.replace('"', '')*.tokenize(',').with { s ->
+                    s[0] == ['sample_id', 'donor', 'region', 'counts', 'markers', 'union'] && s.size() == 3 } },
                 // software versions as in the other pipeline tests
                 { assert snapshot(removeNextflowVersion("$outputDir/pipeline_info/zealgt_software_mqc_versions.yml"), stable_path.sort()).match() }
             )
         }
     }
 
-    test("--step genotype - stub, two regions") {
+    test("--step variant_calling - stub, two regions") {
 
         options "-stub"
 
@@ -75,39 +76,38 @@ nextflow_pipeline {
             params {
                 outdir = "$outputDir"
                 input        = cram_sheet
-                step         = 'genotype'
+                step         = 'variant_calling'
                 b73_controls = controls_sheet
                 lowcopy_bed  = "$baseDir/tests/fixtures/genotype/lowcopy.bed"
                 check_sites  = "$baseDir/tests/fixtures/genotype/check_sites.vcf.gz"
-                genetic_map  = "$baseDir/tests/fixtures/genotype/chrA_map.tsv"
                 regions      = 'chrA:1-2500,chrA:2501-5000'
             }
         }
 
         then {
             def tasks = workflow.trace.tasks().countBy { t -> t.name.tokenize(':')[-1].tokenize(' ')[0] }
-            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: false, ignore: ['pipeline_info/**', '*.csv'])*.toString()
+            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: false, ignore: ['pipeline_info/**', '*.csv', 'samplesheets/**'])*.toString()
             assert workflow.success
             assertAll(
                 // the B73 check filter once per check; every other step once per region, so twice the one-region counts
                 { assert tasks == [CHECK_COUNTS: 2, CHECK_ALT_RATE: 2, SAMTOOLS_MERGE: 8, SAMTOOLS_ADDREPLACERG: 8, SAMTOOLS_INDEX: 8, CRISP: 4,
                                    BED_CLIP: 4, WITNESS_VETO: 4, BCFTOOLS_MPILEUP: 8, POOLED_LIKELIHOOD_TIERS: 4,
                                    BCFTOOLS_MERGE: 2, BCFTOOLS_NORM: 2, BIALLELIC_UNION: 2, COUNT_UNION: 12, UNION_TIERS: 4,
-                                   UNION_SITE_COUNTS: 2, FILL_DONOR_ALLELES: 4, DONOR_ALLELES_MERGE: 2, DONOR_SUBSET: 4, DONOR_ALT_SITES: 4, COUNT_LINES: 4, CALL_ANCESTRY: 4, ANCESTRY_GRID: 2, ANCESTRY_VCF_INDEX: 4] },
+                                   UNION_SITE_COUNTS: 2, FILL_DONOR_ALLELES: 4, DONOR_ALLELES_MERGE: 2, DONOR_SUBSET: 4, DONOR_ALT_SITES: 4, COUNT_LINES: 4] },
                 // every per-region output once per region, the region in its name
                 { assert stable_path.sort() == ['chrA_1-2500', 'chrA_2501-5000'].collectMany { r ->
                     (['Zx.9001_P1', 'Zx.9002_P1'].collectMany { d ->
-                        ["genotype/discovery/${d}.${r}.vcf.gz", "genotype/discovery/${d}.${r}.vcf.gz.tbi", "genotype/discovery/${d}.${r}.sites.tsv.gz"]
-                    } + ['union', 'donor_alleles'].collectMany { f -> ["genotype/union/${r}.${f}.vcf.gz", "genotype/union/${r}.${f}.vcf.gz.tbi"] }
-                      + ['Zx.9001_P1', 'Zx.9002_P1'].collectMany { d ->
-                        ['segments.bed', 'dropped_lines.tsv', 'line_checks.tsv', 'rqtl.csv', 'ancestry.vcf.gz', 'ancestry.vcf.gz.tbi'].collect { f -> "genotype/ancestry/${d}.${r}.${f}" }
-                    } + ["genotype/ancestry/${r}.grid.tsv"])
+                        ["variant_calling/discovery/${d}.${r}.vcf.gz", "variant_calling/discovery/${d}.${r}.vcf.gz.tbi", "variant_calling/discovery/${d}.${r}.sites.tsv.gz"]
+                    } + ['union', 'donor_alleles'].collectMany { f -> ["variant_calling/union/${r}.${f}.vcf.gz", "variant_calling/union/${r}.${f}.vcf.gz.tbi"] }
+                      + [['Zx.9001_P1', 'L_1'], ['Zx.9002_P1', 'M_1']].collectMany { d, l ->
+                        ["variant_calling/counts/${d}/${r}/${l}.vcf.gz", "variant_calling/counts/${d}/${r}/${d}.${r}.union_alt.vcf"]
+                    })
                 }*.toString().sort() }
             )
         }
     }
 
-    test("--step genotype - fixtures") {
+    test("--step variant_calling - fixtures") {
 
         when {
             // nf-test launches in its own directory: the fixture sheets' relative paths are made absolute
@@ -120,23 +120,21 @@ nextflow_pipeline {
             params {
                 outdir = "$outputDir"
                 input        = cram_sheet
-                step         = 'genotype'
+                step         = 'variant_calling'
                 b73_controls = controls_sheet
                 lowcopy_bed  = "$baseDir/tests/fixtures/genotype/lowcopy.bed"
                 check_sites  = "$baseDir/tests/fixtures/genotype/check_sites.vcf.gz"
-                genetic_map  = "$baseDir/tests/fixtures/genotype/chrA_map.tsv"
                 regions      = 'chrA:1-5000'
             }
         }
 
         then {
-            def d = "$outputDir/genotype/discovery"
+            def d = "$outputDir/variant_calling/discovery"
             def sites = path("$d/Zx.9001_P1.chrA_1-5000.sites.tsv.gz").linesGzip.drop(1)*.tokenize('\t')
             def checks = path("$d/dropped_b73_checks.tsv").readLines()*.tokenize('\t')
-            def u = "$outputDir/genotype/union"
+            def u = "$outputDir/variant_calling/union"
             def alleles = path("$u/chrA_1-5000.donor_alleles.vcf.gz").linesGzip.findAll { l -> !l.startsWith('#') }*.tokenize('\t')
-            def a = "$outputDir/genotype/ancestry"
-            def ancestry = path("$a/Zx.9001_P1.chrA_1-5000.ancestry.vcf.gz").linesGzip.findAll { l -> !l.startsWith('##') }*.tokenize('\t')
+            def cdir = "$outputDir/variant_calling/counts/Zx.9001_P1/chrA_1-5000"
             assert workflow.success
             assertAll(
                 // CRISP calls 1000, 1101, 2000, 2500, 4000; 1101 lies one past a range end, the witness has no ALT read at 1000 and 2500
@@ -148,16 +146,12 @@ nextflow_pipeline {
                 // both donors (the same BC1 CRAMs) own both sites: the union, and ALT in both at prior (2 x 0.5 + 1) / (2 + 1)
                 { assert path("$u/chrA_1-5000.union.vcf.gz").linesGzip.findAll { l -> !l.startsWith('#') }*.tokenize('\t')*.getAt(1) == ['2000', '4000'] },
                 { assert alleles*.getAt(1) == ['2000', '4000'] && alleles.every { r -> r[9..10].every { c -> c ==~ /1:[0-9.]+:0\.66666?7:1:own/ } } },
-                // ancestry: L_1 (the witness reads, ALT at both sites) one het segment over both union-ALT sites, none dropped (r 1, cut 2)
-                { assert path("$a/Zx.9001_P1.chrA_1-5000.segments.bed").readLines() == ['#chrom\tstart\tend\tline\tstate', 'chrA\t1999\t4000\tL_1\t1'] },
-                { assert path("$a/Zx.9001_P1.chrA_1-5000.dropped_lines.tsv").readLines() == ['line\tcovered_markers\tcut'] },
-                // L_1's checks: one donor segment of 2001 bp, all its reads in it
-                { assert path("$a/Zx.9001_P1.chrA_1-5000.line_checks.tsv").readLines()*.tokenize('\t').with { r ->
-                    r[0][0..2] == ['line', 'n_donor_segments', 'donor_bp'] && r[1][0..3] == ['L_1', '1', '2001', '0'] && (r[1][5] as int) > 0 } },
-                // the grid: both union sites, 2 cM apart on the chrA map; R/qtl and VCF read at it
-                { assert path("$a/chrA_1-5000.grid.tsv").readLines()*.tokenize('\t')*.getAt(0) == ['marker', 'chrA_2000', 'chrA_4000'] },
-                { assert path("$a/Zx.9001_P1.chrA_1-5000.rqtl.csv").readLines() == ['id,,,L_1', 'chrA_2000,A,2.0000,1', 'chrA_4000,A,4.0000,1'] },
-                { assert ancestry[0][9] == 'L_1' && ancestry.drop(1).collect { r -> [r[1], r[9]] } == [['2000', '0/1'], ['4000', '0/1']] }
+                // Zx.9001_P1's markers: both union-ALT sites; L_1 counted there with ALT reads at both (the witness reads)
+                { assert path("$cdir/Zx.9001_P1.chrA_1-5000.union_alt.vcf").readLines().findAll { l -> !l.startsWith('#') }*.tokenize('\t')*.getAt(1) == ['2000', '4000'] },
+                { assert path("$cdir/L_1.vcf.gz").linesGzip.findAll { l -> !l.startsWith('#') }*.tokenize('\t').collect { r -> [r[1], r[4] != '.'] } == [['2000', true], ['4000', true]] },
+                // the counts sheet points at the published files
+                { assert path("$outputDir/samplesheets/samplesheet_cram.counts.csv").readLines()*.replace('"', '')*.tokenize(',').with { s ->
+                    s.size() == 3 && s.drop(1).every { r -> r[3..5].every { f -> new File(f).exists() } } } }
             )
         }
     }

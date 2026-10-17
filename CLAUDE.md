@@ -3,7 +3,8 @@
 ## Project
 
 `zealgt` takes the ZEAL maize samples from raw reads to genotypes on the NCSU hazel cluster (Nextflow, nf-core template):
-the `ALIGNMENT` workflow stops at one CRAM per sample, then the `GENOTYPE` workflow reads those CRAMs.
+the `ALIGNMENT` workflow stops at one CRAM per sample, the `VARIANT_CALLING` workflow reads those CRAMs and stops at
+each line's counts at its donor's markers, then the `ANCESTRY` workflow reads those counts.
 
 ## Never delete
 

@@ -14,8 +14,8 @@
             "properties": {
                 "step": {
                     "type": "string",
-                    "enum": ["demultiplex", "alignment", "genotype"],
-                    "description": "Workflow to run: demultiplex (libraries to per-sample FASTQs), alignment (per-sample FASTQs to CRAMs) or genotype (CRAMs to variant sites).",
+                    "enum": ["demultiplex", "alignment", "variant_calling", "ancestry"],
+                    "description": "Workflow to run: demultiplex (libraries to per-sample FASTQs), alignment (per-sample FASTQs to CRAMs), variant_calling (CRAMs to variant sites, donor alleles and each line's counts at its donor's markers) or ancestry (those counts to ancestry segments and the grid).",
                     "fa_icon": "fas fa-play"
                 },
                 "input": {
@@ -24,7 +24,7 @@
                     "exists": true,
                     "mimetype": "text/csv",
                     "pattern": "^\\S+\\.csv$",
-                    "description": "Samplesheet: meta/samples.csv rows for demultiplex (assets/schema_input.json), a published samplesheets/<name>.csv for alignment (assets/schema_fastq.json), one CRAM row per sample for genotype (assets/schema_cram.json).",
+                    "description": "Samplesheet: meta/samples.csv rows for demultiplex (assets/schema_input.json), a published samplesheets/<name>.csv for alignment (assets/schema_fastq.json), one CRAM row per sample for variant_calling (assets/schema_cram.json), a published samplesheets/<name>.counts.csv for ancestry (assets/schema_counts.json).",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "outdir": {
@@ -88,15 +88,15 @@
                 "required": ["minibwa_index"]
             }
         },
-        "genotype_options": {
-            "title": "Genotype options",
+        "variant_calling_options": {
+            "title": "Variant calling options",
             "type": "object",
             "fa_icon": "fas fa-seedling",
-            "description": "Inputs and cuts of --step genotype.",
+            "description": "Inputs and cuts of --step variant_calling.",
             "if": {
                 "properties": {
                     "step": {
-                        "const": "genotype"
+                        "const": "variant_calling"
                     }
                 },
                 "required": ["step"]
@@ -149,8 +149,30 @@
                     "type": "number",
                     "default": 0.05,
                     "minimum": 0,
-                    "description": "Samples whose CollectWgsMetrics MEAN_COVERAGE is under this are dropped before genotyping.",
+                    "description": "Samples whose CollectWgsMetrics MEAN_COVERAGE is under this are dropped before variant calling.",
                     "fa_icon": "fas fa-filter"
+                }
+            }
+        },
+        "ancestry_options": {
+            "title": "Ancestry options",
+            "type": "object",
+            "fa_icon": "fas fa-seedling",
+            "description": "Options of --step ancestry.",
+            "properties": {
+                "ancestry_fit": {
+                    "type": "string",
+                    "default": "chromosome",
+                    "enum": ["chromosome", "genome"],
+                    "description": "RTIGER fit unit: one fit per donor and region (chromosome) or one per donor over all its regions (genome).",
+                    "fa_icon": "fas fa-object-group"
+                },
+                "rigidity_mb": {
+                    "type": "number",
+                    "default": 1,
+                    "exclusiveMinimum": 0,
+                    "description": "RTIGER rigidity as a window in Mb: this many Mb times the median line's covered markers per Mb.",
+                    "fa_icon": "fas fa-ruler-horizontal"
                 },
                 "genetic_map": {
                     "type": "string",
@@ -259,7 +281,10 @@
             "$ref": "#/$defs/reference_genome_options"
         },
         {
-            "$ref": "#/$defs/genotype_options"
+            "$ref": "#/$defs/variant_calling_options"
+        },
+        {
+            "$ref": "#/$defs/ancestry_options"
         },
         {
             "$ref": "#/$defs/generic_options"
