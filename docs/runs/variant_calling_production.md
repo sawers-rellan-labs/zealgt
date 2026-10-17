@@ -43,22 +43,34 @@ One `variant_calling` run over every donor (decision 1); it publishes the counts
 Head job on the normal QOS, 16 GB, `NXF_OPTS="-Xms1g -Xmx12g"`; profile per decision 3. Commands written once the
 decisions are made.
 
-## Estimates (to redo from job 1343856)
+## Estimates
 
-- Method: the huehuetenangensis genome trace (job 1343856, 2 donors, 93 rows, chr1-chr10) per process, scaled per donor
-  (discovery, union) and per line (counts), as `agent/hue_genome/estimate_genome.py` scaled run A's chr10 trace. The
-  union steps (`COUNT_UNION`, `UNION_TIERS`, `FILL_DONOR_ALLELES`) also grow with the union's sites, which 95 donors
-  multiply; scaled by the union sizes of the per-taxon chr10 runs.
-- Until then, from run A's chr10 scaling (`huehue_genome.md`, ~11 CPU-h for 2 donors genome-wide, CRISP 5.4 of them):
-  ~250 CPU-h of CRISP and ~500 CPU-h in all for 95 donors; ~3-6 h of CRISP at 80-40 tasks at a time; ~26,000
-  tasks (the huehuetenangensis genome estimate, ~1,100 for 93 rows, scaled to 2,195). The old draft's ~450 CPU-h, ~35,000 tasks and 12-30 h included ancestry.
-- `/share`: run A 3.9 GB of `work/` for chr10, 2 donors; ~1-1.5 TB for the population with `work/` kept (`hpc_dev`),
-  much less with `cleanup = true` (`hpc_prod`).
+Measured on chr10 with 88 donors (diploperennis, parviglumis, mexicana; `genotype_diplo_parviglumis_mexicana_chr10`,
+2026-10-16, trace `execution_trace_2026-10-16_12-30-36.txt`; 727,756 union sites, 3,199 tasks, 28.2 CPU-h with
+ancestry), scaled to 95 donors and chr1-chr10. Genome / chr10 is 14.1 by low-copy Mb and 17.1 by union sites (the
+huehuetenangensis genome run, job 1343856: 1,168,623 vs 68,177); ~15 below.
+
+| process (chr10, 88 donors)                 | tasks  | longest      | CPU-h | peak RSS | production (95 donors, genome)            |
+| ------------------------------------------ | ------ | ------------ | ----- | -------- | ----------------------------------------- |
+| `CRISP`                                    | 82     | 16.1 min     | 12.2  | 0.55 GB  | ~200 CPU-h; chr1 tasks ~35-45 min         |
+| `COUNT_UNION`                              | 358    | 3.1 min      | 4.7   | 0.26 GB  | ~75 CPU-h                                 |
+| `UNION_TIERS`                              | 88     | 2.5 min      | 2.6   | 1.80 GB  | chr1 ~4 GB (2.2 x chr10's sites): 8 GB    |
+| `SAMTOOLS_MERGE`, `_ADDREPLACERG`          | 164    | 3.7 min      | 4.3   | 0.90 GB  | ~70 CPU-h                                 |
+| `COUNT_LINES` (per line, pre-9f)           | 1,569  | 0.2 min      | 1.1   | 0.25 GB  | 950 tasks after 9f; memory from 9f test 6 |
+| `FILL_DONOR_ALLELES`                       | 88     | 0.6 min      | 0.6   | 0.75 GB  | chr1 ~1.7 GB                              |
+| `UNION_SITE_COUNTS`, `DONOR_ALLELES_MERGE` | 1 each | 3.1, 3.6 min | 0.1   | 0.72 GB  | chr1 ~1.6 GB, ~8 min                      |
+
+- CPU: ~400-500 CPU-h; tasks ~18,000 (Milestone 9f: one `COUNT_LINES` per donor and region; ~41,000 without).
+- Wall: ~4-6 h on `hpc_prod` (`queueSize` 80), ~8-10 h on `hpc_dev` (40); the longest task CRISP on chr1. Milestone 9f
+  lets chr2-chr10 go on while chr1's CRISP runs (huehuetenangensis genome: 1 h 41 min before, ~58 min after).
+- Memory: `UNION_TIERS` to 8 GB before the run (4 GB now; chr1 ~4 GB). `COUNT_LINES` in its 9f form (a donor's lines
+  in one task, up to 64 lines) from 9f test 6 (35 lines) before the run.
+- `/share`: `work/` of 9f test 6 to measure; with `cleanup = true` (`hpc_prod`) a run keeps only what is in flight.
 - Published counts: ~77 GB plain, ~8 GB compressed (`-Oz`) for the whole population, on `/rsstu`.
 
 ## Order
 
-1. Job 1343856's trace into the estimates above; `CRISP` and `COUNT_LINES` limits checked against chr1.
+1. Limits from the estimates above: `UNION_TIERS` 8 GB; `COUNT_LINES` from 9f test 6, scaled to 64 lines.
 2. Milestone 9f (`docs/milestones/09f_efficiency_before_production.md`) merged, all its changes debugged before the run
    (user, 2026-10-16: "we need to debug all this changes before sending the whole genome run"): group sizes for the
    discovery and union barriers, CRISP memory, one count VCF per donor and region, short Slurm job names; its test 6
