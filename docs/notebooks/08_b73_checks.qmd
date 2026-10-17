@@ -1,0 +1,178 @@
+---
+title: "The B73 checks at the production run's sites"
+subtitle: "Read counts of the 23 B73 checks at the variant-calling production run's union sites (run 1367152, chr1-chr10; 2026-10-17)"
+author: "Fausto Rodríguez-Zapata"
+date: today
+format:
+  html:
+    toc: true
+    embed-resources: true
+    fig-width: 9
+    fig-height: 5
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+library(data.table)
+library(ggplot2)
+theme_set(theme_bw(base_size = 13))
+# inputs (not tracked as scripts): agent/nb08/count_checks_union.sbatch, agent/nb08/summarize_checks.sh (hazel)
+d <- "b73_checks"
+rd <- function(f, ...) fread(file.path(d, f), ...)
+taxa <- c(Zd = "diploperennis", Zh = "huehuetenangensis", Zl = "luxurians", Zv = "parviglumis", Zx = "mexicana")
+batch <- c(`B73-bulk` = "batch 1, B73-bulk", B73 = "batch 2, B73")
+chroms <- paste0("chr", 1:10)
+cc <- rd("counts_chr.tsv")[, chrom := factor(chrom, chroms)]
+cc[, batch := batch[pedigree]]
+gw <- cc[, .(sites = sum(sites), ref = sum(ref), alt = sum(alt), other = sum(other)), by = .(sample, batch)]
+gw[, `:=`(reads = ref + alt + other, alt_share = alt / (ref + alt + other))]
+setorder(gw, -alt_share)
+gw[, sample := factor(sample, rev(sample))]
+rates <- rd("check_site_rates.tsv")
+```
+
+## Why
+
+CRISP is meant to run on three kinds of pool per donor: its BC1 pools, the in silico pool of its NILs, and a pool of
+the B73 checks that are not contaminated (user, 2026-10-17). A donor's own pools share almost all its variants, so the
+B73 checks give CRISP its contrast. This notebook asks which B73 checks are clean, using only the production run's
+calls: every union site of run 1367152 (chr1-chr10), and each check's reads there.
+
+- **ALT reads**: reads carrying the run's ALT allele at a site; **other reads**: a third allele; **ALT share** = ALT
+  reads / all reads at the run's sites.
+- The checks: the 12 batch-1 B73-bulk checks (the pipeline's check filter tests these) and the 11 batch-2 B73 checks
+  (in the run's sheet, never tested or used).
+- Reads are counted as the run counts the BC1 pools at the union: MAPQ and base quality >= 20, no duplicate, secondary or
+  supplementary records.
+
+## Read counts
+
+```{r counts}
+knitr::kable(gw[order(-alt_share), .(check = as.character(sample), batch, sites, reads, ref, alt, other,
+                                     `ALT share (%)` = round(100 * alt_share, 3))],
+             format.args = list(big.mark = ","),
+             caption = "Each check over chr1-chr10: run sites with >= 1 read, reads, REF, ALT and other reads.")
+```
+
+```{r counts-chr}
+w <- dcast(cc[, .(sample, chrom, pct = round(100 * alt / (ref + alt + other), 3))], sample ~ chrom, value.var = "pct")
+w <- w[match(rev(levels(gw$sample)), sample)]
+knitr::kable(w, caption = "ALT share (%) per chromosome.")
+```
+
+## The two batches
+
+```{r batches, fig.height=6}
+r <- merge(gw[, .(sample = as.character(sample), batch, run_sites = 100 * alt_share)],
+           rates[, .(sample, check_sites = 100 * alt_share)], by = "sample")
+ggplot(melt(r, id.vars = c("sample", "batch")), aes(value, reorder(sample, value), colour = batch, shape = variable)) +
+  geom_point(size = 2.5) +
+  geom_vline(xintercept = 1, linetype = 2, colour = "grey50") +
+  scale_x_log10() +
+  scale_shape_manual(values = c(run_sites = 16, check_sites = 1),
+                     labels = c(run_sites = "the run's sites", check_sites = "SNP50K sites (HQ_BZEA, job 1387271)")) +
+  labs(x = "ALT share (%, log scale); dashed: the pipeline's 1 % check filter", y = NULL, colour = NULL, shape = NULL)
+```
+
+## Mismatches over the whole genome
+
+`samtools stats` of each check's CRAM (alignment QC): mismatches over all mapped bases, no site list. In B73 nearly
+every mismatch is a sequencing error, so this ranks the checks by sequencing quality; contamination adds little to it
+(5 % teosinte reads, which differ from B73 at ~1 % of their bases, add ~0.05 %).
+
+```{r stats}
+st <- rd("samtools_stats.tsv")
+st <- merge(st, gw[, .(sample = as.character(sample), batch, run_sites = 100 * alt_share)], by = "sample")
+st <- merge(st, rates[, .(sample, snp50k_sites = 100 * alt_share)], by = "sample")
+knitr::kable(st[order(-error_rate), .(check = sample, batch, `bases mapped` = bases_mapped_cigar, mismatches,
+                                      `mismatch rate (%)` = round(100 * error_rate, 3),
+                                      `ALT share, run's sites (%)` = round(run_sites, 3),
+                                      `ALT share, SNP50K sites (%)` = round(snp50k_sites, 3))],
+             format.args = list(big.mark = ","), caption = "Whole-genome mismatch rate against the two site-based ALT shares.")
+```
+
+The base qualities (`samtools stats` of the same CRAMs) show why: batch 1 is sequenced worse.
+
+```{r quality}
+q <- merge(rd("samtools_quality.tsv"), st[, .(sample, batch, error_rate)], by = "sample")
+knitr::kable(q[order(batch, -error_rate), .(check = sample, batch, `average base quality` = average_quality,
+                                            `bases < Q20 (%)` = round(100 * share_q_lt20, 2),
+                                            `bases < Q30 (%)` = round(100 * share_q_lt30, 2),
+                                            `mismatch rate (%)` = round(100 * error_rate, 3))],
+             caption = "Base quality and mismatch rate per check.")
+```
+
+### Mismatches on high-quality bases
+
+The same count on bases of quality >= 30 only (`samtools stats` with the reference, MAPQ >= 20, no duplicate,
+secondary, QC-fail or supplementary records; jobs 1388640): no genotypes and no site list, and most of the quality
+difference between the batches is gone.
+
+```{r q30}
+mq <- dcast(rd("mismatch_by_quality.tsv"), sample ~ qbin, value.var = c("bases", "mismatches"))
+mq[, q30 := 100 * `mismatches_q>=30` / `bases_q>=30`]
+mq <- merge(mq, st[, .(sample, batch, error_rate, run_sites)], by = "sample")
+knitr::kable(mq[order(-q30), .(check = sample, batch, `bases at Q>=30` = `bases_q>=30`,
+                               `mismatches at Q>=30` = `mismatches_q>=30`, `mismatch rate at Q>=30 (%)` = round(q30, 4),
+                               `mismatch rate, all bases (%)` = round(100 * error_rate, 3),
+                               `ALT share, run's sites (%)` = round(run_sites, 3))],
+             format.args = list(big.mark = ","), caption = "Mismatch rate on bases of quality >= 30, per check.")
+ggplot(mq, aes(q30, run_sites, colour = batch, label = sample)) +
+  geom_point(size = 2.5) +
+  geom_text(size = 2.5, vjust = -0.8, show.legend = FALSE) +
+  geom_vline(xintercept = 0.1, linetype = 2, colour = "grey50") +
+  scale_x_log10() +
+  scale_y_log10() +
+  labs(x = "mismatch rate at Q >= 30 (%, log scale); dashed: 0.1 %", y = "ALT share at the run's sites (%, log scale)",
+       colour = NULL)
+```
+
+```{r stats-plot, fig.height=5}
+ggplot(st, aes(100 * error_rate, run_sites, colour = batch, label = sample)) +
+  geom_point(size = 2.5) +
+  geom_text(size = 2.5, vjust = -0.8, show.legend = FALSE) +
+  scale_y_log10() +
+  labs(x = "mismatch rate over the whole genome (%)", y = "ALT share at the run's sites (%, log scale)", colour = NULL)
+```
+
+## Along the genome
+
+Each row is a check, each tile 1 Mb; colour is the ALT share of its reads at the run's sites. A block of high share
+on one chromosome is donor DNA in that region (a mislabel or an introgressed segment); an even haze over the genome is
+leakage or error.
+
+```{r paint, fig.height=8, fig.width=12}
+b <- rd("bins_1mb.tsv")[, chrom := factor(chrom, chroms)]
+b[, share := alt / (ref + alt + other)]
+b[, sample := factor(sample, levels(gw$sample))]
+ggplot(b, aes(bin_mb, sample, fill = pmin(100 * share, 5))) +
+  geom_tile() +
+  facet_grid(. ~ chrom, scales = "free_x", space = "free_x") +
+  scale_fill_viridis_c(option = "magma", direction = -1, name = "ALT share (%)\n(capped at 5)") +
+  labs(x = "Position (Mb)", y = NULL) +
+  theme(panel.spacing.x = unit(0.1, "lines"), axis.text.x = element_text(size = 6))
+```
+
+## Whose alleles
+
+For each site where a check has ALT reads: how many of the run's donors carry that ALT in their donor alleles. An ALT
+from cross-talk or contamination matches the donors of the sample it came from; a sequencing error matches whatever
+donors share the site by chance.
+
+```{r donors, fig.height=6}
+s <- rd("alt_by_donors.tsv")
+s[, `:=`(sample = factor(sample, levels(gw$sample)), nd = factor(nd, c("0", "1", "2-5", "6-20", "21-95")))]
+ggplot(s, aes(alt_reads, sample, fill = nd)) +
+  geom_col() +
+  scale_fill_viridis_d(name = "donors carrying\nthe ALT") +
+  labs(x = "ALT reads", y = NULL)
+```
+
+```{r taxa}
+one <- rd("alt_single_donor_taxon.tsv")[, taxon := taxa[taxon]]
+knitr::kable(dcast(one, sample ~ taxon, value.var = "alt_reads", fill = 0),
+             caption = "ALT reads at sites where a single donor carries the ALT, by that donor's taxon.")
+```

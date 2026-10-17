@@ -1,0 +1,67 @@
+---
+title: "Diploperennis NILs: SNP50K against the production run"
+subtitle: "RTIGER ancestry from the SNP50K calls and from production run 1367152's counts (genome fit, 1 Mb rigidity; ancestry jobs 1387871, 1388677; 2026-10-17)"
+author: "Fausto Rodríguez-Zapata"
+date: today
+format:
+  html:
+    toc: true
+    embed-resources: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+library(data.table)
+library(ggplot2)
+# inputs: the ancestry run's genome-fit segments (agent/nb08/submit_anc_dip.sh) and zealhmm data/zeal/rtiger_50K_calls.csv
+d <- "diploperennis_painting"
+srcs <- c("SNP50K", "zealgt")
+ours <- rbindlist(lapply(Sys.glob(file.path(d, "*.genome.segments.bed")), function(f) {
+  fread(f, col.names = c("chrom", "start", "end", "line", "state"))[
+    , .(donor = sub("\\.genome\\..*", "", basename(f)), chrom, line, start, end, state, source = srcs[2])]
+}))
+snp <- fread(file.path(d, "snp50k_calls_diploperennis.csv"))
+snp <- merge(snp[, .(line = name, chrom = paste0("chr", chr), start = start_bp, end = end_bp, state, source = srcs[1])],
+             unique(ours[, .(line, donor)]), by = "line")
+dt <- rbind(snp, ours, use.names = TRUE)
+dt[, chrom := factor(chrom, levels = paste0("chr", 1:10))]
+dt[, source := factor(source, levels = srcs)]
+dt[, row := match(line, rev(sort(unique(line)))), by = donor]
+dt[, label := paste0(donor, "\n", uniqueN(line), " samples"), by = donor]
+```
+
+Per donor, the same lines in the same order in each block: SNP50K RTIGER calls on top, zealgt below. zealgt here is
+RTIGER on the counts of variant-calling production run 1367152, fitted per donor over the whole genome at 1 Mb rigidity
+(ancestry jobs 1387871, 1388677). `r uniqueN(ours$donor)` donors, `r uniqueN(ours$line)` lines.
+
+## Donor segments per line
+
+```{r segments}
+seg <- dt[order(source, line, chrom, start), .(segments = {
+  s <- state > 0
+  sum(s & !shift(s, fill = FALSE))
+}), by = .(source, donor, line, chrom)][, .(segments = sum(segments)), by = .(source, donor, line)]
+knitr::kable(dcast(seg[, .(median = as.numeric(median(segments))), by = .(donor, source)], donor ~ source,
+                   value.var = "median"),
+             caption = "Median donor segments per line, genome-wide (runs of HET or ALT).")
+```
+
+## Painting
+
+```{r paint, fig.width=24, fig.height=26}
+dt[, state := factor(state, levels = 0:2, labels = c("REF", "HET", "ALT"))]
+ggplot(dt) +
+  geom_rect(aes(xmin = start / 1e6, xmax = end / 1e6, ymin = row - 0.48, ymax = row + 0.48, fill = state)) +
+  scale_fill_manual(values = c(REF = "gold", HET = "springgreen4", ALT = "purple4"), name = "State") +
+  facet_grid(label + source ~ chrom, scales = "free", space = "free") +
+  scale_y_continuous(breaks = NULL, expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0), breaks = seq(0, 300, 100)) +
+  labs(title = paste("Diploperennis lines, genome-wide:", paste(srcs, collapse = " | ")),
+       x = "position (Mb)", y = "samples") +
+  theme_classic(base_size = 11) +
+  theme(strip.text.y = element_text(angle = 0), strip.background = element_blank(), legend.position = "bottom",
+        panel.spacing.y = unit(4, "pt"), panel.spacing.x = unit(2, "pt"))
+```
