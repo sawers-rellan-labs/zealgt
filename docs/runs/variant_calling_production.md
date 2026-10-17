@@ -23,19 +23,23 @@ counts; the variant discovery can be done once and then we can fiddle with the H
 
   | taxon             | donors | BC1 | lines |
   | ----------------- | ------ | --- | ----- |
-  | mexicana          | 42     | 163 | 723   |
+  | mexicana          | 42     | 163 | 722   |
   | parviglumis       | 40     | 168 | 606   |
   | diploperennis     | 6      | 25  | 256   |
   | luxurians         | 5      | 19  | 121   |
   | huehuetenangensis | 2      | 9   | 61    |
-  | total             | 95     | 384 | 1,767 |
+  | total             | 95     | 384 | 1,766 |
 
-  Plus the 44 B73 checks and `b73_controls.csv` (`B73_ERR3288215`).
+  Plus the 23 B73 checks of the earlier sheets (12 `B73-bulk`, which the check filter reads, and 11 `B73`) and
+  `b73_controls.csv` (`B73_ERR3288215`). `PN17_SID1574` (`Zx.0390_P1`, no BC1 pool) stays out, as in run 1273053.
 
 - `--lowcopy_bed ZEAL/reference/lowcopy_chr1-10.bed`, `--check_sites bzeaseq/nilhmm/vcf/HQ_BZEA.vcf.gz`,
   `--regions chr1,...,chr10`.
-- One input sheet with every donor (the union pools every donor in the run's sheet); written from `meta/samples.csv` and
-  the CRAM folder, checked as job 1323750 did (paths present, each donor keeps a pool and a line over 0.05x).
+- One input sheet with every donor (the union pools every donor in the run's sheet):
+  `docs/runs/variant_calling_production/samplesheet.csv` (2,173 rows) and `b73_controls.csv`, written by
+  `agent/vc_prod/write_sheet.py` from `meta/samples.csv`. Every row of the earlier run sheets in `docs/runs/` is in it
+  unchanged (`agent/vc_prod/compare_sheets.py`); the luxurians rows are new. Sheet check on hazel (paths present, each
+  donor keeps a pool and a line over 0.05x): see "Sheet check".
 
 ## Runs
 
@@ -63,15 +67,16 @@ huehuetenangensis genome run, job 1343856: 1,168,623 vs 68,177); ~15 below.
 - CPU: ~400-500 CPU-h; tasks ~18,000 (Milestone 9f: one `COUNT_LINES` per donor and region; ~41,000 without).
 - Wall: ~4-6 h on `hpc_prod` (`queueSize` 80), ~8-10 h on `hpc_dev` (40); the longest task CRISP on chr1. Milestone 9f
   lets chr2-chr10 go on while chr1's CRISP runs (huehuetenangensis genome: 1 h 41 min before, ~58 min after).
-- Memory: `UNION_TIERS` to 8 GB before the run (4 GB now; chr1 ~4 GB). `COUNT_LINES` in its 9f form (a donor's lines
-  in one task, up to 64 lines) from 9f test 6 (35 lines) before the run.
-- `/share`: `work/` of 9f test 6 to measure; with `cleanup = true` (`hpc_prod`) a run keeps only what is in flight.
+- Memory (set in 9f): `UNION_TIERS` 8 GB (chr1 ~4 GB); `COUNT_LINES` 4 GB for a donor's lines in one task (up to 64).
+- `/share`: `work/` of 9f test 6 (huehuetenangensis genome-wide, 2 donors, 70 samples) was 51 GB; scaled to 95 donors
+  ~1.5-2.5 TB without cleanup (`hpc_dev`); with `cleanup = true` (`hpc_prod`) a run keeps only what is in flight.
 - Published counts: ~77 GB plain, ~8 GB compressed (`-Oz`) for the whole population, on `/rsstu`.
 
 ## Order
 
-1. Limits from the estimates above: `UNION_TIERS` 8 GB; `COUNT_LINES` from 9f test 6, scaled to 64 lines.
-2. Milestone 9f (`docs/milestones/09f_efficiency_before_production.md`) merged, all its changes debugged before the run
+1. Done in Milestone 9f: limits from the estimates above: `UNION_TIERS` 8 GB; `COUNT_LINES` 4 GB (0.84 GB peak with 35
+   lines in 9f test 6, doubling on retry).
+2. Done, merged 2026-10-17 (PR #64): Milestone 9f (`docs/milestones/09f_efficiency_before_production.md`) merged, all its changes debugged before the run
    (user, 2026-10-16: "we need to debug all this changes before sending the whole genome run"): group sizes for the
    discovery and union barriers, CRISP memory, one count VCF per donor and region, short Slurm job names; its test 6
    reruns huehuetenangensis genome-wide on `hpc_dev`.
