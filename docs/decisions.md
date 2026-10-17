@@ -331,3 +331,14 @@ Spec approved by the user, 2026-10-16 (`docs/milestones/09f_efficiency_before_pr
 
 User, 2026-10-17: "I want the array jobs implemented": arrays of 20 for the per-donor and per-sample variant-calling
 processes; `submitRateLimit` 20/1min would take ~14 h to submit ~17,500 single jobs (run 1349242, cancelled).
+
+## 2026-10-17 No supplementary records in variant calling (Milestone 9g)
+
+User, 2026-10-17: exclude supplementary records (0x800) consistently across variant calling, always (no parameter), at
+the variant-calling input; the `/rsstu` CRAMs stay whole. CRISP 1a9027e has a use-after-free on them
+(vibansal/crisp#35) that stopped the production run.
+
+- CRISP reads filtered copies (`samtools view -F 0x800`): each BC1 CRAM once, whole genome; each witness pool per region.
+  The four mpileup steps skip them with `--ff UNMAP,SECONDARY,QCFAIL,DUP,SUPPLEMENTARY`.
+- Rejected: filtering at CRAM export (the archive loses the records, 2,173 CRAMs re-exported); a parameter; filtered
+  copies of every CRAM (about the alignment archive's size on `/share`).
