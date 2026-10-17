@@ -50,6 +50,8 @@
 %%metro process: merge_pools | CRAM_VARIANT_DISCOVERY_CRISP:SAMTOOLS_MERGE
 %%metro process: addrg | SAMTOOLS_ADDREPLACERG
 %%metro process: index_pools | CRAM_VARIANT_DISCOVERY_CRISP:SAMTOOLS_INDEX
+%%metro process: filter_bc1 | FILTER_BC1
+%%metro process: filter_witness | FILTER_WITNESS
 %%metro process: crisp | CRISP
 %%metro process: bed_clip | BED_CLIP
 %%metro process: veto | WITNESS_VETO
@@ -139,6 +141,8 @@ graph LR
         merge_pools[samtools merge]
         addrg[addreplacerg]
         index_pools[index]
+        filter_bc1[no supplementary]
+        filter_witness[no supplementary]
         crisp[CRISP]
         bed_clip[bed clip]
         veto[witness veto]
@@ -170,7 +174,10 @@ graph LR
         regions_in -->|variant_calling| crisp
         merge_pools -->|variant_calling| addrg
         addrg -->|variant_calling| index_pools
-        index_pools -->|variant_calling| crisp
+        cov_filter -->|variant_calling| filter_bc1
+        filter_bc1 -->|variant_calling| crisp
+        addrg -->|variant_calling| filter_witness
+        filter_witness -->|variant_calling| crisp
         index_pools -->|variant_calling| mpileup_ctrl
         crisp -->|variant_calling| bed_clip
         bed_clip -->|variant_calling| veto

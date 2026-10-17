@@ -303,3 +303,10 @@ gave 16 GB; 1 Mb and 5 Mb rigidity alike (jobs 1343858, 1346168).
 | `UNION_TIERS`             | 20    | 0.6 min      | 0.12  | 0.39 GB      |
 | `POOLED_LIKELIHOOD_TIERS` | 20    | 0.6 min      | 0.09  | 0.48 GB      |
 | `CALL_ANCESTRY`, genome   | 2     | 8.6 min      | -     | 8.6 GB       |
+
+## Supplementary-record filters, estimated (2026-10-17, Milestone 9g)
+
+`FILTER_BC1` (each BC1 CRAM, whole genome) and `FILTER_WITNESS` (each witness pool, one region): `samtools view -F
+0x800` filtered chr1 of Zl.0020_P3's five CRAMs (its four BC1 pools and witness) in 4.5 min with 4 threads (CRISP debug,
+job 1365010), ~1 min per chr1 CRAM; a whole-genome BC1 CRAM is ~7 x that. Set until the production run measures them:
+2 cpus, 1 GB, 2 h, arrays of 20 in `hpc_prod`; 384 + 950 tasks in production.
