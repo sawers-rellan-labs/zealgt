@@ -342,3 +342,5 @@ the variant-calling input; the `/rsstu` CRAMs stay whole. CRISP 1a9027e has a us
   The four mpileup steps skip them with `--ff UNMAP,SECONDARY,QCFAIL,DUP,SUPPLEMENTARY`.
 - Rejected: filtering at CRAM export (the archive loses the records, 2,173 CRAMs re-exported); a parameter; filtered
   copies of every CRAM (about the alignment archive's size on `/share`).
+- Accepted (user, 2026-10-17: "the losses are ok"): ~2 % fewer discovery records and tier-A sites (pilot slice, chr10:1-5
+  Mb; full chr1 of Zl.0020_P3: 229,627 vs 234,635 CRISP calls), counts at most 4 reads per cell.
