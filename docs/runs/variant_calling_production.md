@@ -51,17 +51,9 @@ Head job on the normal QOS, 16 GB, `NXF_OPTS="-Xms1g -Xmx12g"`, `hpc_prod` (deci
 
 - Checkout `ZEAL/zealgt_prod` (a fresh clone; the old one was removed in cleanup) at tag `vc-prod-20261017`; launch
   folder `nf_work/zealgt_prod` (default).
-- Setup checks (`docs/running.md` "Stubs on hazel"), one job from that checkout:
+- Setup checks (`docs/running.md` "Stubs on hazel"), one job from that checkout, every process's stub at once on
+  `hpc_prod` beside the run's `nextflow config` and `inspect`; no chained pipeline stub:
   `sbatch --export=ALL,ZEALGT_REPO=$C,PARAMS=$C/docs/runs/variant_calling_production/params.yaml scripts/run_hazel_tests.sbatch`.
-- Stub (9f changed `hpc_prod`): `stub_samplesheet.csv`, per taxon its first donor with one BC1 pool and one line over
-  0.05x, plus one `B73-bulk` check (5 donors, 11 rows), chr1 and chr10, its own launch folder and outdir on `/share`:
-  ```
-  sbatch --partition=compute --qos=normal --time=02:00:00 --mem=16G \
-    --export=ALL,ZEALGT_REPO=$C,ZEALGT_LAUNCH=/share/maize/frodrig4/nf_work/zealgt_prod_vc_stub,NXF_OPTS="-Xms1g -Xmx12g" \
-    $C/scripts/submit_head_job.sbatch hpc_prod -params-file $C/docs/runs/variant_calling_production/params.yaml \
-    --input $C/docs/runs/variant_calling_production/stub_samplesheet.csv --regions chr1,chr10 \
-    --outdir /share/maize/frodrig4/nf_work/zealgt_prod_vc_stub/results -stub -c $C/conf/stub_hazel.config
-  ```
 - The run (`C=/rsstu/users/r/rrellan/BZea/ZEAL/zealgt_prod`):
   ```
   sbatch --partition=compute --qos=normal --time=1-00:00:00 --mem=16G --no-requeue \
@@ -103,7 +95,7 @@ huehuetenangensis genome run, job 1343856: 1,168,623 vs 68,177); ~15 below.
    discovery and union barriers, CRISP memory, one count VCF per donor and region, short Slurm job names; its test 6
    reruns huehuetenangensis genome-wide on `hpc_dev`.
 3. The sheet written and checked (every donor, luxurians included).
-4. Hazel setup checks at the production tag; a stub of the run.
+4. Hazel setup checks at the production tag (parallel process stubs, config, containers).
 5. The run, one submission, unattended.
 
 ## Checks after the runs (bugs, not accuracy)
@@ -126,7 +118,7 @@ huehuetenangensis genome run, job 1343856: 1,168,623 vs 68,177); ~15 below.
    markers are lost, a subset of each donor's markers to sites its taxon discovered (`SRC=own` in some donor of the
    taxon, bcftools on `donor_alleles.vcf.gz`) before `--step ancestry`; not built.
 2. **Luxurians in**: 5 donors, 19 BC1 pools, 121 lines.
-3. **`hpc_dev` until production**: the debugging runs (9f's tests, this plan's stub) on `hpc_dev`; the production run on
+3. **`hpc_dev` until production**: the debugging runs (9f's tests) on `hpc_dev`; the production run on
    `hpc_prod` (frozen tag, `cleanup = true`, outputs on `/rsstu`).
 4. **Ancestry afterwards (not this plan): 1 Mb rigidity over the all-donor union's markers**, expected denser per Mb than
    a per-taxon union's (huehuetenangensis alone needed 5 Mb and the genome fit to reach SNP50K-level fragmentation: median
