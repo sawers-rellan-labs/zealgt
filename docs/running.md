@@ -26,6 +26,12 @@ Nextflow 26.04.6 (laptop, or hazel GPFS with tasks on Slurm compute nodes).
 - One fixed launch directory per profile: the task cache lives in `<launch directory>/.nextflow/cache`, and resuming
   needs that cache and `work/` intact (docs). A new directory per attempt starts every run cold.
 
+## Head job memory (hazel)
+
+Head jobs: 16 GB for production (`NXF_OPTS="-Xms1g -Xmx12g"`), 8 GB for tests (the default of
+`scripts/submit_head_job.sbatch`); their peak always equals the request, so never raise it unless authentically OOM
+(user, 2026-10-17).
+
 ## Container bindings (hazel)
 
 Two layers of Apptainer containers, each seeing only the host paths bound into it (`-B`):
