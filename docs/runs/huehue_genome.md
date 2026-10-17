@@ -25,7 +25,8 @@ bzeaseq/nilhmm/vcf/HQ_BZEA.vcf.gz`, `--regions chr1,chr2,chr3,chr4,chr5,chr6,chr
 - Code: `origin/dev` at `12dae9a` (Milestone 9e merged); hazel setup checks of 9e passed (jobs 1343306, 1343307). No
   new code, so no stub and no CodeRabbit.
 - Checkout: `ZEAL/zealgt` is on `runs-genotype-huehue-chr10` (merged as PR #60), clean, used by no job; it moves to
-  `origin/dev` (your OK): `git -C /rsstu/users/r/rrellan/BZea/ZEAL/zealgt fetch -q origin && git -C ... checkout --detach origin/dev`.
+  this branch, `runs-huehue-genome` (`origin/dev` plus this plan and its run config; your OK):
+  `git -C /rsstu/users/r/rrellan/BZea/ZEAL/zealgt fetch -q origin && git -C ... checkout runs-huehue-genome`.
 
 ## Runs
 
@@ -44,7 +45,7 @@ vc=$(sbatch --parsable --partition=compute --qos=normal --time=12:00:00 --mem=16
   scripts/submit_head_job.sbatch hpc_dev --step variant_calling --input $S/huehue.csv \
   --b73_controls $S/b73_controls.csv --lowcopy_bed $B/ZEAL/reference/lowcopy_chr1-10.bed \
   --check_sites $B/bzeaseq/nilhmm/vcf/HQ_BZEA.vcf.gz --regions chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10 \
-  --outdir $V/results)
+  --outdir $V/results -c $B/ZEAL/zealgt/docs/runs/huehue_genome.config)
 # ancestry, per chromosome and per genome, from the counts sheet
 for fit in chromosome genome; do
   sbatch --parsable --dependency=afterok:$vc --qos=short --time=02:00:00 --mem=8G \
@@ -72,7 +73,8 @@ by its low-copy Mb (`lowcopy_chr1-10.bed`: chr1 55.7, chr10 26.1, all ten 367.1 
 | the other 19 processes   | < 1 min             | < 1.5 min                 | 1.0           | < 0.7 GB           |
 
 - Variant calling: ~11 CPU-h, ~1,100 tasks at 40 at a time; chr1's chain ~42 min of compute plus the Slurm scheduling
-  waits (run A: 48 min wall on a ~20 min chain), so ~1-1.5 h. Every process stays under its `hpc_dev` limits. Head job
+  waits (run A: 48 min wall on a ~20 min chain): Slurm's scheduling pass (~50 s per step, the cluster's) and Nextflow's
+  status poll (up to 1 min per step; 10 s in this run's config, as the hazel stubs: 9d stub 24 -> 19 min), so ~1-1.5 h. Every process stays under its `hpc_dev` limits. Head job
   on the normal QOS, 12 h: a run that outlives the short QOS's 2 h is killed with its head job
   (`scripts/submit_head_job.sbatch`).
 - Ancestry, chromosome: 20 fits as chr10's (< 1.5 min, < 1 GB each).
