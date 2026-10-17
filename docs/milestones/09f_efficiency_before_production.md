@@ -68,5 +68,5 @@ before sending the whole genome run". From the huehuetenangensis genome run (job
 ## Done when
 
 - Tests 1-6 pass; `nf-core pipelines lint` has no failures.
-- `docs/running.md` (job names, arrays), `docs/usage.md` and `docs/output.md` (counts sheet), `docs/RESOURCES.md`,
-  both metro maps updated.
+- `docs/running.md` (job names, arrays), `docs/structure.md` and `README.md` (counts per donor), `docs/RESOURCES.md`
+  updated; the metro maps keep their processes (none added or removed).
