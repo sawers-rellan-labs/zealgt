@@ -83,7 +83,11 @@ huehuetenangensis genome run, job 1343856: 1,168,623 vs 68,177); ~15 below.
   lets chr2-chr10 go on while chr1's CRISP runs (huehuetenangensis genome: 1 h 41 min before, ~58 min after).
 - Memory (set in 9f): `UNION_TIERS` 8 GB (chr1 ~4 GB); `COUNT_LINES` 4 GB for a donor's lines in one task (up to 64).
 - `/share`: `work/` of 9f test 6 (huehuetenangensis genome-wide, 2 donors, 70 samples) was 51 GB; scaled to 95 donors
-  ~1.5-2.5 TB without cleanup (`hpc_dev`); with `cleanup = true` (`hpc_prod`) a run keeps only what is in flight.
+  ~1.5-2.5 TB; `cleanup = true` (`hpc_prod`) deletes `work/` only when the run succeeds, so the whole of it stays until
+  then (attempt 4 held 1.4 TB when it stopped). Milestone 9g's filtered copies for CRISP add ~1.9 TB (the 384 BC1 CRAMs
+  are 1,397 GB, the 1,766 line CRAMs behind the witness pools 544 GB): peak ~3.5 TB.
+- Stop point for the supervising agent (user, 2026-10-17): `work/` above 6 TB on `/share` (the ~3.5 TB peak plus
+  headroom): stop resuming and ask the user; removing a failed attempt's `work/` is the user's.
 - Published counts: ~77 GB plain, ~8 GB compressed (`-Oz`) for the whole population, on `/rsstu`.
 
 ## Order
