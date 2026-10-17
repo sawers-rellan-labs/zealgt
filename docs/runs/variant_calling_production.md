@@ -59,16 +59,12 @@ decisions are made.
 ## Order
 
 1. Job 1343856's trace into the estimates above; `CRISP` and `COUNT_LINES` limits checked against chr1.
-2. Efficiency fixes, all before the run (user, 2026-10-16), each through the test order of `CLAUDE.md`:
-   - the discovery barrier: `groupTuple` without a size before `POOLED_LIKELIHOOD_TIERS`
-     (`subworkflows/local/cram_variant_discovery_crisp/main.nf:90`) holds every donor and region until the last CRISP
-     task (job 1343856: chr2-chr10 waited ~30 min for chr1); `groupKey` with the control count;
-   - the same pattern (`groupTuple` without a size, `collect`) in the union stage, if any;
-   - `CRISP` memory from the trace (asks 16 GB; run A's chr10 peak 0.46 GB);
-   - line counts batched (~610 tasks of seconds in job 1343856, mostly Slurm scheduling), e.g. one task per donor and
-     region; a design change.
-3. Decisions 2-3; the sheet written and checked.
-4. Hazel setup checks of the new code; a stub of the run.
+2. Milestone 9f (`docs/milestones/09f_efficiency_before_production.md`) merged, all its changes debugged before the run
+   (user, 2026-10-16: "we need to debug all this changes before sending the whole genome run"): group sizes for the
+   discovery and union barriers, CRISP memory, one count VCF per donor and region, short Slurm job names; its test 6
+   reruns huehuetenangensis genome-wide on `hpc_dev`.
+3. The sheet written and checked (every donor, luxurians included).
+4. Hazel setup checks at the production tag; a stub of the run.
 5. The run, one submission, unattended.
 
 ## Checks after the runs (bugs, not accuracy)
@@ -78,21 +74,24 @@ decisions are made.
 2. chr10 against the per-taxon chr10 runs (`genotype_*_chr10.md`): union and donor alleles, and per donor the
    union-ALT markers its taxon discovered, kept or lost; differences are CRISP run-to-run variation (Milestone 9d), the
    union's other donors, or a bug.
-3. Each counts sheet lists every line of its run with an existing counts file.
+3. The counts sheet has a row for every donor and region, its count VCF holding every line of the donor.
 4. Time and peak memory per process into `docs/RESOURCES.md`.
 
-## Open decisions (yours)
+## Decisions (user, 2026-10-16)
 
-1. **Union design: one union of all donors** (user, 2026-10-16), one run. Gap filling's prior already comes from all
+1. **Union design: one union of all donors**, one run. Gap filling's prior already comes from all
    other donors (Milestone 8, Eq. `eb`); on chr10, huehuetenangensis alone fragmented 2 samples that + parviglumis or +
    mexicana cleaned (notebook 06). With 94 other donors the prior `pi = (2 mu_d + k) / (2 + m)` nears `k / m`, so
    alleles of one taxon get a smaller prior than in a per-taxon union: fewer of their gaps filled, some own sites
    re-scored to missing. Check: chr10 of the all-donor union against the per-taxon chr10 runs (check 2). If own-taxon
    markers are lost, a subset of each donor's markers to sites its taxon discovered (`SRC=own` in some donor of the
    taxon, bcftools on `donor_alleles.vcf.gz`) before `--step ancestry`; not built.
-2. **Luxurians in or out.**
-3. **`hpc_prod` or `hpc_dev`:** `hpc_prod` (recommended): frozen tag, `cleanup = true`, outputs on `/rsstu`; `hpc_dev`
-   keeps `work/` (~1-1.5 TB on `/share`) for the HMM experiments' `-resume`.
+2. **Luxurians in**: 5 donors, 19 BC1 pools, 121 lines.
+3. **`hpc_dev` until production**: the debugging runs (9f's tests, this plan's stub) on `hpc_dev`; the production run on
+   `hpc_prod` (frozen tag, `cleanup = true`, outputs on `/rsstu`).
+4. **Ancestry afterwards (not this plan): 1 Mb rigidity over the all-donor union's markers**, expected denser per Mb than
+   a per-taxon union's (huehuetenangensis alone needed 5 Mb and the genome fit to reach SNP50K-level fragmentation: median
+   7.5 and 7 donor segments per line, jobs 1346167-1346168).
 
 ## Done when
 
