@@ -10,7 +10,7 @@
 #SBATCH --qos=short
 #SBATCH --time=00:30:00
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=32G
+#SBATCH --mem=16G
 #SBATCH --output=/share/maize/frodrig4/nf_work/zealgt_hazel_tests_%j.log
 set -o pipefail
 REPO=${ZEALGT_REPO:-/rsstu/users/r/rrellan/BZea/ZEAL/zealgt}
