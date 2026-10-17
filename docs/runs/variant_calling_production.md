@@ -59,9 +59,17 @@ decisions are made.
 ## Order
 
 1. Job 1343856's trace into the estimates above; `CRISP` and `COUNT_LINES` limits checked against chr1.
-2. Decisions 2-3; the sheet written and checked.
-3. One hazel stub per profile change only (no new code since 9e's setup checks, jobs 1343306, 1343307).
-4. The runs, one submission, unattended.
+2. Efficiency fixes, all before the run (user, 2026-10-16), each through the test order of `CLAUDE.md`:
+   - the discovery barrier: `groupTuple` without a size before `POOLED_LIKELIHOOD_TIERS`
+     (`subworkflows/local/cram_variant_discovery_crisp/main.nf:90`) holds every donor and region until the last CRISP
+     task (job 1343856: chr2-chr10 waited ~30 min for chr1); `groupKey` with the control count;
+   - the same pattern (`groupTuple` without a size, `collect`) in the union stage, if any;
+   - `CRISP` memory from the trace (asks 16 GB; run A's chr10 peak 0.46 GB);
+   - line counts batched (~610 tasks of seconds in job 1343856, mostly Slurm scheduling), e.g. one task per donor and
+     region; a design change.
+3. Decisions 2-3; the sheet written and checked.
+4. Hazel setup checks of the new code; a stub of the run.
+5. The run, one submission, unattended.
 
 ## Checks after the runs (bugs, not accuracy)
 
