@@ -104,7 +104,10 @@ huehuetenangensis genome run, job 1343856: 1,168,623 vs 68,177); ~15 below.
 
 1. Every region of every run succeeded; per donor and chromosome: tier-A sites, union sites, union-ALT markers, lines
    counted.
-2. chr10 against the per-taxon chr10 runs (`genotype_*_chr10.md`): union and donor alleles, and per donor the
+2. chr10 against per-taxon chr10 runs: the earlier ones (`genotype_*_chr10.md`) were deleted with their `/share`
+   folders (2026-10-17), so after this run one `--step variant_calling --regions chr10` run per taxon (mexicana,
+   parviglumis, diploperennis, luxurians, huehuetenangensis), `hpc_dev`, sheets = each taxon's rows of this run's sheet
+   plus the same checks (user, 2026-10-17); then union and donor alleles, and per donor the
    union-ALT markers its taxon discovered, kept or lost; differences are CRISP run-to-run variation (Milestone 9d), the
    union's other donors, or a bug.
 3. The counts sheet has a row for every donor and region, its count VCF holding every line of the donor.
