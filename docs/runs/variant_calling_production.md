@@ -158,3 +158,5 @@ huehuetenangensis genome run, job 1343856: 1,168,623 vs 68,177); ~15 below.
    let the full chr1 task finish (229,627 calls vs 234,635; the lost calls have lower QUAL and sit nearer TE edges, job
    1365010). Reported upstream: https://github.com/vibansal/crisp/issues/35. Fix: Milestone 9g (no supplementary
    records in variant calling); the run restarts cold after it merges (`work/` deleted in cleanup).
+5. Job 1367152 (2026-10-17, tag `vc-prod-9g-20261017`, cold: `work/` deleted): Milestone 9g (PR #66), no
+   supplementary records in variant calling; run config `queueSize = 400` only; head job 16 GB, `-Xmx12g`.
