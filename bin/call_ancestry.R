@@ -2,14 +2,15 @@
 # Each line's ancestry mosaic with nilHMM's RTIGER (math supplement, Text S6, "Ancestry inference"), one fit over the
 # chromosomes of the markers given (one region, or all of a donor's regions).
 #
-# Markers: the union sites gap filling called ALT for the donor; per line, n_ref and n_alt are the bcftools mpileup
-# AD of the site's REF and of the donor's ALT allele, summed over the count files (one per region). Rigidity
+# Markers: the union sites gap filling called ALT for the donor; per line (a sample of the count VCFs), n_ref and n_alt
+# are the bcftools mpileup AD of the site's REF and of the donor's ALT allele, summed over the count files (one per
+# region). Rigidity
 # r = max(1, round(Mb x the median line's covered markers (>= 1 read) per Mb of the markers' span)); lines with fewer
 # than 2r covered markers on any chromosome are dropped first, since RTIGER stops on them. States: 0 B73/B73, 1 het,
 # 2 donor/donor. Line checks (curve rule, docs/decisions.md 2026-10-11): per called line, its donor (state 1-2)
 # segments, their bp, and the reads and ALT % of its markers inside the segments of each state.
 #
-# Usage: call_ancestry.R --markers MARKERS.vcf [...] --counts LINE.vcf.gz [...] --rigidity-mb MB
+# Usage: call_ancestry.R --markers MARKERS.vcf [...] --counts DONOR.REGION.counts.vcf.gz [...] --rigidity-mb MB
 #        --segments OUT.bed --dropped OUT.tsv --line-checks OUT.tsv [--seed S]
 suppressPackageStartupMessages({
   library(data.table)
@@ -42,32 +43,35 @@ read_vcf <- function(path) {
   v[, POS := as.integer(POS)]
 }
 
-# one line's name and its REF and donor-ALT read counts at the markers it has records for
-read_line_counts <- function(path, sites) {
+# a count file's lines (its samples) and their REF and donor-ALT read counts at the markers it has records for
+read_counts <- function(path, sites) {
   v <- read_vcf(path)
-  name <- tail(names(v), 1L)
-  if (!nrow(v)) {
-    return(list(name = name, counts = data.table(
+  lines <- setdiff(names(v), c("CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT"))
+  m <- v[sites, on = .(CHROM, POS), nomatch = NULL]
+  if (!nrow(m)) {
+    return(list(names = lines, counts = data.table(
       name = character(), chrom = character(), pos = integer(), n_ref = integer(), n_alt = integer()
     )))
   }
   # AD's place in FORMAT per record: bcftools call writes GT:AD where no ALT read is seen, GT:PL:AD elsewhere
-  ad_at <- vapply(strsplit(v$FORMAT, ":", fixed = TRUE), function(f) match("AD", f), 0L)
-  cells <- strsplit(v[[name]], ":", fixed = TRUE)
-  v[, ad := vapply(seq_along(cells), function(i) cells[[i]][ad_at[i]], "")]
-  m <- v[sites, on = .(CHROM, POS), nomatch = NULL]
+  ad_at <- vapply(strsplit(m$FORMAT, ":", fixed = TRUE), function(f) match("AD", f), 0L)
   alleles <- strsplit(paste(m$REF, m$ALT, sep = ","), ",", fixed = TRUE)
-  depths <- lapply(strsplit(m$ad, ",", fixed = TRUE), function(x) suppressWarnings(as.integer(x)))
-  count_of <- function(allele, i) {
-    k <- match(allele, alleles[[i]])
-    d <- if (is.na(k)) NA_integer_ else depths[[i]][k]
-    if (is.na(d)) 0L else d
+  k_ref <- mapply(match, m$i.REF, alleles, USE.NAMES = FALSE)
+  k_alt <- mapply(match, m$i.ALT, alleles, USE.NAMES = FALSE)
+  # a read count from AD by allele index; 0 where the allele or the count is missing
+  count_of <- function(depths, k) {
+    d <- vapply(seq_along(depths), function(i) if (is.na(k[i])) NA_integer_ else depths[[i]][k[i]], 0L)
+    fifelse(is.na(d), 0L, d)
   }
-  list(name = name, counts = data.table(
-    name = name, chrom = m$CHROM, pos = m$POS,
-    n_ref = vapply(seq_len(nrow(m)), function(i) count_of(m$i.REF[i], i), 0L),
-    n_alt = vapply(seq_len(nrow(m)), function(i) count_of(m$i.ALT[i], i), 0L)
-  ))
+  counts <- rbindlist(lapply(lines, function(name) {
+    cells <- strsplit(m[[name]], ":", fixed = TRUE)
+    ad <- vapply(seq_along(cells), function(i) cells[[i]][ad_at[i]], "")
+    depths <- lapply(strsplit(ad, ",", fixed = TRUE), function(x) suppressWarnings(as.integer(x)))
+    data.table(
+      name = name, chrom = m$CHROM, pos = m$POS, n_ref = count_of(depths, k_ref), n_alt = count_of(depths, k_alt)
+    )
+  }))
+  list(names = lines, counts = counts)
 }
 
 main <- function(argv = commandArgs(trailingOnly = TRUE)) {
@@ -78,10 +82,10 @@ main <- function(argv = commandArgs(trailingOnly = TRUE)) {
   chroms <- unique(sites$CHROM)
 
   # each count file's records (one region each), then every line at every marker once, 0 where no file has a record
-  files <- lapply(a$counts, read_line_counts, sites = sites)
+  files <- lapply(a$counts, read_counts, sites = sites)
   seen <- rbindlist(lapply(files, `[[`, "counts"))
   seen <- seen[, .(n_ref = sum(n_ref), n_alt = sum(n_alt)), by = .(name, chrom, pos)]
-  grid <- CJ(name = unique(vapply(files, `[[`, "", "name")), k = seq_len(nrow(sites)), sorted = FALSE)
+  grid <- CJ(name = unique(unlist(lapply(files, `[[`, "names"))), k = seq_len(nrow(sites)), sorted = FALSE)
   counts <- seen[grid[, .(name, chrom = sites$CHROM[k], pos = sites$POS[k])], on = .(name, chrom, pos)]
   counts[, `:=`(n_ref = nafill(n_ref, fill = 0L), n_alt = nafill(n_alt, fill = 0L))]
   by_chrom <- counts[, .(covered = sum(n_ref + n_alt >= 1L)), by = .(name, chrom)]

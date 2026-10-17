@@ -55,6 +55,33 @@ write_counts_vcf <- function(obs, sites, line, path, chrom = "chr10") {
   )
 }
 
+# all lines in one VCF, as bcftools mpileup | call -m -A writes a donor's lines: a record where any line has reads;
+# ALT '.' and GT:AD where no line has ALT reads, else GT:PL:AD; a line without reads at a record has AD 0
+write_multi_counts_vcf <- function(obs, sites, path, chrom = "chr10") {
+  o <- obs[sites, on = "pos"]
+  o[, `:=`(reads = sum(n_ref + n_alt), any_alt = sum(n_alt) > 0L), by = pos]
+  o <- o[reads > 0L]
+  o[, swap := pos %% 3L == 0L]
+  o[, cell := fifelse(
+    !any_alt, sprintf("0/0:%d", n_ref),
+    fifelse(swap, sprintf("0/1:0,3,30,9,40,50:%d,0,%d", n_ref, n_alt), sprintf("0/1:30,0,30:%d,%d", n_ref, n_alt))
+  )]
+  w <- dcast(o, pos + ref + alt + any_alt + swap ~ name, value.var = "cell")
+  names <- setdiff(names(w), c("pos", "ref", "alt", "any_alt", "swap"))
+  w[, `:=`(
+    alt_field = fifelse(!any_alt, ".", fifelse(swap, paste0("T,", alt), alt)),
+    fmt = fifelse(!any_alt, "GT:AD", "GT:PL:AD")
+  )]
+  writeLines(c(
+    "##fileformat=VCFv4.2", sprintf("##contig=<ID=%s,length=152435371>", chrom),
+    "##FORMAT=<ID=AD,Number=R,Type=Integer,Description=\"Allelic depths\">",
+    paste0("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t", paste(names, collapse = "\t"))
+  ), path)
+  fwrite(cbind(w[, .(chrom, pos, ".", ref, alt_field, ".", ".", ".", fmt)], w[, ..names]), path,
+    sep = "\t", col.names = FALSE, append = TRUE
+  )
+}
+
 state_at <- function(seg, pos) {
   s <- seg[order(start)]
   i <- findInterval(pos, s$start + 1L)
@@ -102,7 +129,7 @@ test_that("each line's REF and donor-ALT counts at its records are read back exa
   sys.source(file.path(root, "bin", "call_ancestry.R"), envir = tool)
   markers <- tool$read_vcf(file.path(dir, "markers.vcf"))[, .(CHROM, POS, REF, ALT)]
   for (l in lines[2:4]) {
-    got <- tool$read_line_counts(counts[[l]], markers)$counts
+    got <- tool$read_counts(counts[[l]], markers)$counts
     want <- obs[name == l & n_ref + n_alt > 0L][order(pos)]
     expect_equal(got[order(pos)]$n_ref, want$n_ref)
     expect_equal(got[order(pos)]$n_alt, want$n_alt)
@@ -133,6 +160,22 @@ test_that("the line checks list every called line, and their reads are the count
   inside <- checks[, .(line, reads = ref_reads + het_reads + alt_reads)][total, on = .(line = name)]
   # segments run from each line's first marker to its last, so every read falls inside one
   expect_equal(inside$reads, inside$i.reads)
+})
+
+# the same lines in one multi-sample count VCF, as COUNT_LINES writes a donor's lines per region
+write_multi_counts_vcf(obs, sites, file.path(dir, "D.chr10.counts.vcf"))
+system2("gzip", file.path(dir, "D.chr10.counts.vcf"))
+res_multi <- run_tool("call_ancestry.R", c(
+  "--markers", file.path(dir, "markers.vcf"), "--counts", file.path(dir, "D.chr10.counts.vcf.gz"), "--rigidity-mb", "1",
+  "--segments", file.path(dir, "M.bed"), "--dropped", file.path(dir, "M.dropped.tsv"),
+  "--line-checks", file.path(dir, "M.line_checks.tsv")
+), dir)
+
+test_that("one multi-sample count VCF gives the segments, dropped lines and line checks of one file per line", {
+  expect_equal(res_multi$status, 0L, info = paste(res_multi$log, collapse = "\n"))
+  for (f in c("bed", "dropped.tsv", "line_checks.tsv")) {
+    expect_identical(readLines(file.path(dir, paste0("M.", f))), readLines(file.path(dir, paste0("D.", f))), info = f)
+  }
 })
 
 # two chromosomes in one fit, as --ancestry_fit genome: chr9 is a second simulation, each chromosome its own markers

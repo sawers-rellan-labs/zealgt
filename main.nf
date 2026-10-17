@@ -130,7 +130,7 @@ workflow ZEALGT {
     dropped_b73_checks = ch_dropped_b73_checks // channel: dropped_b73_checks.tsv
     union              = ch_union              // channel: [ meta, vcf.gz, tbi ]
     donor_alleles      = ch_donor_alleles      // channel: [ meta, vcf.gz, tbi ]
-    counts             = ch_counts             // channel: [ sample_id:, donor:, region:, counts:, markers:, union: ], one per line x region
+    counts             = ch_counts             // channel: [ donor:, region:, counts:, markers:, union: ], one per donor x region
     ancestry           = ch_ancestry           // channel: [ meta, files ], the grid and each donor's mosaic outputs
 }
 /*
@@ -227,7 +227,7 @@ output {
     donor_alleles {
         path 'variant_calling/union'
     }
-    // each line's counts and its donor's markers per region, and the counts sheet --step ancestry reads
+    // each donor's line counts and markers per region, and the counts sheet --step ancestry reads
     counts {
         enabled params.step == 'variant_calling'
         path { r ->
