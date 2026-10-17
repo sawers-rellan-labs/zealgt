@@ -39,7 +39,9 @@ counts; the variant discovery can be done once and then we can fiddle with the H
   `docs/runs/variant_calling_production/samplesheet.csv` (2,173 rows) and `b73_controls.csv`, written by
   `agent/vc_prod/write_sheet.py` from `meta/samples.csv`. Every row of the earlier run sheets in `docs/runs/` is in it
   unchanged (`agent/vc_prod/compare_sheets.py`); the luxurians rows are new. Sheet check on hazel (paths present, each
-  donor keeps a pool and a line over 0.05x): see "Sheet check".
+  donor keeps a pool and a line over 0.05x), job 1349174 (2026-10-17): 2,173 rows, every path absolute and present
+  (`b73_controls.csv` too); every donor keeps a pool and a line at or above 0.05x. 17 lines under the floor (dropped by
+  the pipeline, their donors keep other lines): 7 Zx (as in run 1273053), 3 Zd, 5 Zv, 2 Zl.
 
 ## Runs
 
