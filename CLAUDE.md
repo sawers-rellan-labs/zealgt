@@ -21,7 +21,8 @@ each line's counts at its donor's markers, then the `ANCESTRY` workflow reads th
 
 ## Shell
 
-- Anything longer than one line is a script in `agent/`, then run.
+- Anything longer than one line is a script in `agent/`, then run: loops, `&&`/`;`/`|` chains of several steps, heredocs,
+  `python -c` and `Rscript -e` count; inline only single commands (`ls`, `git status`, `cat`, `wc`).
 - `agent/` is gitignored scratch; never `git add -f` it.
 - All scratch (scripts, logs, temp outputs, worktrees `agent/wt_<name>`) lives in `agent/`; this overrides the harness scratchpad. Never `/tmp`.
 
