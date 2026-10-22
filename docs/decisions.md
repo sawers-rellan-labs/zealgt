@@ -377,3 +377,20 @@ selection was less dependent on the batch". The word "witness" was coined by an 
   drops PN3_SID236 and PN5_SID468; a round number, call-free and independent of run 1367152, as the user required
   on 2026-10-17 ("no genotypes"; "other number sound tailored for a result").
 - Variant-calling production run 1367152 (2026-10-17) used the overruled rules; its outputs are a baseline only.
+
+## 2026-10-22 Read and population site filters (Milestone 9h)
+
+User, 2026-10-22: "I believe we have established from the controls that there is a noise in the sequencing thta is why
+I suggested usingbthe Q30 and MQ 60. that filter must be kept throughpout." "In addition to those the two successful
+filters seem to be the 0.5-2x coverage per site and the MAF >0.05".
+
+- Read filters MAPQ >= 60 and BQ >= 30 in every step that reads alignments (CRISP and every mpileup); also recorded on
+  branch `mapq60-bq30` (fda7f3a, 2026-10-21).
+- Population site filters, as in the SNP50K joint call (2024 VCF headers, `joint_genotype/all_samps/7_filtered_samples/`:
+  `INFO/DP>= 427.00 && INFO/DP<=1505 && QUAL>=70 && INFO/MQ>40 && INFO/QD>=0.75`, then MAF >= 0.05): a site's reads
+  over the lines in 0.5-2x the lines' expected reads, and >= 5 % of the lines with an ALT read.
+- Evidence (zealhmm `zeal-chr10-snp50k-filters.qmd`, chr10, run 1367152's counts at MAPQ/BQ 20): PV23 floor pi 0.286 ->
+  0.148 with depth + MQ + MAF (SNP50K: 0.161); at the SNP50K sites zealgt's PV23 CRAMs (MAPQ 60, BQ 30) give pi 0.171,
+  KS D 0.067 (job 1498209). Recount at MAPQ 60 / BQ 30 pending (jobs 1498762-66).
+- OPEN (mine): where the site filters go: proposed after counting all lines at every union site (whole cohort), before
+  the donor markers are chosen.
