@@ -223,7 +223,8 @@ fqtk runs once per lane, and `CAT_FASTQ` joins each sample's lanes (user). Reaso
 
 ## 2026-10-05 CRISP pool size: -p 12 for every pool
 
-**Superseded** by "2026-10-17 VARIANT_CALLING discovery (Milestone 9h)".
+**Superseded** (the witness pool) by "2026-10-17 VARIANT_CALLING discovery (Milestone 9h)"; `-p 12` for every pool
+kept by "2026-10-23 CRISP pool size: -p 12 for every pool (Milestone 9h)".
 
 - `-p 12` (6 plants x 2 haplotypes) is what matters for the BC1 pools. The witness pool gets the same 12: at its low
   coverage the number of lines would not change the calls, so no per-pool sizes in the `--bams` file (user).
@@ -360,15 +361,15 @@ contaminated" ("decent" replaced by the user with "QC PASS B73"); the BC1 pools 
 and so they will have poor contrast". On Q30 for reads: "I think it is a good decision after that filter the B73
 selection was less dependent on the batch". The word "witness" was coined by an agent (zealbc1, 2026-09-21).
 
-| existing entry                                                                | what it says                                                                        | overruled by (VARIANT_CALLING, Milestone 9h)                                                                                 |
-| ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Milestone 7 spec; math supplement Section 4.1                                 | tier A needs ALT reads in >= 2 BC1 pools                                            | a variant must be in a BC1 and in the segregating population (the NIL in silico pool)                                        |
-| 2026-10-05 GENOTYPE inputs and discovery outputs; math supplement Section 4.2 | the witness veto: keep a site only with >= 1 ALT read in the witness pool           | the same rule, with the NIL in silico pool as one of CRISP's pools; no separate veto, no "witness"                           |
-| 2026-10-05 CRISP pool size                                                    | `-p 12` for every pool, the witness pool included                                   | three pool kinds: the donor's BC1s, its NIL in silico pool, one pool of QC-PASS B73 checks; pool sizes set per pool          |
-| zealbc1 DECISIONS 2026-09-23                                                  | CRISP = BC1s + BC2S3 pool only; B73 enters after CRISP (step 4)                     | the QC-PASS B73 checks go into CRISP as a pool                                                                               |
-| 2026-10-02 Allele counting; Milestone 7 (CRISP)                               | mpileup `-Q 20`; CRISP `--mbq 20`                                                   | base quality >= 30 in discovery and counting (user: "after that filter the B73 selection was less dependent on the batch")   |
-| 2026-10-05 GENOTYPE inputs and discovery outputs                              | B73 check filter: < 1 % ALT share at the check sites (SNP50K), B73-bulk checks only | QC-PASS B73 checks: mismatch rate < 0.1 % on bases of quality >= 30, whole genome, no genotypes (21 of 23; user, 2026-10-21) |
-| none                                                                          |                                                                                     | to measure, not decided: filter sites with the wideseq panel (Schnable 2023)                                                 |
+| existing entry                                                                | what it says                                                                        | overruled by (VARIANT_CALLING, Milestone 9h)                                                                                          |
+| ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Milestone 7 spec; math supplement Section 4.1                                 | tier A needs ALT reads in >= 2 BC1 pools                                            | a variant must be in a BC1 and in the segregating population (the NIL in silico pool)                                                 |
+| 2026-10-05 GENOTYPE inputs and discovery outputs; math supplement Section 4.2 | the witness veto: keep a site only with >= 1 ALT read in the witness pool           | the same rule, with the NIL in silico pool as one of CRISP's pools; no separate veto, no "witness"                                    |
+| 2026-10-05 CRISP pool size                                                    | `-p 12` for every pool, the witness pool included                                   | three pool kinds: the donor's BC1s, its NIL in silico pool, one pool of QC-PASS B73 checks; `-p 12` for every pool (user, 2026-10-23) |
+| zealbc1 DECISIONS 2026-09-23                                                  | CRISP = BC1s + BC2S3 pool only; B73 enters after CRISP (step 4)                     | the QC-PASS B73 checks go into CRISP as a pool                                                                                        |
+| 2026-10-02 Allele counting; Milestone 7 (CRISP)                               | mpileup `-Q 20`; CRISP `--mbq 20`                                                   | base quality >= 30 in discovery and counting (user: "after that filter the B73 selection was less dependent on the batch")            |
+| 2026-10-05 GENOTYPE inputs and discovery outputs                              | B73 check filter: < 1 % ALT share at the check sites (SNP50K), B73-bulk checks only | QC-PASS B73 checks: mismatch rate < 0.1 % on bases of quality >= 30, whole genome, no genotypes (21 of 23; user, 2026-10-21)          |
+| none                                                                          |                                                                                     | to measure, not decided: filter sites with the wideseq panel (Schnable 2023)                                                          |
 
 - The B73 checks: all 23 of the run's sheet (12 batch-1 B73-bulk, 11 batch-2 B73) are candidates; batch 1 has lower
   base quality (average 35 vs 40), measured in notebook 08.
@@ -394,3 +395,14 @@ filters seem to be the 0.5-2x coverage per site and the MAF >0.05".
   KS D 0.067 (job 1498209). Recount at MAPQ 60 / BQ 30 pending (jobs 1498762-66).
 - OPEN (mine): where the site filters go: proposed after counting all lines at every union site (whole cohort), before
   the donor markers are chosen.
+
+## 2026-10-23 CRISP pool size: -p 12 for every pool (Milestone 9h)
+
+User, 2026-10-23: "keep -p 12 for all pools, record it".
+
+- `-p 12` for the donor's BC1 pools, its NIL in silico pool and the QC-PASS B73 check pool; no per-pool sizes. "Pool
+  sizes set per pool" in the 9h table above was an agent's wording, not the user's.
+- Context (mine, calculated from notebook 08, not measured): CRISP takes a pool as carrying ALT from a share of about
+  1/p (8.3 % at 12). The check pool's ALT share from error (0.1-0.26 %) stays below it, the B73 blocks every check
+  carries (chr1 296-299 Mb, chr5 218-219 Mb, ~20-25 % ALT) above it; the check pool's true size (21 x 12 = 252) would
+  put it at 0.4 %, near the error level.
