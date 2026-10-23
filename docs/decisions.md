@@ -418,3 +418,13 @@ removed"; "use CRISP's check pool call, record it".
   notebook 08 blocks (chr1 296-299 Mb, chr5 218-219 Mb).
 - OPEN (mine): the field read for the call, the check pool's `FORMAT/AC` >= 1 (CRISP's maximum-likelihood ALT count,
   "." in pools it does not call in run 1367152's VCFs); to confirm in the tool tests.
+
+## 2026-10-23 NIL pool: >= 1 ALT read (Milestone 9h)
+
+User, 2026-10-23: "use >= 1 ALT read in the NIL pool, record it".
+
+- "Present in the segregating population" (2026-10-17 entry) is tested as >= 1 ALT read in the donor's NIL in silico
+  pool (forward, reverse or overlapping reads), as the witness veto does now.
+- Rejected: CRISP's call for the NIL pool. Context (mine, not measured): at ~4.5x per site and a donor ALT share often
+  under 1/12, it would drop real donor sites carried by few lines.
+- OPEN: how "present in a BC1" is tested.
