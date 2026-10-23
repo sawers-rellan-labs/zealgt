@@ -406,3 +406,15 @@ User, 2026-10-23: "keep -p 12 for all pools, record it".
   1/p (8.3 % at 12). The check pool's ALT share from error (0.1-0.26 %) stays below it, the B73 blocks every check
   carries (chr1 296-299 Mb, chr5 218-219 Mb, ~20-25 % ALT) above it; the check pool's true size (21 x 12 = 252) would
   put it at 0.4 %, near the error level.
+
+## 2026-10-23 B73 check pool filter: CRISP's check pool call (Milestone 9h)
+
+User, 2026-10-23: "b73 has some sites that have sequence divergence from the reference those I would relly like
+removed"; "use CRISP's check pool call, record it".
+
+- A site is dropped where CRISP calls the QC-PASS B73 check pool a carrier of the ALT allele, genome-wide; no region
+  list.
+- Rejected: >= 1 ALT read in the check pool (user: "that is every single error in the check pool"); a mask of the
+  notebook 08 blocks (chr1 296-299 Mb, chr5 218-219 Mb).
+- OPEN (mine): the field read for the call, the check pool's `FORMAT/AC` >= 1 (CRISP's maximum-likelihood ALT count,
+  "." in pools it does not call in run 1367152's VCFs); to confirm in the tool tests.
