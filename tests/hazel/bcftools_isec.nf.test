@@ -13,7 +13,7 @@ nextflow_process {
         when {
             process {
                 """
-                input[0] = [[id: 'Zx.0540_P3', region: 'chrA'], [file("${projectDir}/tests/fixtures/genotype/known_sites.vcf.gz", checkIfExists: true), file("${projectDir}/tests/fixtures/genotype/known_sites.vcf.gz", checkIfExists: true)], [file("${projectDir}/tests/fixtures/genotype/known_sites.vcf.gz.tbi", checkIfExists: true), file("${projectDir}/tests/fixtures/genotype/known_sites.vcf.gz.tbi", checkIfExists: true)], [], [], []]
+                input[0] = [[id: 'Zx.0540_P3', region: 'chrA'], [file("${projectDir}/tests/fixtures/genotype/markers_isec.vcf.gz", checkIfExists: true), file("${projectDir}/tests/fixtures/genotype/known_sites.vcf.gz", checkIfExists: true)], [file("${projectDir}/tests/fixtures/genotype/markers_isec.vcf.gz.tbi", checkIfExists: true), file("${projectDir}/tests/fixtures/genotype/known_sites.vcf.gz.tbi", checkIfExists: true)], [], [], []]
                 """
             }
         }
