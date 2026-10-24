@@ -28,7 +28,9 @@ workflow CRAM_VARIANT_DISCOVERY_CRISP {
         nil: meta.role == 'nil'
         check: meta.role == 'check'
     }
+    // no QC-PASS check among the samples stops the run, since without the check pool CRISP never runs
     def ch_check = ch_role.check.map { meta, cram, crai -> [meta.id, cram, crai] }.combine(ch_b73_checks.map { id -> [id] }, by: 0)
+        .ifEmpty { error("None of the --b73_checks samples is a check sample in the CRAM samplesheet above the coverage floor") }
 
     // one pool per donor's lines (the NIL pool, called witness in the code), one of the QC-PASS checks, one per B73 control; each per region
     def ch_pool = ch_role.nil.map { meta, cram, crai -> [meta.donor, cram, crai] }.groupTuple()
