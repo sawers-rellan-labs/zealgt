@@ -35,7 +35,7 @@ nextflow_pipeline {
                 { assert tasks == [CALL_ANCESTRY: 4, ANCESTRY_GRID: 2, ANCESTRY_VCF_INDEX: 4] },
                 { assert stable_path.sort() == ['chrA_1-2500', 'chrA_2501-5000'].collectMany { r ->
                     ['Zx.9001_P1', 'Zx.9002_P1'].collectMany { d ->
-                        ['segments.bed', 'dropped_lines.tsv', 'line_checks.tsv', 'rqtl.csv', 'ancestry.vcf.gz', 'ancestry.vcf.gz.tbi'].collect { f -> "ancestry/${d}.${r}.${f}" }
+                        ['segments.bed', 'dropped_lines.tsv', 'line_checks.tsv', 'markers_per_chrom.tsv', 'rqtl.csv', 'ancestry.vcf.gz', 'ancestry.vcf.gz.tbi'].collect { f -> "ancestry/${d}.${r}.${f}" }
                     } + ["ancestry/${r}.grid.tsv"]
                 }*.toString().sort() },
                 // software versions as in the other pipeline tests
@@ -72,7 +72,7 @@ nextflow_pipeline {
                 // one RTIGER call per donor over both regions; the grid stays per region
                 { assert tasks == [CALL_ANCESTRY: 2, ANCESTRY_GRID: 2, ANCESTRY_VCF_INDEX: 4] },
                 { assert stable_path.sort() == (['Zx.9001_P1', 'Zx.9002_P1'].collectMany { d ->
-                    ['segments.bed', 'dropped_lines.tsv', 'line_checks.tsv'].collect { f -> "ancestry/${d}.genome.${f}" }
+                    ['segments.bed', 'dropped_lines.tsv', 'line_checks.tsv', 'markers_per_chrom.tsv'].collect { f -> "ancestry/${d}.genome.${f}" }
                 } + ['chrA_1-2500', 'chrA_2501-5000'].collectMany { r ->
                     ['Zx.9001_P1', 'Zx.9002_P1'].collectMany { d ->
                         ['rqtl.csv', 'ancestry.vcf.gz', 'ancestry.vcf.gz.tbi'].collect { f -> "ancestry/${d}.${r}.${f}" }

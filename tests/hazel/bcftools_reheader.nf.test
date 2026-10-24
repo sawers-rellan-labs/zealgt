@@ -1,0 +1,26 @@
+nextflow_process {
+
+    name "BCFTOOLS_REHEADER stub (hazel setup check)"
+    script "../../modules/nf-core/bcftools/reheader/main.nf"
+    process "BCFTOOLS_REHEADER"
+    tag "hazel"
+    tag "genotype"
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [[id: 'Zx.0540_P3', region: 'chrA'], file("${projectDir}/tests/fixtures/genotype/score/crisp_check_pool.vcf", checkIfExists: true), [], []]
+                input[1] = [[id: 'tiny'], file("${projectDir}/tests/fixtures/ref/tiny.fa.fai", checkIfExists: true)]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}

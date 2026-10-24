@@ -1,6 +1,7 @@
 # Decisions
 
-One entry per decision, newest last. Terms as in `TERMINOLOGY.md`.
+One entry per decision, newest last. Terms as in `TERMINOLOGY.md`. An entry marked **Superseded** no longer holds:
+follow its pointer.
 
 ## 2026-10-02 Workflows
 
@@ -30,6 +31,8 @@ downsampling in genotyping. `--step alignment` takes the first N pairs per sampl
 - Open: the base quality of read-through bases, i.e. whether `-Q 20` alone would drop them.
 
 ## 2026-10-02 Allele counting
+
+**Superseded** (base quality) by "2026-10-17 VARIANT_CALLING discovery (Milestone 9h)".
 
 `bcftools mpileup -I -a AD -q 20 -Q 20`, default depth cap (250), default mate-overlap removal.
 
@@ -220,6 +223,9 @@ fqtk runs once per lane, and `CAT_FASTQ` joins each sample's lanes (user). Reaso
 
 ## 2026-10-05 CRISP pool size: -p 12 for every pool
 
+**Superseded** (the witness pool) by "2026-10-17 VARIANT_CALLING discovery (Milestone 9h)"; `-p 12` for every pool
+kept by "2026-10-23 CRISP pool size: -p 12 for every pool (Milestone 9h)".
+
 - `-p 12` (6 plants x 2 haplotypes) is what matters for the BC1 pools. The witness pool gets the same 12: at its low
   coverage the number of lines would not change the calls, so no per-pool sizes in the `--bams` file (user).
 
@@ -244,6 +250,8 @@ fqtk runs once per lane, and `CAT_FASTQ` joins each sample's lanes (user). Reaso
   and the witness veto and the pooled likelihood use many reads per site.
 
 ## 2026-10-05 GENOTYPE inputs and discovery outputs (Milestone 7 build choices)
+
+**Superseded** (the witness veto; the B73 check filter, by the QC-PASS cutoff of 2026-10-21) by "2026-10-17 VARIANT_CALLING discovery (Milestone 9h)".
 
 Confirmed by the user from the Milestone 7 report; item 11 for now, open to change.
 
@@ -344,3 +352,191 @@ the variant-calling input; the `/rsstu` CRAMs stay whole. CRISP 1a9027e has a us
   copies of every CRAM (about the alignment archive's size on `/share`).
 - Accepted (user, 2026-10-17: "the losses are ok"): ~2 % fewer discovery records and tier-A sites (pilot slice, chr10:1-5
   Mb; full chr1 of Zl.0020_P3: 229,627 vs 234,635 CRISP calls), counts at most 4 reads per cell.
+
+## 2026-10-17 VARIANT_CALLING discovery (Milestone 9h)
+
+User, 2026-10-17, in their words: "I need the variant to be present in a BC1 and the segregating population. That was my
+intent." "the crisp thing should go over the 3 pools: BC1s: NILs: Checks. But only the decent checks not the ones
+contaminated" ("decent" replaced by the user with "QC PASS B73"); the BC1 pools "would share almost all the variants
+and so they will have poor contrast". On Q30 for reads: "I think it is a good decision after that filter the B73
+selection was less dependent on the batch". The word "witness" was coined by an agent (zealbc1, 2026-09-21).
+
+| existing entry                                                                | what it says                                                                        | overruled by (VARIANT_CALLING, Milestone 9h)                                                                                                                                   |
+| ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Milestone 7 spec; math supplement Section 4.1                                 | tier A needs ALT reads in >= 2 BC1 pools                                            | a variant must be in a BC1 and in the segregating population (the NIL in silico pool)                                                                                          |
+| 2026-10-05 GENOTYPE inputs and discovery outputs; math supplement Section 4.2 | the witness veto: keep a site only with >= 1 ALT read in the witness pool           | the same rule, with the NIL in silico pool as one of CRISP's pools; no separate veto, no "witness"                                                                             |
+| 2026-10-05 CRISP pool size                                                    | `-p 12` for every pool, the witness pool included                                   | three pool kinds: the donor's BC1s, its NIL in silico pool, one pool of QC-PASS B73 checks; `-p 12` for every pool (user, 2026-10-23)                                          |
+| zealbc1 DECISIONS 2026-09-23                                                  | CRISP = BC1s + BC2S3 pool only; B73 enters after CRISP (step 4)                     | the QC-PASS B73 checks go into CRISP as a pool                                                                                                                                 |
+| 2026-10-02 Allele counting; Milestone 7 (CRISP)                               | mpileup `-q 20 -Q 20`; CRISP `--mmq 20 --mbq 20`                                    | MAPQ >= 60 and base quality >= 30 in discovery and counting (user: "after that filter the B73 selection was less dependent on the batch"; MAPQ 60 and BQ 30: 2026-10-22 entry) |
+| 2026-10-05 GENOTYPE inputs and discovery outputs                              | B73 check filter: < 1 % ALT share at the check sites (SNP50K), B73-bulk checks only | QC-PASS B73 checks: mismatch rate < 0.1 % on bases of quality >= 30, whole genome, no genotypes (21 of 23; user, 2026-10-21)                                                   |
+| none                                                                          |                                                                                     | sites kept only if in the wideseq panel (Schnable 2023; 2026-10-23 entry)                                                                                                      |
+
+- The B73 checks: all 23 of the run's sheet (12 batch-1 B73-bulk, 11 batch-2 B73) are candidates; batch 1 has lower
+  base quality (average 35 vs 40), measured in notebook 08.
+- QC-PASS cutoff (user, 2026-10-21: "use the 0.1% Q30 mismatch cutoff, record it"): the whole-genome mismatch rate on
+  bases of quality >= 30 (`samtools stats` with the reference, job 1388640) under 0.1 %. It keeps 21 of 23 checks and
+  drops PN3_SID236 and PN5_SID468; a round number, call-free and independent of run 1367152, as the user required
+  on 2026-10-17 ("no genotypes"; "other number sound tailored for a result").
+- Variant-calling production run 1367152 (2026-10-17) used the overruled rules; its outputs are a baseline only.
+
+## 2026-10-22 Read and population site filters (Milestone 9h)
+
+**Superseded** (MAF >= 0.05) by "2026-10-23 Site filters: no MAF, wideseq kept (Milestone 9h)"; the read filters and
+the depth filter stand.
+
+User, 2026-10-22: "I believe we have established from the controls that there is a noise in the sequencing thta is why
+I suggested usingbthe Q30 and MQ 60. that filter must be kept throughpout." "In addition to those the two successful
+filters seem to be the 0.5-2x coverage per site and the MAF >0.05".
+
+- Read filters MAPQ >= 60 and BQ >= 30 in every step that reads alignments (CRISP and every mpileup); also recorded on
+  branch `mapq60-bq30` (fda7f3a, 2026-10-21).
+- Population site filters, as in the SNP50K joint call (2024 VCF headers, `joint_genotype/all_samps/7_filtered_samples/`:
+  `INFO/DP>= 427.00 && INFO/DP<=1505 && QUAL>=70 && INFO/MQ>40 && INFO/QD>=0.75`, then MAF >= 0.05): a site's reads
+  over the lines in 0.5-2x the lines' expected reads, and >= 5 % of the lines with an ALT read.
+- Evidence (zealhmm `zeal-chr10-snp50k-filters.qmd`, chr10, run 1367152's counts at MAPQ/BQ 20): PV23 floor pi 0.286 ->
+  0.148 with depth + MQ + MAF (SNP50K: 0.161); at the SNP50K sites zealgt's PV23 CRAMs (MAPQ 60, BQ 30) give pi 0.171,
+  KS D 0.067 (job 1498209). Recount at MAPQ 60 / BQ 30 pending (jobs 1498762-66).
+- OPEN (mine): where the site filters go: proposed after counting all lines at every union site (whole cohort), before
+  the donor markers are chosen.
+
+## 2026-10-23 CRISP pool size: -p 12 for every pool (Milestone 9h)
+
+User, 2026-10-23: "keep -p 12 for all pools, record it".
+
+- `-p 12` for the donor's BC1 pools, its NIL in silico pool and the QC-PASS B73 check pool; no per-pool sizes. "Pool
+  sizes set per pool" in the 9h table above was an agent's wording, not the user's.
+- Context (mine, calculated from notebook 08, not measured): CRISP takes a pool as carrying ALT from a share of about
+  1/p (8.3 % at 12). The check pool's ALT share from error (0.1-0.26 %) stays below it, the B73 blocks every check
+  carries (chr1 296-299 Mb, chr5 218-219 Mb, ~20-25 % ALT) above it; the check pool's true size (21 x 12 = 252) would
+  put it at 0.4 %, near the error level.
+
+## 2026-10-23 B73 check pool filter: CRISP's check pool call (Milestone 9h)
+
+User, 2026-10-23: "b73 has some sites that have sequence divergence from the reference those I would relly like
+removed"; "use CRISP's check pool call, record it".
+
+- A site is dropped where CRISP calls the QC-PASS B73 check pool a carrier of the ALT allele, genome-wide; no region
+  list.
+- Rejected: >= 1 ALT read in the check pool (user: "that is every single error in the check pool"); a mask of the
+  notebook 08 blocks (chr1 296-299 Mb, chr5 218-219 Mb).
+- OPEN (mine): the field read for the call, the check pool's `FORMAT/AC` >= 1 (CRISP's maximum-likelihood ALT count,
+  "." in pools it does not call in run 1367152's VCFs); to confirm in the tool tests.
+
+## 2026-10-23 NIL pool: >= 1 ALT read (Milestone 9h)
+
+User, 2026-10-23: "use >= 1 ALT read in the NIL pool, record it".
+
+- "Present in the segregating population" (2026-10-17 entry) is tested as >= 1 ALT read in the donor's NIL in silico
+  pool (forward, reverse or overlapping reads), as the witness veto does now.
+- Rejected: CRISP's call for the NIL pool. Context (mine, not measured): at ~4.5x per site and a donor ALT share often
+  under 1/12, it would drop real donor sites carried by few lines.
+- OPEN: how "present in a BC1" is tested.
+
+## 2026-10-23 Site filters: no MAF, wideseq kept (Milestone 9h)
+
+User, 2026-10-23 (capitals removed): "yeah the MAF filter doesnt seem to be helpful"; "yeah fro some reason that
+wideseq filtering is working"; "I like the mexicana and diplo get the same number of sites ~30k leaving maf out";
+"record dropping MAF and keeping wideseq in decisions.md".
+
+- No MAF filter on the donor markers (drops the MAF >= 0.05 of the 2026-10-22 entry).
+- Wideseq kept: a marker is kept only if its position, REF and ALT are in the wideseq panel (Schnable 2023,
+  `/rsstu/.../bzeaseq/wideseq_ref/`).
+- Evidence (chr10, run 1367152's gap-filled markers, lines recounted at MAPQ 60 / BQ 30, depth 0.5-2x + MQ > 40,
+  RTIGER at 1 Mb; zealhmm `zeal-mex-chr10-maf.qmd`, `zeal-dip-chr10-rtiger-filters.qmd`; hazel jobs 1521271-72,
+  1522424, 1523451):
+
+  | chr10                                         | no MAF, wideseq | MAF, wideseq | no MAF, no wideseq | SNP50K |
+  | --------------------------------------------- | --------------- | ------------ | ------------------ | ------ |
+  | mexicana markers per donor (median)           | 32,453          | 2,101        | 81,994             | -      |
+  | diploperennis markers per donor (median)      | 26,423          | 1,587        | 72,402             | -      |
+  | mexicana segments per line (572 lines)        | 1.13            | 1.18         | 1.96               | 0.49   |
+  | diploperennis segments per line               | 1.23            | -            | 2.42               | 0.51   |
+  | mexicana PH full LOD at 54 cM (all lines)     | 5.12            | 4.20         | 4.60               | 6.77   |
+  | diploperennis DTA full max LOD                | 7.91            | -            | 7.89               | 6.70   |
+  | diploperennis PH full max LOD                 | 6.32            | -            | 5.63               | 5.25   |
+  | diploperennis ALT segments, ALT read fraction | 0.803           | -            | 0.748              | 0.421  |
+
+  Family covariate, chr10-only permutation thresholds. Diploperennis with MAF ran only through the union matrix (DTA
+  8.43, all lines at the 5,035 union sites).
+
+- Context (mine, not measured): at ~0.3x the share of lines with an ALT read measures coverage more than frequency; a
+  real site carried by 12.5 % of lines shows an ALT read in ~3 % of them.
+
+## 2026-10-23 Gap filling kept, the union only as candidate sites (Milestone 9h)
+
+User, 2026-10-23: "I know tHta the gap filling shgould be added"; "nope the complicated gap fill stays"; "keep the
+controls, record gap filling in decisions.md". Earlier (2026-10-22): "the union part seems to break mexicana and fix
+diplo".
+
+- Gap filling as in run 1367152: the donors' sites merged into one union per region; each donor's BC1 pools counted at
+  every union site (`COUNT_UNION`) and scored with the tier code (`UNION_TIERS`, `score_pooled_likelihood.py`); each
+  donor's allele at every union site from Eq. eb (`FILL_DONOR_ALLELES`). A donor's markers are the union sites called
+  ALT for it (own or gap).
+- `--b73_controls` kept: the external B73 controls stay in the per-site error rate, beside the B73 check pool.
+- The union is only the list of candidate sites: each donor's lines are counted at its own markers, never at every
+  union site (the union matrix).
+- Rejected:
+  - the union matrix, every line at all union sites (mexicana nb28: 11,606 sites, segments per line 0.93 vs 9a 0.78 on
+    223 lines; ~94 % of the union with ALT in fewer than 2 of a mexicana donor's lines);
+  - gap filling by a read rule (>= 1 ALT read in the donor's BC1s and in its NIL lines, no tier scoring; nb36, hazel jobs
+    1523883-86): segments per line mexicana 1.77 vs 1.13, diploperennis 1.43 vs 1.23; QTL LODs within a few tenths.
+- Evidence for the kept method: the chr10 table of "2026-10-23 Site filters: no MAF, wideseq kept".
+- OPEN (mine): the donor's own sites in gap filling once 9h discovery drops tier A (the sites the 9h rule keeps).
+- Gap-filled sites do not need >= 1 ALT read in the donor's lines (user, 2026-10-24: "so no"). Reason (user,
+  2026-10-07): "I just realized that there is a loss of infromation with theveto I believe and I am worried at the donors
+  qith few lines". Evidence (nb31, chr10): with that rule Zx.0480_P2 (2 lines) kept 20 of 2,455 markers; mexicana median
+  64 %.
+
+## 2026-10-23 Variant-calling inputs cut to the low-copy ranges (Milestone 9h)
+
+User, 2026-10-23 (typos corrected): "I think we could keep the low copy only; the wideseq I think is fine as a last step
+filter";
+"so this goes into 9h: So the filter step is samtools view -F 0x800 -L lowcopy.bed, with the pipeline's existing
+low-copy BED, and wideseq stays as the last site filter."
+
+- The filtered copies variant calling reads (today `FILTER_BC1`, `FILTER_WITNESS`: `samtools view -F 0x800`) also keep
+  only reads overlapping the pipeline's low-copy BED (`-L`); reads are kept whole, a mate outside the ranges is dropped.
+- Wideseq is not in that BED; it stays the last site filter, as in the tested chr10 method.
+- Context (mine, not measured): copies about 15-20 % of the CRAMs' size (low-copy is 26 of chr10's 152 Mb); calls inside
+  the ranges unchanged; CRISP's memory driven by the pools and local depth more than by file size.
+
+## 2026-10-24 Depth filter over the lines of the donors carrying the site (Milestone 9h)
+
+User, 2026-10-23: "keep it as tested, record it" (on which lines the depth filter counts).
+
+- A marker is kept where its reads, summed over the lines of every donor (any taxon) that has it among its markers, are
+  0.5-2x those lines' expected reads (each line's mean reads per marker, summed), as tested on chr10
+  (`chr10_filters_a/b`, nb18b `flags.tsv`).
+- Rejected: per taxon; over every line in the population (every line counted at every site).
+- MQ > 40 is not applied (mine): at MAPQ >= 60 it removed almost nothing on chr10 (110,313 of 110,896 mexicana markers
+  kept, median).
+
+## 2026-10-24 "Present in a BC1" = tier A (Milestone 9h)
+
+User, 2026-10-24: "go ahead then", on my advice to decide on the depth + wideseq method as tested and to keep tier A
+for "present in a BC1" (2026-10-17 entry).
+
+- A donor's own sites are its tier-A sites (ALT reads in >= 2 BC1 pools, LLR >= 6.9, no `hidepth`, `af_gt_half` or
+  `inconsistent` flag), as in run 1367152; gap filling's prior keeps counting them.
+- Rejected (chr10, nb46, hazel jobs 1530364-67): own sites = every CRISP site unless the BC1 pools have >= 12 reads and
+  no ALT read (no tiers): more markers (mexicana 36,035 vs 32,453, diploperennis 37,331 vs 26,423 per donor), segments
+  per line 1.16 vs 1.13 and 1.32 vs 1.23, class-separation MSE 0.025 vs 0.024 and 0.036 vs 0.032, mexicana PH 6.12 vs
+  6.70, diploperennis DTA 7.28 vs 7.91, diploperennis PH 6.54 vs 6.32 (gap filling not rerun for it).
+- Context (user, 2026-10-24, before deciding): the tiers and the LLR are an agent's construction, not the user's design.
+
+## 2026-10-24 No donor x chromosome exclusion; marker counts per chromosome logged (Milestone 9h)
+
+User, 2026-10-24: "GO WITH THAT MAKE ANOTE SOMEWHERE APPROPIATE" (on the advice: add the two checks, no exclusion
+rule, keep the plan).
+
+- `CALL_ANCESTRY` writes markers per chromosome (`<donor>.<unit>.markers_per_chrom.tsv`: chromosome, markers, the
+  median line's covered markers; 0 where a chromosome has none) and logs one line per chromosome; the zero-marker path
+  (no lines to RTIGER, header-only segments) is tested (`tests/bin/test_ancestry_tools.R`).
+- No rule excludes a donor x chromosome from RTIGER or the union (consistent with 2026-10-16 "Families stay in the
+  union"); lines under 2 x rigidity covered markers stay left out of the RTIGER call as before (zealbc1 rule, user
+  2026-09-24).
+- Evidence (mine): run 1367152's union-ALT markers per donor x chromosome (hazel job 1387272), 950 cells, none below
+  15,305 (minimum Zx.0520_P4 chr6, a donor with no tier-A sites anywhere: all its markers gap-filled); the chr10 depth +
+  wideseq set's minimum 4,498 (Zx.0560_P4); no line under the cut on chr10.
+- For the genome-wide run plan (mine): genome-fit `CALL_ANCESTRY` needed 48 GB for Zd.0010_P2 and Zd.0010_P3 (exit 137
+  at 16 GB; run 1387871); judge on fragmentation against SNP50K per chromosome, not on completion.

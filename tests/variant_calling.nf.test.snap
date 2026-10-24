@@ -132,12 +132,6 @@
                 "BIALLELIC_UNION": {
                     "bcftools": "1.23.1"
                 },
-                "CHECK_ALT_RATE": {
-                    "bcftools": "1.23.1"
-                },
-                "CHECK_COUNTS": {
-                    "bcftools": "1.23.1"
-                },
                 "COUNT_LINES": {
                     "bcftools": "1.23.1"
                 },
@@ -146,6 +140,9 @@
                 },
                 "CRISP": {
                     "crisp": "1a9027e"
+                },
+                "CRISP_CONTIGS": {
+                    "bcftools": "1.23.1"
                 },
                 "DONOR_ALLELES_MERGE": {
                     "bcftools": "1.23.1"
@@ -163,8 +160,17 @@
                 "FILTER_BC1": {
                     "samtools": 1.24
                 },
+                "FILTER_CHECKS": {
+                    "samtools": 1.24
+                },
+                "FILTER_SITE_DEPTH": {
+                    "python": "3.12.14"
+                },
                 "FILTER_WITNESS": {
                     "samtools": 1.24
+                },
+                "KNOWN_SITES": {
+                    "bcftools": "1.23.1"
                 },
                 "POOLED_LIKELIHOOD_TIERS": {
                     "pysam": "0.24.1",
@@ -196,9 +202,9 @@
             },
             [
                 "variant_calling/counts/Zx.9001_P1/chrA/Zx.9001_P1.chrA.counts.vcf.gz",
-                "variant_calling/counts/Zx.9001_P1/chrA/Zx.9001_P1.chrA.union_alt.vcf",
+                "variant_calling/counts/Zx.9001_P1/chrA/Zx.9001_P1.chrA.markers.vcf",
                 "variant_calling/counts/Zx.9002_P1/chrA/Zx.9002_P1.chrA.counts.vcf.gz",
-                "variant_calling/counts/Zx.9002_P1/chrA/Zx.9002_P1.chrA.union_alt.vcf",
+                "variant_calling/counts/Zx.9002_P1/chrA/Zx.9002_P1.chrA.markers.vcf",
                 "variant_calling/discovery/Zx.9001_P1.chrA.sites.tsv.gz",
                 "variant_calling/discovery/Zx.9001_P1.chrA.vcf.gz",
                 "variant_calling/discovery/Zx.9001_P1.chrA.vcf.gz.tbi",
@@ -211,7 +217,7 @@
                 "variant_calling/union/chrA.union.vcf.gz.tbi"
             ]
         ],
-        "timestamp": "2026-10-17T11:22:42.766975",
+        "timestamp": "2026-10-24T04:26:32.480275",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

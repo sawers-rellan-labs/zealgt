@@ -25,7 +25,6 @@ include { softwareVersionsToYAML  } from './subworkflows/nf-core/utils_nfcore_pi
 params {
     head: Integer = 0
     read_qc: Boolean = false
-    max_check_alt_rate: Float = 0.01
     min_mean_coverage: Float = 0.05
     rigidity_mb: Float = 1
 }
@@ -75,7 +74,6 @@ workflow ZEALGT {
     def ch_multiqc_report = channel.empty()
     def ch_discovery_vcf = channel.empty()
     def ch_discovery_sites = channel.empty()
-    def ch_dropped_b73_checks = channel.empty()
     def ch_union = channel.empty()
     def ch_donor_alleles = channel.empty()
     def ch_counts = channel.empty()
@@ -89,14 +87,13 @@ workflow ZEALGT {
             params.b73_controls,
             params.fasta,
             params.lowcopy_bed,
-            params.check_sites,
-            params.max_check_alt_rate,
+            params.b73_checks,
+            params.known_sites,
             params.min_mean_coverage,
             params.regions,
         )
         ch_discovery_vcf = VARIANT_CALLING.out.discovery_vcf
         ch_discovery_sites = VARIANT_CALLING.out.discovery_sites
-        ch_dropped_b73_checks = VARIANT_CALLING.out.dropped_b73_checks
         ch_union = VARIANT_CALLING.out.union
         ch_donor_alleles = VARIANT_CALLING.out.donor_alleles
         ch_counts = VARIANT_CALLING.out.counts
@@ -127,7 +124,6 @@ workflow ZEALGT {
     cram_qc            = ch_cram_qc            // channel: [ meta, file ], several per sample
     discovery_vcf      = ch_discovery_vcf      // channel: [ meta, vcf.gz, tbi ], one per donor
     discovery_sites    = ch_discovery_sites    // channel: [ meta, sites.tsv.gz ], one per donor
-    dropped_b73_checks = ch_dropped_b73_checks // channel: dropped_b73_checks.tsv
     union              = ch_union              // channel: [ meta, vcf.gz, tbi ]
     donor_alleles      = ch_donor_alleles      // channel: [ meta, vcf.gz, tbi ]
     counts             = ch_counts             // channel: [ donor:, region:, counts:, markers:, union: ], one per donor x region
@@ -178,7 +174,6 @@ workflow {
     cram_qc = ZEALGT.out.cram_qc
     discovery_vcf = ZEALGT.out.discovery_vcf
     discovery_sites = ZEALGT.out.discovery_sites
-    dropped_b73_checks = ZEALGT.out.dropped_b73_checks
     union = ZEALGT.out.union
     donor_alleles = ZEALGT.out.donor_alleles
     counts = ZEALGT.out.counts
@@ -210,14 +205,11 @@ output {
         path 'cram'
         mode 'copy'
     }
-    // variant discovery per donor and the dropped B73 checks
+    // variant discovery per donor
     discovery_vcf {
         path 'variant_calling/discovery'
     }
     discovery_sites {
-        path 'variant_calling/discovery'
-    }
-    dropped_b73_checks {
         path 'variant_calling/discovery'
     }
     // the union sites and every donor's allele there

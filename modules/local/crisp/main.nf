@@ -6,7 +6,7 @@ process CRISP {
     container 'ghcr.io/sawers-rellan-labs/zealgt-crisp:1a9027e'
 
     input:
-    tuple val(meta), path(crams, arity: '1..*', stageAs: 'bc1/*'), path(crais, arity: '1..*', stageAs: 'bc1/*'), path(witness, stageAs: 'witness/*'), path(witness_index, stageAs: 'witness/*')
+    tuple val(meta), path(crams, arity: '1..*', stageAs: 'bc1/*'), path(crais, arity: '1..*', stageAs: 'bc1/*'), path(witness, stageAs: 'witness/*'), path(witness_index, stageAs: 'witness/*'), path(checks, stageAs: 'checks/*'), path(checks_index, stageAs: 'checks/*')
     tuple val(meta2), path(fasta), path(fai)
     path bed
 
@@ -21,9 +21,9 @@ process CRISP {
     script:
     def args = task.ext.args ?: ''
     prefix = task.ext.prefix ?: "${meta.id}"
-    // --sm 0 names each pool by its file name, which must start with ./ (CRISP drops a bare name's first character); witness first
+    // --sm 0 names each pool by its file name, which must start with ./ (CRISP drops a bare name's first character); the NIL pool first, the check pool second
     """
-    printf '%s\\n' ./${witness} ${crams.collect { c -> "./${c}" }.join(' ')} > bams.txt
+    printf '%s\\n' ./${witness} ./${checks} ${crams.collect { c -> "./${c}" }.join(' ')} > bams.txt
 
     # CRISP exits 1 on success: success is the finish line in its log
     CRISP --bams bams.txt --ref ${fasta} --bed ${bed} --sm 0 ${args} --VCF ${prefix}.crisp.vcf 2>&1 | tee ${prefix}.crisp.log >&2 || [ \$? -eq 1 ]

@@ -310,3 +310,29 @@ gave 16 GB; 1 Mb and 5 Mb rigidity alike (jobs 1343858, 1346168).
 0x800` filtered chr1 of Zl.0020_P3's five CRAMs (its four BC1 pools and witness) in 4.5 min with 4 threads (CRISP debug,
 job 1365010), ~1 min per chr1 CRAM; a whole-genome BC1 CRAM is ~7 x that. Set until the production run measures them:
 2 cpus, 1 GB, 2 h, arrays of 20 in `hpc_prod`; 384 + 950 tasks in production.
+
+## Milestone 9h steps, measured on chr10 (2026-10-24, test 7)
+
+The Milestone 9h chr10 check (`hpc_dev`, 42 mexicana and 6 diploperennis donors, 188 BC1 pools, 978 NIL rows, the 21
+QC-PASS checks; head jobs 1532055 variant calling, 2 h 15 min, 1,159 tasks, and 1532056 ancestry, 10 min, 97 tasks; commit
+28de8c5). Nextflow trace: max realtime and peak RSS over the tasks, CPU-h summed (realtime x `%cpu`). No task failed or
+retried; every peak is at most 0.72 of its request. `FILTER_BC1` filters each BC1 CRAM whole (the low-copy BED of all
+chromosomes), so its numbers hold for the genome-wide run; its peak is flat at 0.72 GB in every task, and it uses ~1.05 of
+its 2 cpus. CRISP with the three pool kinds (the BC1 pools, the NIL pool, the check pool) on one donor's chr10 takes
+7-14 min and <= 0.36 GB. The requests stay as set.
+
+| process             | tasks | max realtime | CPU-h | max peak RSS | set (`hpc_dev`, `hpc_prod`)                            |
+| ------------------- | ----- | ------------ | ----- | ------------ | ------------------------------------------------------ |
+| `FILTER_BC1`        | 188   | 20.6 min     | 26.72 | 0.72 GB      | 2 cpus, 1 GB, 2 h; arrays of 20 in `hpc_prod`          |
+| `FILTER_WITNESS`    | 48    | 1.8 min      | 0.61  | 0.42 GB      | 2 cpus, 1 GB, 2 h; arrays of 20 in `hpc_prod`          |
+| `FILTER_CHECKS`     | 1     | 0.8 min      | 0.01  | 0.42 GB      | 2 cpus, 1 GB, 2 h; arrays of 20 in `hpc_prod`          |
+| `CRISP`             | 48    | 13.6 min     | 6.75  | 0.36 GB      | 1 cpu, 2 GB x attempt, 2 h; arrays of 20 in `hpc_prod` |
+| `CRISP_CONTIGS`     | 48    | 4.7 s        | 0.02  | 35 MB        | 1 cpu, 1 GB, 1 h; arrays of 20 in `hpc_prod`           |
+| `BED_CLIP`          | 48    | 4.4 s        | 0.02  | 27 MB        | 1 cpu, 1 GB, 1 h; arrays of 20 in `hpc_prod`           |
+| `KNOWN_SITES`       | 48    | 3.2 s        | 0.04  | 32 MB        | 1 cpu, 1 GB, 1 h; arrays of 20 in `hpc_prod`           |
+| `COUNT_LINES`       | 48    | 2.6 min      | 0.66  | 0.98 GB      | 1 cpu, 4 GB x attempt, 1 h; arrays of 20 in `hpc_prod` |
+| `FILTER_SITE_DEPTH` | 1     | 35 s         | 0.01  | 80 MB        | 1 cpu, 4 GB x attempt, 1 h                             |
+| `CALL_ANCESTRY`     | 48    | 22 s         | 0.09  | 0.42 GB      | 1 cpu, 2 GB, 1 h                                       |
+
+Others in the same run, within their requests: `SAMTOOLS_MERGE` (pools) 1.00 GB of 4 GB, `SAMTOOLS_ADDREPLACERG` 4.5 min,
+`COUNT_UNION` 190 tasks, 2.2 min, 0.25 GB of 1 GB, `UNION_TIERS` 0.93 GB of 8 GB (48 donors).

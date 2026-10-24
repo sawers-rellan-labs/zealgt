@@ -1,0 +1,26 @@
+nextflow_process {
+
+    name "FILTER_SITE_DEPTH stub (hazel setup check)"
+    script "../../modules/local/filter_site_depth/main.nf"
+    process "FILTER_SITE_DEPTH"
+    tag "hazel"
+    tag "genotype"
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [[id: 'chrA', region: 'chrA'], ['Zx.0540_P3'], [file("${projectDir}/tests/fixtures/genotype/fill/union.vcf", checkIfExists: true)], [file("${projectDir}/tests/fixtures/genotype/known_sites.vcf.gz", checkIfExists: true)]]
+                input[1] = file("${projectDir}/bin/filter_site_depth.py", checkIfExists: true)
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}

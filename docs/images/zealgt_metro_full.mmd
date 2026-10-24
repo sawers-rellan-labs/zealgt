@@ -9,7 +9,6 @@
 %%metro line: alignment | --step alignment | #0570b0
 %%metro line: variant_calling | --step variant_calling | #e6550d
 %%metro line: ancestry | --step ancestry | #756bb1
-%%metro file: checks_out | TSV
 %%metro file: vcf_out | VCF
 %%metro file: sites_out | TSV
 %%metro file: union_out | VCF
@@ -20,7 +19,11 @@
 %%metro file: rqtl_out | CSV
 %%metro file: ancestry_out | VCF
 %%metro file: regions_in | LIST | --regions
+%%metro file: checks_in | CSV | --b73_checks
+%%metro file: known_in | VCF | --known_sites
 %%metro off_track: regions_in
+%%metro off_track: checks_in
+%%metro off_track: known_in
 %%metro legend: bl
 %%metro grid: demux | 0,0
 %%metro grid: align | 0,1
@@ -45,14 +48,14 @@
 %%metro process: picard_wgs | PICARD_COLLECTWGSMETRICS
 %%metro process: mosdepth | MOSDEPTH
 %%metro process: multiqc | ALIGNMENT:MULTIQC
-%%metro process: check_counts | CHECK_COUNTS
-%%metro process: check_rate | CHECK_ALT_RATE
 %%metro process: merge_pools | CRAM_VARIANT_DISCOVERY_CRISP:SAMTOOLS_MERGE
 %%metro process: addrg | SAMTOOLS_ADDREPLACERG
 %%metro process: index_pools | CRAM_VARIANT_DISCOVERY_CRISP:SAMTOOLS_INDEX
 %%metro process: filter_bc1 | FILTER_BC1
 %%metro process: filter_witness | FILTER_WITNESS
+%%metro process: filter_checks | FILTER_CHECKS
 %%metro process: crisp | CRISP
+%%metro process: contigs | CRISP_CONTIGS
 %%metro process: bed_clip | BED_CLIP
 %%metro process: veto | WITNESS_VETO
 %%metro process: mpileup_ctrl | BCFTOOLS_MPILEUP
@@ -67,7 +70,9 @@
 %%metro process: merge_alleles | DONOR_ALLELES_MERGE
 %%metro process: donor_subset | DONOR_SUBSET
 %%metro process: donor_alt | DONOR_ALT_SITES
+%%metro process: known_sites | KNOWN_SITES
 %%metro process: count_lines | COUNT_LINES
+%%metro process: filter_depth | FILTER_SITE_DEPTH
 %%metro process: rtiger | CALL_ANCESTRY
 %%metro process: grid | ANCESTRY_GRID
 %%metro process: index_ancestry | ANCESTRY_VCF_INDEX
@@ -134,18 +139,18 @@ graph LR
         %%metro entry: left | variant_calling
         %%metro exit: right | ancestry
         cov_filter[coverage filter]
-        check_counts[mpileup checks]
-        check_rate[ALT rate]
-        checks_out[ ]
+        checks_in[ ]
         regions_in[ ]
         merge_pools[samtools merge]
         addrg[addreplacerg]
         index_pools[index]
-        filter_bc1[no supplementary]
-        filter_witness[no supplementary]
+        filter_bc1[low-copy reads]
+        filter_witness[low-copy reads]
+        filter_checks[low-copy reads]
         crisp[CRISP]
-        bed_clip[bed clip]
-        veto[witness veto]
+        contigs[contig lines]
+        bed_clip[bed clip, check pool rule]
+        veto[NIL rule]
         vcf_out[ ]
         mpileup_ctrl[mpileup]
         tiers[pooled likelihood]
@@ -162,14 +167,14 @@ graph LR
         alleles_out[ ]
         donor_subset[donor column]
         donor_alt[donor ALT sites]
+        known_in[ ]
+        known_sites[known sites]
         count_lines[mpileup lines]
+        filter_depth[depth filter]
         counts_out[counts]
 
-        cov_filter -->|variant_calling| check_counts
-        check_counts -->|variant_calling| check_rate
-        check_rate -->|variant_calling| checks_out
-        check_rate -->|variant_calling| merge_pools
         cov_filter -->|variant_calling| merge_pools
+        checks_in -->|variant_calling| merge_pools
         regions_in -->|variant_calling| merge_pools
         regions_in -->|variant_calling| crisp
         merge_pools -->|variant_calling| addrg
@@ -178,8 +183,11 @@ graph LR
         filter_bc1 -->|variant_calling| crisp
         addrg -->|variant_calling| filter_witness
         filter_witness -->|variant_calling| crisp
+        addrg -->|variant_calling| filter_checks
+        filter_checks -->|variant_calling| crisp
         index_pools -->|variant_calling| mpileup_ctrl
-        crisp -->|variant_calling| bed_clip
+        crisp -->|variant_calling| contigs
+        contigs -->|variant_calling| bed_clip
         bed_clip -->|variant_calling| veto
         veto -->|variant_calling| vcf_out
         veto -->|variant_calling| mpileup_ctrl
@@ -199,9 +207,12 @@ graph LR
         merge_alleles -->|variant_calling| alleles_out
         merge_alleles -->|variant_calling| donor_subset
         donor_subset -->|variant_calling| donor_alt
-        donor_alt -->|variant_calling| count_lines
+        donor_alt -->|variant_calling| known_sites
+        known_in -->|variant_calling| known_sites
+        known_sites -->|variant_calling| count_lines
         cov_filter -->|variant_calling| count_lines
-        count_lines -->|variant_calling| counts_out
+        count_lines -->|variant_calling| filter_depth
+        filter_depth -->|variant_calling| counts_out
         biallelic -->|variant_calling| counts_out
     end
 

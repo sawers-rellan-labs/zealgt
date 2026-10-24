@@ -1,0 +1,20 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/sawers-rellan-labs/zealgt/main/assets/schema_b73_checks.json",
+    "title": "sawers-rellan-labs/zealgt pipeline - params.b73_checks schema",
+    "description": "One row per QC-PASS B73 check: a sample_id of a check sample in the CRAM samplesheet",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "sample_id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_]+$",
+                "errorMessage": "sample_id must be letters, digits and underscores"
+            }
+        },
+        "required": ["sample_id"]
+    },
+    "minItems": 1,
+    "uniqueEntries": ["sample_id"]
+}
