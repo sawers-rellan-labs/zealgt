@@ -461,3 +461,25 @@ wideseq filtering is working"; "I like the mexicana and diplo get the same numbe
 
 - Context (mine, not measured): at ~0.3x the share of lines with an ALT read measures coverage more than frequency; a
   real site carried by 12.5 % of lines shows an ALT read in ~3 % of them.
+
+## 2026-10-23 Gap filling kept, the union only as candidate sites (Milestone 9h)
+
+User, 2026-10-23: "I know tHta the gap filling shgould be added"; "nope the complicated gap fill stays"; "keep the
+controls, record gap filling in decisions.md". Earlier (2026-10-22): "the union part seems to break mexicana and fix
+diplo".
+
+- Gap filling as in run 1367152: the donors' sites merged into one union per region; each donor's BC1 pools counted at
+  every union site (`COUNT_UNION`) and scored with the tier code (`UNION_TIERS`, `score_pooled_likelihood.py`); each
+  donor's allele at every union site from Eq. eb (`FILL_DONOR_ALLELES`). A donor's markers are the union sites called
+  ALT for it (own or gap).
+- `--b73_controls` kept: the external B73 controls stay in the per-site error rate, beside the B73 check pool.
+- The union is only the list of candidate sites: each donor's lines are counted at its own markers, never at every
+  union site (the union matrix).
+- Rejected:
+  - the union matrix, every line at all union sites (mexicana nb28: 11,606 sites, segments per line 0.93 vs 9a 0.78 on
+    223 lines; ~94 % of the union with ALT in fewer than 2 of a mexicana donor's lines);
+  - gap filling by a read rule (>= 1 ALT read in the donor's BC1s and in its NIL lines, no tier scoring; nb36, hazel jobs
+    1523883-86): segments per line mexicana 1.77 vs 1.13, diploperennis 1.43 vs 1.23; QTL LODs within a few tenths.
+- Evidence for the kept method: the chr10 table of "2026-10-23 Site filters: no MAF, wideseq kept".
+- OPEN (mine): the donor's own sites in gap filling once 9h discovery drops tier A (the sites the 9h rule keeps);
+  whether gap-filled sites also need >= 1 ALT read in the NIL pool (not in the tested method).
