@@ -499,3 +499,27 @@ low-copy BED, and wideseq stays as the last site filter."
 - Wideseq is not in that BED; it stays the last site filter, as in the tested chr10 method.
 - Context (mine, not measured): copies about 15-20 % of the CRAMs' size (low-copy is 26 of chr10's 152 Mb); calls inside
   the ranges unchanged; CRISP's memory driven by the pools and local depth more than by file size.
+
+## 2026-10-24 Depth filter over the lines of the donors carrying the site (Milestone 9h)
+
+User, 2026-10-23: "keep it as tested, record it" (on which lines the depth filter counts).
+
+- A marker is kept where its reads, summed over the lines of every donor (any taxon) that has it among its markers, are
+  0.5-2x those lines' expected reads (each line's mean reads per marker, summed), as tested on chr10
+  (`chr10_filters_a/b`, nb18b `flags.tsv`).
+- Rejected: per taxon; over every line in the population (every line counted at every site).
+- MQ > 40 is not applied (mine): at MAPQ >= 60 it removed almost nothing on chr10 (110,313 of 110,896 mexicana markers
+  kept, median).
+
+## 2026-10-24 "Present in a BC1" = tier A (Milestone 9h)
+
+User, 2026-10-24: "go ahead then", on my advice to decide on the depth + wideseq method as tested and to keep tier A
+for "present in a BC1" (2026-10-17 entry).
+
+- A donor's own sites are its tier-A sites (ALT reads in >= 2 BC1 pools, LLR >= 6.9, no `hidepth`, `af_gt_half` or
+  `inconsistent` flag), as in run 1367152; gap filling's prior keeps counting them.
+- Rejected (chr10, nb46, hazel jobs 1530364-67): own sites = every CRISP site unless the BC1 pools have >= 12 reads and
+  no ALT read (no tiers): more markers (mexicana 36,035 vs 32,453, diploperennis 37,331 vs 26,423 per donor), segments
+  per line 1.16 vs 1.13 and 1.32 vs 1.23, class-separation MSE 0.025 vs 0.024 and 0.036 vs 0.032, mexicana PH 6.12 vs
+  6.70, diploperennis DTA 7.28 vs 7.91, diploperennis PH 6.54 vs 6.32 (gap filling not rerun for it).
+- Context (user, 2026-10-24, before deciding): the tiers and the LLR are an agent's construction, not the user's design.
