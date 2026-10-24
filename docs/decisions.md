@@ -483,3 +483,15 @@ diplo".
 - Evidence for the kept method: the chr10 table of "2026-10-23 Site filters: no MAF, wideseq kept".
 - OPEN (mine): the donor's own sites in gap filling once 9h discovery drops tier A (the sites the 9h rule keeps);
   whether gap-filled sites also need >= 1 ALT read in the NIL pool (not in the tested method).
+
+## 2026-10-23 Variant-calling inputs cut to the low-copy ranges (Milestone 9h)
+
+User, 2026-10-23: "I think we could keep the low copy only why the wideseq I thibk it is fine as a last step filter";
+"so this goes into 9h: So the filter step is samtools view -F 0x800 -L lowcopy.bed, with the pipeline's existing
+low-copy BED, and wideseq stays as the last site filter."
+
+- The filtered copies variant calling reads (today `FILTER_BC1`, `FILTER_WITNESS`: `samtools view -F 0x800`) also keep
+  only reads overlapping the pipeline's low-copy BED (`-L`); reads are kept whole, a mate outside the ranges is dropped.
+- Wideseq is not in that BED; it stays the last site filter, as in the tested chr10 method.
+- Context (mine, not measured): copies about 15-20 % of the CRAMs' size (low-copy is 26 of chr10's 152 Mb); calls inside
+  the ranges unchanged; CRISP's memory driven by the pools and local depth more than by file size.
