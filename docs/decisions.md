@@ -369,7 +369,7 @@ selection was less dependent on the batch". The word "witness" was coined by an 
 | zealbc1 DECISIONS 2026-09-23                                                  | CRISP = BC1s + BC2S3 pool only; B73 enters after CRISP (step 4)                     | the QC-PASS B73 checks go into CRISP as a pool                                                                                                                                 |
 | 2026-10-02 Allele counting; Milestone 7 (CRISP)                               | mpileup `-q 20 -Q 20`; CRISP `--mmq 20 --mbq 20`                                    | MAPQ >= 60 and base quality >= 30 in discovery and counting (user: "after that filter the B73 selection was less dependent on the batch"; MAPQ 60 and BQ 30: 2026-10-22 entry) |
 | 2026-10-05 GENOTYPE inputs and discovery outputs                              | B73 check filter: < 1 % ALT share at the check sites (SNP50K), B73-bulk checks only | QC-PASS B73 checks: mismatch rate < 0.1 % on bases of quality >= 30, whole genome, no genotypes (21 of 23; user, 2026-10-21)                                                   |
-| none                                                                          |                                                                                     | to measure, not decided: filter sites with the wideseq panel (Schnable 2023)                                                                                                   |
+| none                                                                          |                                                                                     | sites kept only if in the wideseq panel (Schnable 2023; 2026-10-23 entry)                                                                                                      |
 
 - The B73 checks: all 23 of the run's sheet (12 batch-1 B73-bulk, 11 batch-2 B73) are candidates; batch 1 has lower
   base quality (average 35 vs 40), measured in notebook 08.
@@ -380,6 +380,9 @@ selection was less dependent on the batch". The word "witness" was coined by an 
 - Variant-calling production run 1367152 (2026-10-17) used the overruled rules; its outputs are a baseline only.
 
 ## 2026-10-22 Read and population site filters (Milestone 9h)
+
+**Superseded** (MAF >= 0.05) by "2026-10-23 Site filters: no MAF, wideseq kept (Milestone 9h)"; the read filters and
+the depth filter stand.
 
 User, 2026-10-22: "I believe we have established from the controls that there is a noise in the sequencing thta is why
 I suggested usingbthe Q30 and MQ 60. that filter must be kept throughpout." "In addition to those the two successful
@@ -428,3 +431,33 @@ User, 2026-10-23: "use >= 1 ALT read in the NIL pool, record it".
 - Rejected: CRISP's call for the NIL pool. Context (mine, not measured): at ~4.5x per site and a donor ALT share often
   under 1/12, it would drop real donor sites carried by few lines.
 - OPEN: how "present in a BC1" is tested.
+
+## 2026-10-23 Site filters: no MAF, wideseq kept (Milestone 9h)
+
+User, 2026-10-23 (capitals removed): "yeah the MAF filter doesnt seem to be helpful"; "yeah fro some reason that
+wideseq filtering is working"; "I like the mexicana and diplo get the same number of sites ~30k leaving maf out";
+"record dropping MAF and keeping wideseq in decisions.md".
+
+- No MAF filter on the donor markers (drops the MAF >= 0.05 of the 2026-10-22 entry).
+- Wideseq kept: a marker is kept only if its position, REF and ALT are in the wideseq panel (Schnable 2023,
+  `/rsstu/.../bzeaseq/wideseq_ref/`).
+- Evidence (chr10, run 1367152's gap-filled markers, lines recounted at MAPQ 60 / BQ 30, depth 0.5-2x + MQ > 40,
+  RTIGER at 1 Mb; zealhmm `zeal-mex-chr10-maf.qmd`, `zeal-dip-chr10-rtiger-filters.qmd`; hazel jobs 1521271-72,
+  1522424, 1523451):
+
+  | chr10                                         | no MAF, wideseq | MAF, wideseq | no MAF, no wideseq | SNP50K |
+  | --------------------------------------------- | --------------- | ------------ | ------------------ | ------ |
+  | mexicana markers per donor (median)           | 32,453          | 2,101        | ~88,000            | -      |
+  | diploperennis markers per donor (median)      | ~29,500         | ~1,600       | ~80,000            | -      |
+  | mexicana segments per line (572 lines)        | 1.13            | 1.18         | 1.96               | 0.49   |
+  | diploperennis segments per line               | 1.23            | -            | 2.42               | 0.51   |
+  | mexicana PH full LOD at 54 cM (all lines)     | 5.12            | 4.20         | 4.60               | 6.77   |
+  | diploperennis DTA full max LOD                | 7.91            | -            | 7.89               | 6.70   |
+  | diploperennis PH full max LOD                 | 6.32            | -            | 5.63               | 5.25   |
+  | diploperennis ALT segments, ALT read fraction | 0.803           | -            | 0.748              | 0.421  |
+
+  Family covariate, chr10-only permutation thresholds. Diploperennis with MAF ran only through the union matrix (DTA
+  8.43, all lines at the 5,035 union sites).
+
+- Context (mine, not measured): at ~0.3x the share of lines with an ALT read measures coverage more than frequency; a
+  real site carried by 12.5 % of lines shows an ALT read in ~3 % of them.
