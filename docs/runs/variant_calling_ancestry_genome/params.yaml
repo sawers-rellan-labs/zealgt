@@ -1,0 +1,6 @@
+step: variant_calling
+input: /rsstu/users/r/rrellan/BZea/ZEAL/zealgt_prod/docs/runs/variant_calling_ancestry_genome/samplesheet.csv
+b73_controls: /rsstu/users/r/rrellan/BZea/ZEAL/zealgt_prod/docs/runs/variant_calling_ancestry_genome/b73_controls.csv
+lowcopy_bed: /rsstu/users/r/rrellan/BZea/ZEAL/reference/lowcopy_chr1-10.bed
+b73_checks: /rsstu/users/r/rrellan/BZea/ZEAL/reference/b73_checks_qcpass.csv
+known_sites: /rsstu/users/r/rrellan/BZea/ZEAL/reference/wideseq_sites_biallelic_snps.vcf.gz
