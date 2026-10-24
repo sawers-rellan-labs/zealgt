@@ -486,7 +486,8 @@ diplo".
 
 ## 2026-10-23 Variant-calling inputs cut to the low-copy ranges (Milestone 9h)
 
-User, 2026-10-23: "I think we could keep the low copy only why the wideseq I thibk it is fine as a last step filter";
+User, 2026-10-23 (typos corrected): "I think we could keep the low copy only; the wideseq I think is fine as a last step
+filter";
 "so this goes into 9h: So the filter step is samtools view -F 0x800 -L lowcopy.bed, with the pipeline's existing
 low-copy BED, and wideseq stays as the last site filter."
 
