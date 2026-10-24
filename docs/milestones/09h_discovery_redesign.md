@@ -83,3 +83,77 @@ then a depth filter and a known-sites filter (the wideseq panel) on each donor's
 
 - Tests 1-7 pass; test 6 within a few tenths of the 2026-10-23 numbers or the differences explained; `nf-core pipelines
 lint` has no failures; docs above updated.
+
+## Report (2026-10-24)
+
+All tests on this branch. One question is OPEN for the user (the chr10 LODs, below); the rest is done.
+
+### Tests
+
+| #   | test                   | result                                                                                                                                                                                                                                                     |
+| --- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | tools (laptop)         | `tests/bin/test_filter_site_depth.py` 3/3; the check pool rule and the NIL rule as `bcftools view` expressions on fixture VCFs; `bcftools isec` keeps exact CHROM POS REF ALT only; `tests/bin/test_ancestry_tools.R` 73/73, the zero-marker path included |
+| 2   | wiring (laptop, stubs) | `tests/variant_calling.nf.test` 3/3, `tests/ancestry.nf.test` 4/4; both metro maps; `nf-core pipelines lint` 0 failures                                                                                                                                    |
+| 3   | hazel setup            | jobs 1531870, 1531871, 1531973: all pass after the isec test fix (28de8c5); the new bcftools 1.23.1 image cached (job 1531869)                                                                                                                             |
+| 4   | review                 | CodeRabbit dc8252c..d2fc2be: one finding, fixed (989b04b: the run stops when no `--b73_checks` ID is a check sample); second pass clean                                                                                                                    |
+| 5   | slice (laptop)         | pilot, 2 donors, chr10:1-5 Mb, `dev` against 9h: below                                                                                                                                                                                                     |
+| 6   | chr10 check (hazel)    | 42 mexicana and 6 diploperennis donors; variant calling job 1532055 (2 h 15 min), ancestry job 1532056 (10 min): below                                                                                                                                     |
+| 7   | profile (hazel)        | `docs/RESOURCES.md` "Milestone 9h steps, measured on chr10" (fbb1689); no task failed or retried, no process above 0.72 of its memory request; requests unchanged                                                                                          |
+
+### Slice (test 5)
+
+Records per step, `dev` / 9h: CRISP 6,012 / 3,582 (Zx.0570_P2) and 3,054 / 1,846 (Zx.0540_P3); after the NIL rule
+2,581 / 1,432 and 1,919 / 1,052; tier A 1,610 / 904 and 1,114 / 598; union 2,450 / 1,368; union-ALT markers 1,587 / 846
+and 1,380 / 726; markers counted 1,587 / 126 and 1,380 / 111 (9h after the known-sites filter); 116 after the depth
+filter. Segments per line 1.19 / 1.16 (43 lines) and 1.49 / 1.31 (39 lines). The slice's known-sites fixture was
+wideseq positions only (any non-REF ALT accepted), so its share kept is not the method's; the chr10 check with the real
+panel keeps 39.7 % / 38.8 %, as on 2026-10-23. Tables: `agent/m09h/slice/steps.tsv`, `segments.tsv`.
+
+### chr10 check (test 6), against SNP50K and the 2026-10-23 "depth + wideseq" set
+
+573 mexicana and 252 diploperennis lines, the same in all three sets; family covariate, chr10-only permutation
+thresholds (`agent/m09h/chr10_check/compare_*.tsv`, `compare.log`).
+
+| chr10                      | mex SNP50K | mex 10-23 | mex 9h | dip SNP50K | dip 10-23 | dip 9h |
+| -------------------------- | ---------- | --------- | ------ | ---------- | --------- | ------ |
+| markers per donor (median) | -          | 32,453    | 19,567 | -          | 26,423    | 14,797 |
+| class-separation MSE       | 0.157      | 0.024     | 0.019  | 0.131      | 0.032     | 0.027  |
+| HET %                      | 10.1       | 7.4       | 7.3    | 8.7        | 7.7       | 7.7    |
+| ALT %                      | 1.4        | 4.9       | 5.0    | 3.1        | 4.5       | 4.7    |
+| segments per line          | 0.49       | 1.13      | 1.09   | 0.51       | 1.23      | 1.14   |
+| PH full max LOD            | 7.04       | 6.70      | 6.19   | 5.25       | 6.32      | 6.32   |
+| DTA full max LOD           | 3.16       | 3.17      | 3.41   | 6.70       | 7.91      | 7.27   |
+
+- Class separation and fragmentation improve on 10-23 in both taxa; classes are as on 10-23.
+- Markers 42-45 % fewer than 10-23, from two causes:
+  1. This check's union came from 48 donors of two taxa; run 1367152 (behind the 10-23 set) pooled 95 donors of all
+     taxa. Sites from the other taxa were 15 % (mexicana) and 10 % (diploperennis) of each donor's old markers.
+  2. Tier-A sites 0.71x (mexicana) and 0.67x (diploperennis): MAPQ 60 / BQ 30, the check pool rule, the 21 QC-PASS
+     checks and the low-copy cut together (their shares cannot be separated in this run).
+- Known-sites share 39.7 % / 38.8 % (as 10-23); the depth filter keeps 75 % / 71 %. Fewest markers on a chromosome:
+  Zx.0560_P4, 2,629. No line dropped.
+- **OPEN for the user**: mexicana PH −0.51 and diploperennis DTA −0.64 against 10-23 are more than "a few tenths".
+  My reading, not proven: fewer markers, mostly from the two-taxa union. The genome-wide run pools all taxa as 1367152
+  and 10-23 did, and its chr10 against this check tests that reading (run plan, check 2).
+
+### Choices made during the work
+
+- **`CRISP_CONTIGS` added** (nf-core `bcftools/reheader --fai`, one task per donor x region): CRISP writes no contig
+  lines, and `bcftools view -s ^B73_checks` refuses to drop a sample without them.
+- **The check pool rule folded into `BED_CLIP`** (one `bcftools view -s ^B73_checks -e 'FMT/AC[1:0]>=1'` call) instead
+  of a process of its own after `BED_CLIP` (spec row 5): one Slurm job fewer per donor x region; with `CRISP_CONTIGS`
+  the job count equals the spec's.
+- **The `--b73_checks` test fixture lists `C_1` only**: `C_2` holds the NIL pool's reads (as a QC-PASS check its ALT
+  counts would drop every site) and `C_3` is a Purple check.
+- **`ifEmpty` error when no listed check is in the sheet** (CodeRabbit): otherwise the run ended without variant-calling
+  output. Listed checks absent from a subset sheet (slice, coverage floor) still leave the pool silently.
+
+### DAG
+
+The laptop stub run's `-with-dag` (`agent/m09h/stub_vc/dag.html`) and the chr10 check's `pipeline_dag_2026-10-24_05-10-28.html` (variant calling) and
+`pipeline_dag_2026-10-24_07-26-00.html` (ancestry) in `/share/maize/frodrig4/nf_work/m09h_chr10_check/results/pipeline_info/`;
+the processes as in `docs/images/zealgt_metro_full.svg`.
+
+### Next
+
+The genome-wide run: `docs/runs/variant_calling_ancestry_genome.md`, submitted after this milestone merges.
