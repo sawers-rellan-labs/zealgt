@@ -1,0 +1,16 @@
+##fileformat=VCFv4.1
+##contig=<ID=chr10,length=152435371>
+##INFO=<ID=NP,Number=1,Type=Integer,Description="NP">
+##FORMAT=<ID=AC,Number=.,Type=Integer,Description="AC">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="GQ">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="DP">
+##FORMAT=<ID=ADf,Number=.,Type=Integer,Description="ADf">
+##FORMAT=<ID=ADr,Number=.,Type=Integer,Description="ADr">
+##FORMAT=<ID=ADb,Number=.,Type=Integer,Description="ADb">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	W	B73_checks	S_A	S_B
+chr10	1000	.	A	G	50	PASS	NP=4	AC:GQ:DP:ADf:ADr:ADb	1:9:10:4,1:5,0:0,0	0:9:40:20,0:20,0:0,0	1:9:10:5,1:4,0:0,0	0:9:10:5,0:5,0:0,0
+chr10	1010	.	C	T	50	PASS	NP=4	AC:GQ:DP:ADf:ADr:ADb	1:9:10:4,1:5,0:0,0	1:9:40:15,5:15,5:0,0	1:9:10:5,1:4,0:0,0	0:9:10:5,0:5,0:0,0
+chr10	1020	.	G	A	50	PASS	NP=4	AC:GQ:DP:ADf:ADr:ADb	0:9:10:4,0:5,1:0,0	.:9:40:20,0:19,1:0,0	1:9:10:5,1:4,0:0,0	1:9:10:4,1:5,0:0,0
+chr10	1030	.	T	C	50	PASS	NP=4	AC:GQ:DP:ADf:ADr:ADb	0:9:10:5,0:5,0:0,0	0:9:40:20,0:20,0:0,0	1:9:10:5,1:4,0:0,0	1:9:10:4,1:5,0:0,0
+chr10	1040	.	A	C	50	PASS	NP=4	AC:GQ:DP:ADf:ADr:ADb	0:9:10:5,0:4,0:0,1	2:9:40:10,10:10,10:0,0	1:9:10:5,1:4,0:0,0	0:9:10:5,0:5,0:0,0
+chr10	1050	.	C	A	50	PASS	NP=4	AC:GQ:DP:ADf:ADr:ADb	1:9:10:4,1:5,0:0,0	0:9:40:20,0:20,0:0,0	1:9:10:5,1:4,0:0,0	0:9:10:5,0:5,0:0,0

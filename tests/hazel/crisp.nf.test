@@ -13,7 +13,7 @@ nextflow_process {
         when {
             process {
                 """
-                input[0] = [[id: 'Zx.0540_P3', donor: 'Zx.0540_P3', region: 'chrA'], [file("${projectDir}/tests/fixtures/genotype/cram/L_1.cram", checkIfExists: true)], [file("${projectDir}/tests/fixtures/genotype/cram/L_1.cram.crai", checkIfExists: true)], [file("${projectDir}/tests/fixtures/genotype/cram/L_1.cram", checkIfExists: true)], [file("${projectDir}/tests/fixtures/genotype/cram/L_1.cram.crai", checkIfExists: true)]]
+                input[0] = [[id: 'Zx.0540_P3', donor: 'Zx.0540_P3', region: 'chrA'], [file("${projectDir}/tests/fixtures/genotype/cram/L_1.cram", checkIfExists: true)], [file("${projectDir}/tests/fixtures/genotype/cram/L_1.cram.crai", checkIfExists: true)], [file("${projectDir}/tests/fixtures/genotype/cram/L_1.cram", checkIfExists: true)], [file("${projectDir}/tests/fixtures/genotype/cram/L_1.cram.crai", checkIfExists: true)], file("${projectDir}/tests/fixtures/genotype/cram/C_1.cram", checkIfExists: true), file("${projectDir}/tests/fixtures/genotype/cram/C_1.cram.crai", checkIfExists: true)]
                 input[1] = [[id: 'tiny'], file("${projectDir}/tests/fixtures/ref/tiny.fa", checkIfExists: true), file("${projectDir}/tests/fixtures/ref/tiny.fa.fai", checkIfExists: true)]
                 input[2] = file("${projectDir}/tests/fixtures/genotype/lowcopy.bed", checkIfExists: true)
                 """

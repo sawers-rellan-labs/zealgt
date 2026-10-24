@@ -1,0 +1,25 @@
+nextflow_process {
+
+    name "BCFTOOLS_ISEC stub (hazel setup check)"
+    script "../../modules/nf-core/bcftools/isec/main.nf"
+    process "BCFTOOLS_ISEC"
+    tag "hazel"
+    tag "genotype"
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [[id: 'Zx.0540_P3', region: 'chrA'], [file("${projectDir}/tests/fixtures/genotype/known_sites.vcf.gz", checkIfExists: true), file("${projectDir}/tests/fixtures/genotype/known_sites.vcf.gz", checkIfExists: true)], [file("${projectDir}/tests/fixtures/genotype/known_sites.vcf.gz.tbi", checkIfExists: true), file("${projectDir}/tests/fixtures/genotype/known_sites.vcf.gz.tbi", checkIfExists: true)], [], [], []]
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}
