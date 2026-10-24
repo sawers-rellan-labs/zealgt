@@ -17,6 +17,6 @@ workflow ANCESTRY {
 
     emit:
     ancestry = ANCESTRY_RTIGER.out.segments.mix( // channel: [ meta, files ], the grid and each donor's outputs
-        ANCESTRY_RTIGER.out.dropped, ANCESTRY_RTIGER.out.checks, ANCESTRY_RTIGER.out.grid, ANCESTRY_RTIGER.out.rqtl, ANCESTRY_RTIGER.out.vcf
+        ANCESTRY_RTIGER.out.dropped, ANCESTRY_RTIGER.out.checks, ANCESTRY_RTIGER.out.markers, ANCESTRY_RTIGER.out.grid, ANCESTRY_RTIGER.out.rqtl, ANCESTRY_RTIGER.out.vcf
     )
 }

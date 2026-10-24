@@ -13,9 +13,9 @@ workflow ANCESTRY_RTIGER {
     main:
     // one RTIGER call per donor and fit unit (the region, or 'genome' for all of them), its lines' counts at its markers
     CALL_ANCESTRY(
-        ch_counts.map { meta, counts, markers, _union -> [meta.donor, fit == 'genome' ? 'genome' : meta.region, counts, markers] }
+        ch_counts.map { meta, counts, markers, _union -> [meta.donor, fit == 'genome' ? 'genome' : meta.region, meta.region, counts, markers] }
             .groupTuple(by: [0, 1])
-            .map { donor, u, counts, markers -> [[id: donor, region: u], markers.unique(), counts] },
+            .map { donor, u, regions, counts, markers -> [[id: donor, region: u, regions: regions.unique().sort()], markers.unique(), counts] },
         call_tool
     )
 
@@ -41,6 +41,7 @@ workflow ANCESTRY_RTIGER {
     segments = CALL_ANCESTRY.out.segments                                       // channel: [ meta, segments.bed ], one per donor x fit unit
     dropped  = CALL_ANCESTRY.out.dropped                                        // channel: [ meta, dropped_lines.tsv ], one per donor x fit unit
     checks   = CALL_ANCESTRY.out.line_checks                                    // channel: [ meta, line_checks.tsv ], one per donor x fit unit
+    markers  = CALL_ANCESTRY.out.markers_per_chrom                              // channel: [ meta, markers_per_chrom.tsv ], one per donor x fit unit
     grid     = ANCESTRY_GRID.out.grid                                           // channel: [ meta, grid.tsv ], one per region
     rqtl     = ANCESTRY_GRID.out.rqtl                                           // channel: [ meta, [ rqtl.csv ] ], one per region
     vcf      = ANCESTRY_VCF_INDEX.out.vcf.join(ANCESTRY_VCF_INDEX.out.index, failOnMismatch: true) // channel: [ meta, vcf.gz, tbi ], one per donor x region

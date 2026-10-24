@@ -116,7 +116,7 @@ rigidity <- r_of(obs, sites[, .(chrom = "chr10", pos)], 1)
 res <- run_tool("call_ancestry.R", c(
   "--markers", file.path(dir, "markers.vcf"), "--counts", counts, "--rigidity-mb", "1",
   "--segments", file.path(dir, "D.bed"), "--dropped", file.path(dir, "D.dropped.tsv"),
-  "--line-checks", file.path(dir, "D.line_checks.tsv")
+  "--line-checks", file.path(dir, "D.line_checks.tsv"), "--markers-per-chrom", file.path(dir, "D.per_chrom.tsv")
 ), dir)
 
 test_that("call_ancestry.R runs and logs with timestamps", {
@@ -168,7 +168,7 @@ system2("gzip", file.path(dir, "D.chr10.counts.vcf"))
 res_multi <- run_tool("call_ancestry.R", c(
   "--markers", file.path(dir, "markers.vcf"), "--counts", file.path(dir, "D.chr10.counts.vcf.gz"), "--rigidity-mb", "1",
   "--segments", file.path(dir, "M.bed"), "--dropped", file.path(dir, "M.dropped.tsv"),
-  "--line-checks", file.path(dir, "M.line_checks.tsv")
+  "--line-checks", file.path(dir, "M.line_checks.tsv"), "--markers-per-chrom", file.path(dir, "M.per_chrom.tsv")
 ), dir)
 
 test_that("one multi-sample count VCF gives the segments, dropped lines and line checks of one file per line", {
@@ -202,7 +202,7 @@ counts10 <- vapply(lines, function(l) {
 res2 <- run_tool("call_ancestry.R", c(
   "--markers", file.path(dir, "markers9.vcf"), file.path(dir, "markers.vcf"), "--counts", counts9, counts10,
   "--rigidity-mb", "1", "--segments", file.path(dir, "G.bed"), "--dropped", file.path(dir, "G.dropped.tsv"),
-  "--line-checks", file.path(dir, "G.line_checks.tsv")
+  "--line-checks", file.path(dir, "G.line_checks.tsv"), "--markers-per-chrom", file.path(dir, "G.per_chrom.tsv")
 ), dir)
 
 test_that("two chromosomes: one fit, rigidity from both spans, the cut on the least covered chromosome", {
@@ -315,6 +315,57 @@ test_that("nilHMM's RTIGER stops on a line under 2r covered markers", {
 })
 
 # grid: union sites on a hand-made map for chrA (1 cM per 1000 bp), two donors' hand-made segments
+# no markers: a markers VCF without records and its lines' count VCF without records, as COUNT_LINES writes it
+write_sites_vcf(sites[0], file.path(dir, "markers0.vcf"))
+writeLines(c(
+  "##fileformat=VCFv4.2", "##contig=<ID=chr10,length=152435371>",
+  "##FORMAT=<ID=AD,Number=R,Type=Integer,Description=\"Allelic depths\">",
+  paste0("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t", paste(lines, collapse = "\t"))
+), file.path(dir, "Z.chr10.counts.vcf"))
+system2("gzip", file.path(dir, "Z.chr10.counts.vcf"))
+res_zero <- run_tool("call_ancestry.R", c(
+  "--markers", file.path(dir, "markers0.vcf"), "--counts", file.path(dir, "Z.chr10.counts.vcf.gz"),
+  "--regions", "chr10", "--rigidity-mb", "1", "--segments", file.path(dir, "Z.bed"),
+  "--dropped", file.path(dir, "Z.dropped.tsv"), "--line-checks", file.path(dir, "Z.line_checks.tsv"),
+  "--markers-per-chrom", file.path(dir, "Z.per_chrom.tsv")
+), dir)
+
+test_that("no markers: no error, no RTIGER call, header-only outputs, 0 markers on the chromosome", {
+  expect_equal(res_zero$status, 0L, info = paste(res_zero$log, collapse = "\n"))
+  expect_false(any(grepl("RTIGER on", res_zero$log)))
+  expect_match(paste(res_zero$log, collapse = "\n"), "chr10: 0 markers")
+  expect_equal(readLines(file.path(dir, "Z.bed")), "#chrom\tstart\tend\tline\tstate")
+  expect_equal(nrow(fread(file.path(dir, "Z.dropped.tsv"))), 0L)
+  per_chrom <- fread(file.path(dir, "Z.per_chrom.tsv"))
+  expect_equal(per_chrom$chrom, "chr10")
+  expect_equal(per_chrom$markers, 0L)
+})
+
+# a genome fit with a chromosome without markers: chr9's markers VCF without records, chr10 as before
+write_sites_vcf(sites[0], file.path(dir, "markers9_0.vcf"), chrom = "chr9")
+res_gap <- run_tool("call_ancestry.R", c(
+  "--markers", file.path(dir, "markers9_0.vcf"), file.path(dir, "markers.vcf"), "--counts", counts,
+  "--regions", "chr9", "chr10", "--rigidity-mb", "1", "--segments", file.path(dir, "Y.bed"),
+  "--dropped", file.path(dir, "Y.dropped.tsv"), "--line-checks", file.path(dir, "Y.line_checks.tsv"),
+  "--markers-per-chrom", file.path(dir, "Y.per_chrom.tsv")
+), dir)
+
+test_that("a chromosome without markers in a genome fit: 0 markers there, the other chromosome called as alone", {
+  expect_equal(res_gap$status, 0L, info = paste(res_gap$log, collapse = "\n"))
+  per_chrom <- fread(file.path(dir, "Y.per_chrom.tsv"))
+  expect_equal(per_chrom$chrom, c("chr9", "chr10"))
+  expect_equal(per_chrom$markers, c(0L, nrow(sites)))
+  expect_equal(fread(file.path(dir, "Y.dropped.tsv"))$line, fread(file.path(dir, "D.dropped.tsv"))$line)
+  expect_equal(fread(file.path(dir, "Y.bed")), fread(file.path(dir, "D.bed")))
+})
+
+test_that("markers per chromosome: the markers and the median line's covered markers", {
+  per_chrom <- fread(file.path(dir, "G.per_chrom.tsv"))
+  expect_equal(per_chrom$chrom, c("chr9", "chr10"))
+  expect_equal(per_chrom$markers, c(nrow(sites9), nrow(sites)))
+  expect_equal(per_chrom$median_line_covered[2], median(obs10[, .(n = sum(n_ref + n_alt > 0L)), by = name]$n))
+})
+
 union <- data.table(pos = c(1000L, 1050L, 1100L, 1120L, 1250L, 1300L, 1500L), ref = "C", alt = "T")
 writeLines(
   c("##fileformat=VCFv4.2", "##contig=<ID=chrA,length=5000>", "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO"),

@@ -8,10 +8,13 @@
 # r = max(1, round(Mb x the median line's covered markers (>= 1 read) per Mb of the markers' span)); lines with fewer
 # than 2r covered markers on any chromosome are dropped first, since RTIGER stops on them. States: 0 B73/B73, 1 het,
 # 2 donor/donor. Line checks (curve rule, docs/decisions.md 2026-10-11): per called line, its donor (state 1-2)
-# segments, their bp, and the reads and ALT % of its markers inside the segments of each state.
+# segments, their bp, and the reads and ALT % of its markers inside the segments of each state. Markers per
+# chromosome of the fit unit (--regions, else the markers' chromosomes; 0 where a chromosome has none) and the median
+# line's covered markers there, logged and written; nothing is dropped for them (decisions.md 2026-10-24).
 #
 # Usage: call_ancestry.R --markers MARKERS.vcf [...] --counts DONOR.REGION.counts.vcf.gz [...] --rigidity-mb MB
-#        --segments OUT.bed --dropped OUT.tsv --line-checks OUT.tsv [--seed S]
+#        --segments OUT.bed --dropped OUT.tsv --line-checks OUT.tsv --markers-per-chrom OUT.tsv
+#        [--regions REGION ...] [--seed S]
 suppressPackageStartupMessages({
   library(data.table)
   library(nilHMM)
@@ -89,6 +92,22 @@ main <- function(argv = commandArgs(trailingOnly = TRUE)) {
   counts <- seen[grid[, .(name, chrom = sites$CHROM[k], pos = sites$POS[k])], on = .(name, chrom, pos)]
   counts[, `:=`(n_ref = nafill(n_ref, fill = 0L), n_alt = nafill(n_alt, fill = 0L))]
   by_chrom <- counts[, .(covered = sum(n_ref + n_alt >= 1L)), by = .(name, chrom)]
+
+  # markers and the median line's covered markers per chromosome of the fit unit, 0 where it has none
+  n_sites <- sites[, .N, by = CHROM]
+  med <- by_chrom[, .(m = median(covered)), by = chrom]
+  per_chrom <- data.table(chrom = unique(c(sub(":.*$", "", a$regions), chroms)))
+  per_chrom[, `:=`(
+    markers = nafill(n_sites$N[match(chrom, n_sites$CHROM)], fill = 0L),
+    median_line_covered = nafill(as.numeric(med$m[match(chrom, med$chrom)]), fill = 0)
+  )]
+  for (k in seq_len(nrow(per_chrom))) {
+    log_info(
+      "%s: %d markers, median line %g covered markers", per_chrom$chrom[k], per_chrom$markers[k],
+      per_chrom$median_line_covered[k]
+    )
+  }
+  fwrite(per_chrom, a$`markers-per-chrom`, sep = "\t")
 
   # rigidity from a window in Mb: the median line's covered markers per Mb of the markers' span, summed over chromosomes
   span_mb <- sites[, .(span = max(POS) - min(POS)), by = CHROM][, sum(span)] / 1e6
