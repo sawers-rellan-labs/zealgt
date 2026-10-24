@@ -42,6 +42,7 @@ then a depth filter and a known-sites filter (the wideseq panel) on each donor's
 | 9   | known-sites filter     | per donor x region, its union-ALT markers kept where CHROM, POS, REF and ALT are in `--known_sites` (nf-core `bcftools/isec`), before `COUNT_LINES`                                                                                              | 2026-10-23             |
 | 10  | depth filter           | after `COUNT_LINES`, per region over all donors' count VCFs: a marker kept where its reads summed over the lines of the donors carrying it are 0.5-2x those lines' expected reads (each line's mean reads per marker); new local module and tool | 2026-10-24             |
 | 11  | docs                   | `structure.md`, both metro maps, `docs/RESOURCES.md`; the math supplement and the Milestone 7 spec keep tier A, lose the "witness" name for the NIL pool                                                                                         |                        |
+| 12  | markers per chromosome | `CALL_ANCESTRY` logs and writes each chromosome's markers and the median line's covered markers (`markers_per_chrom.tsv`); no donor x chromosome exclusion; the zero-marker path tested                                                          | 2026-10-24             |
 
 ## Choices this spec settles (approved by the user, 2026-10-24)
 

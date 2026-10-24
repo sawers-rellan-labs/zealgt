@@ -523,3 +523,20 @@ for "present in a BC1" (2026-10-17 entry).
   per line 1.16 vs 1.13 and 1.32 vs 1.23, class-separation MSE 0.025 vs 0.024 and 0.036 vs 0.032, mexicana PH 6.12 vs
   6.70, diploperennis DTA 7.28 vs 7.91, diploperennis PH 6.54 vs 6.32 (gap filling not rerun for it).
 - Context (user, 2026-10-24, before deciding): the tiers and the LLR are an agent's construction, not the user's design.
+
+## 2026-10-24 No donor x chromosome exclusion; marker counts per chromosome logged (Milestone 9h)
+
+User, 2026-10-24: "GO WITH THAT MAKE ANOTE SOMEWHERE APPROPIATE" (on the advice: add the two checks, no exclusion
+rule, keep the plan).
+
+- `CALL_ANCESTRY` writes markers per chromosome (`<donor>.<unit>.markers_per_chrom.tsv`: chromosome, markers, the
+  median line's covered markers; 0 where a chromosome has none) and logs one line per chromosome; the zero-marker path
+  (no lines to RTIGER, header-only segments) is tested (`tests/bin/test_ancestry_tools.R`).
+- No rule excludes a donor x chromosome from RTIGER or the union (consistent with 2026-10-16 "Families stay in the
+  union"); lines under 2 x rigidity covered markers stay left out of the RTIGER call as before (zealbc1 rule, user
+  2026-09-24).
+- Evidence (mine): run 1367152's union-ALT markers per donor x chromosome (hazel job 1387272), 950 cells, none below
+  15,305 (minimum Zx.0520_P4 chr6, a donor with no tier-A sites anywhere: all its markers gap-filled); the chr10 depth +
+  wideseq set's minimum 4,498 (Zx.0560_P4); no line under the cut on chr10.
+- For the genome-wide run plan (mine): genome-fit `CALL_ANCESTRY` needed 48 GB for Zd.0010_P2 and Zd.0010_P3 (exit 137
+  at 16 GB; run 1387871); judge on fragmentation against SNP50K per chromosome, not on completion.
