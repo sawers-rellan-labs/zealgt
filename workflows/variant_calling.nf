@@ -9,8 +9,8 @@ workflow VARIANT_CALLING {
     b73_controls       // string: CSV of the B73 reference controls (assets/schema_b73_controls.json)
     fasta              // string: reference FASTA, its .fai next to it
     lowcopy_bed        // string: low-copy BED
-    check_sites        // string: VCF of the sites the B73 check filter counts
-    max_check_alt_rate // number: B73 checks with a larger share of ALT reads are dropped
+    b73_checks         // string: CSV of the QC-PASS B73 checks (sample_id)
+    known_sites        // string: sites VCF of known variants, its .tbi next to it
     min_mean_coverage  // number: samples under this CollectWgsMetrics MEAN_COVERAGE are dropped
     regions            // string: comma-separated regions, each called on its own (chr9,chr10 or chr10:1-20000000)
 
@@ -27,10 +27,9 @@ workflow VARIANT_CALLING {
         ch_cram,
         channel.fromList(regions.tokenize(',')).unique(), // a region given twice runs once
         channel.fromList(samplesheetToList(b73_controls, "${projectDir}/assets/schema_b73_controls.json")),
+        channel.fromPath(b73_checks, checkIfExists: true).splitCsv(header: true).map { row -> row.sample_id },
         ch_fasta,
         file(lowcopy_bed, checkIfExists: true),
-        file(check_sites, checkIfExists: true),
-        max_check_alt_rate,
         file("${projectDir}/bin/score_pooled_likelihood.py", checkIfExists: true),
     )
 
@@ -50,12 +49,13 @@ workflow VARIANT_CALLING {
         SITES_UNION_GAPFILL.out.union,
         ch_cram,
         ch_fasta,
+        [file(known_sites, checkIfExists: true), file("${known_sites}.tbi", checkIfExists: true)],
+        file("${projectDir}/bin/filter_site_depth.py", checkIfExists: true),
     )
 
     emit:
     discovery_vcf      = CRAM_VARIANT_DISCOVERY_CRISP.out.vcf                // channel: [ meta, vcf.gz, tbi ], one per donor x region
     discovery_sites    = CRAM_VARIANT_DISCOVERY_CRISP.out.sites              // channel: [ meta, sites.tsv.gz ], one per donor x region
-    dropped_b73_checks = CRAM_VARIANT_DISCOVERY_CRISP.out.dropped_b73_checks // channel: dropped_b73_checks.tsv
     union              = SITES_UNION_GAPFILL.out.union                       // channel: [ meta, vcf.gz, tbi ], one per region
     donor_alleles      = SITES_UNION_GAPFILL.out.donor_alleles               // channel: [ meta, vcf.gz, tbi ], one per region
     counts             = LINE_COUNTS.out.counts                              // channel: [ donor:, region:, counts:, markers:, union: ], one per donor x region

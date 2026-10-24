@@ -102,7 +102,7 @@
                 "required": ["step"]
             },
             "then": {
-                "required": ["lowcopy_bed", "regions", "check_sites", "b73_controls"]
+                "required": ["lowcopy_bed", "regions", "b73_checks", "known_sites", "b73_controls"]
             },
             "properties": {
                 "lowcopy_bed": {
@@ -119,21 +119,23 @@
                     "description": "Comma-separated chromosomes or windows, each called on its own: chr10, chr9,chr10 or chr10:1-20000000.",
                     "fa_icon": "fas fa-map-marker-alt"
                 },
-                "check_sites": {
+                "b73_checks": {
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
-                    "pattern": "^\\S+\\.vcf(\\.gz)?$",
-                    "description": "VCF of the teosinte-vs-B73 sites at which the B73 check filter counts each B73 check's reads.",
-                    "fa_icon": "fas fa-file"
+                    "schema": "assets/schema_b73_checks.json",
+                    "pattern": "^\\S+\\.csv$",
+                    "mimetype": "text/csv",
+                    "description": "CSV of the QC-PASS B73 checks (sample_id): the check samples pooled as CRISP's check pool.",
+                    "fa_icon": "fas fa-file-csv"
                 },
-                "max_check_alt_rate": {
-                    "type": "number",
-                    "default": 0.01,
-                    "minimum": 0,
-                    "maximum": 1,
-                    "description": "B73 checks whose share of ALT reads at --check_sites exceeds this are dropped.",
-                    "fa_icon": "fas fa-filter"
+                "known_sites": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.vcf\\.gz$",
+                    "description": "Sites VCF of known variants, bgzipped with its .tbi next to it, the role of GATK BQSR's --known-sites; here the wideseq panel.",
+                    "fa_icon": "fas fa-file"
                 },
                 "b73_controls": {
                     "type": "string",

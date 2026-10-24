@@ -28,7 +28,7 @@ jobs:
           nextflow run . -profile test,docker -stub --step demultiplex --input tests/fixtures/samplesheet.csv --outdir out_demultiplex
           nextflow run . -profile test,docker -stub --step alignment --read_qc --outdir out_alignment
           nextflow run . -profile test,docker -stub --step variant_calling --input $G/samplesheet_cram.csv --b73_controls $G/b73_controls.csv \
-            --lowcopy_bed $G/lowcopy.bed --check_sites $G/check_sites.vcf.gz --regions chrA --outdir out_variant_calling
+            --lowcopy_bed $G/lowcopy.bed --b73_checks $G/b73_checks.csv --known_sites $G/known_sites.vcf.gz --regions chrA --outdir out_variant_calling
           nextflow run . -profile test,docker -stub --step ancestry --input tests/fixtures/ancestry/windows.counts.csv --outdir out_ancestry
 
       - name: Process names from the traces
