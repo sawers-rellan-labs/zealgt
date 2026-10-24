@@ -447,8 +447,8 @@ wideseq filtering is working"; "I like the mexicana and diplo get the same numbe
 
   | chr10                                         | no MAF, wideseq | MAF, wideseq | no MAF, no wideseq | SNP50K |
   | --------------------------------------------- | --------------- | ------------ | ------------------ | ------ |
-  | mexicana markers per donor (median)           | 32,453          | 2,101        | ~88,000            | -      |
-  | diploperennis markers per donor (median)      | ~29,500         | ~1,600       | ~80,000            | -      |
+  | mexicana markers per donor (median)           | 32,453          | 2,101        | 81,994             | -      |
+  | diploperennis markers per donor (median)      | 26,423          | 1,587        | 72,402             | -      |
   | mexicana segments per line (572 lines)        | 1.13            | 1.18         | 1.96               | 0.49   |
   | diploperennis segments per line               | 1.23            | -            | 2.42               | 0.51   |
   | mexicana PH full LOD at 54 cM (all lines)     | 5.12            | 4.20         | 4.60               | 6.77   |
