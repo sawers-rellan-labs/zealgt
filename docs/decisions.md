@@ -481,8 +481,11 @@ diplo".
   - gap filling by a read rule (>= 1 ALT read in the donor's BC1s and in its NIL lines, no tier scoring; nb36, hazel jobs
     1523883-86): segments per line mexicana 1.77 vs 1.13, diploperennis 1.43 vs 1.23; QTL LODs within a few tenths.
 - Evidence for the kept method: the chr10 table of "2026-10-23 Site filters: no MAF, wideseq kept".
-- OPEN (mine): the donor's own sites in gap filling once 9h discovery drops tier A (the sites the 9h rule keeps);
-  whether gap-filled sites also need >= 1 ALT read in the NIL pool (not in the tested method).
+- OPEN (mine): the donor's own sites in gap filling once 9h discovery drops tier A (the sites the 9h rule keeps).
+- Gap-filled sites do not need >= 1 ALT read in the donor's lines (user, 2026-10-24: "so no"). Reason (user,
+  2026-10-07): "I just realized that there is a loss of infromation with theveto I believe and I am worried at the donors
+  qith few lines". Evidence (nb31, chr10): with that rule Zx.0480_P2 (2 lines) kept 20 of 2,455 markers; mexicana median
+  64 %.
 
 ## 2026-10-23 Variant-calling inputs cut to the low-copy ranges (Milestone 9h)
 
