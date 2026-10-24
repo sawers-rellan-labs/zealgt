@@ -310,3 +310,16 @@ gave 16 GB; 1 Mb and 5 Mb rigidity alike (jobs 1343858, 1346168).
 0x800` filtered chr1 of Zl.0020_P3's five CRAMs (its four BC1 pools and witness) in 4.5 min with 4 threads (CRISP debug,
 job 1365010), ~1 min per chr1 CRAM; a whole-genome BC1 CRAM is ~7 x that. Set until the production run measures them:
 2 cpus, 1 GB, 2 h, arrays of 20 in `hpc_prod`; 384 + 950 tasks in production.
+
+## Milestone 9h steps, placeholders (2026-10-24)
+
+Not measured; set until the Milestone 9h profile (test 7) or the production run measures them. `FILTER_BC1`,
+`FILTER_WITNESS` and `FILTER_CHECKS` now also cut to the low-copy BED (`-L`), which can only shorten them; CRISP now
+reads the check pool as well.
+
+| process             | runs                       | set (`hpc_dev`, `hpc_prod`)                  |
+| ------------------- | -------------------------- | -------------------------------------------- |
+| `FILTER_CHECKS`     | one per region             | 2 cpus, 1 GB, 2 h (as `FILTER_WITNESS`)      |
+| `CRISP_CONTIGS`     | one per donor x region     | 1 cpu, 1 GB, 1 h (as `BED_CLIP`)             |
+| `KNOWN_SITES`       | one per donor x region     | 1 cpu, 1 GB, 1 h; arrays of 20 in `hpc_prod` |
+| `FILTER_SITE_DEPTH` | one per region, all donors | 1 cpu, 4 GB x attempt, 1 h                   |

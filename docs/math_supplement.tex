@@ -166,7 +166,7 @@ removal before variant calling is standard in pooled-sequencing pipelines \citep
 \label{sec:discovery}
 %======================================================================
 
-Candidate sites come from CRISP \citep{bansal2010crisp} run on the donor's BC$_1$ samples plus a witness pool (the donor's BC$_2$S$_3$ lines
+Candidate sites come from CRISP \citep{bansal2010crisp} run on the donor's BC$_1$ samples plus a NIL pool (the donor's BC$_2$S$_3$ lines
 merged). Our post-filter (step~4) scores each candidate per donor.
 
 \subsection{Pooled likelihood ratio}
@@ -189,8 +189,8 @@ the starting value), including two B73 pools counted at the candidate sites, whe
 Eq.~\eqref{eq:bc1} and the signature of paralogs or mis-mapping. \code{hidepth}: summed depth $>2\times$ the median, the signature of copy-number
 gain. Tier A additionally requires ALT reads in $\ge2$ BC$_1$ samples.
 
-\subsection{Witness veto}
-The veto keeps a candidate only if the witness pool shows $\ge1$ ALT read. For a real $\Hd$ allele, a line of coverage $\lambda$ shows no ALT read with
+\subsection{NIL rule}
+The NIL rule keeps a candidate only if the NIL pool shows $\ge1$ ALT read. For a real $\Hd$ allele, a line of coverage $\lambda$ shows no ALT read with
 probability $E[e^{-\lambda g}]$ over the bulk fraction $g$ of Eq.~\eqref{eq:bulkmix}; using
 $E[e^{-\lambda K/12}]=\big(\tfrac{1+e^{-\lambda/12}}{2}\big)^{12}$,
 \begin{equation}
@@ -199,10 +199,10 @@ q(\lambda)=\tfrac{27}{32}+\tfrac{3}{32}e^{-\lambda}+\tfrac{1}{16}\Big(\tfrac{1+e
 \label{eq:veto}
 \end{equation}
 for $L$ lines, treating lines as independent at the locus (they are not: sibling lines share BC$_1$ and BC$_2$ ancestry, which makes the true
-loss larger). $q(0.4)=0.958$ and $q(1.2)=0.907$, so the veto discards about $65\%$ of real alleles with ten lines at $0.4\times$
+loss larger). $q(0.4)=0.958$ and $q(1.2)=0.907$, so the NIL rule discards about $65\%$ of real alleles with ten lines at $0.4\times$
 ($0.958^{10}$), $19\%$ with 38 lines, and $25\%$ with fourteen lines at $1.2\times$. This is consistent in direction with the pilot, where a
-10-line witness kept $20\%$ of CRISP records and a 38-line witness $51\%$ (chr10; records include artifacts, so the numbers are not
-directly comparable). \todo{compare Eq.~\eqref{eq:veto} with the QC-set witness}
+10-line NIL pool kept $20\%$ of CRISP records and a 38-line NIL pool $51\%$ (chr10; records include artifacts, so the numbers are not
+directly comparable). \todo{compare Eq.~\eqref{eq:veto} with the QC-set NIL pool}
 
 %======================================================================
 \section{The union of informative sites and gap filling}
@@ -253,7 +253,7 @@ ALT is called at posterior $\ge0.999$ with reads at $s$; sites flagged \code{hid
 sites are re-scored the same way but are never REF: an own site whose posterior falls below $0.999$ becomes missing, also when its reads
 at the union are tier \code{ref} (then discovery and the second count disagree). The prior comes from all other donors; restricting it to the same taxon is an option once
 other taxa are added.
-The likelihood ratio models sequencing error but not artifacts; a site that is tier A in another donor, passed that donor's witness and is
+The likelihood ratio models sequencing error but not artifacts; a site that is tier A in another donor, passed that donor's NIL rule and is
 clean in the B73 pools is independent evidence that the site is real, which is what the prior carries. A mis-mapped paralog shows ALT in all
 donors, so sharing alone does not separate real alleles from artifacts; the B73 zero class and the flags do.
 

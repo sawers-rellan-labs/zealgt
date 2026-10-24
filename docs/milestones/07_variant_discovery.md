@@ -32,7 +32,7 @@ low quality variants. I have pools, which are misspecified for DeepVariant and G
 
 Per donor and chromosome, in `genotype/discovery/`:
 
-- `<donor>.<chr>.vcf.gz` + `.tbi`: CRISP's records inside the low-copy BED that the witness keeps.
+- `<donor>.<chr>.vcf.gz` + `.tbi`: CRISP's records inside the low-copy BED that the NIL pool keeps.
 - `<donor>.<chr>.sites.tsv.gz`: one row per site with pooled depth and ALT reads per pool, LLR, the flags
   (`af_gt_half`, `hidepth`, `inconsistent`) and the tier (`A`, `B`, `C`, `ref`, none). Tier-A sites feed the next rows (union,
   ancestry).
@@ -46,15 +46,15 @@ needs); samples are routed by `role` with a channel `branch` (BC1 pools and line
    (`-I -a AD -q 20 -Q 20`); a local module `CHECK_ALT_RATE` (`bcftools query` of the AD sums) gives its share of ALT
    reads; a channel `filter` keeps the checks at or below `--max_check_alt_rate`. The dropped checks are listed with
    their rate in `genotype/discovery/b73_checks.tsv`.
-1. `SAMTOOLS_MERGE` (nf-core): the donor's line CRAMs in `--region` into one witness BAM; the same module merges
+1. `SAMTOOLS_MERGE` (nf-core): the donor's line CRAMs in `--region` into one NIL pool BAM; the same module merges
    the B73 checks into the B73 check pool.
 2. `SAMTOOLS_ADDREPLACERG` (nf-core): one read group per merged pool (CRISP splits a file by read group).
 3. `CRISP` (local module, container `ghcr.io/sawers-rellan-labs/zealgt-crisp:1a9027e`): the BC1 CRAMs plus the
-   witness, `--bed <lowcopy, clipped to --region> --regions <chr> --sm 0 -p 12 --mmq 20 --mbq 20 --filterreads 0 --minc 2` (zealbc1, plus `--mbq 20`).
+   NIL pool, `--bed <lowcopy, clipped to --region> --regions <chr> --sm 0 -p 12 --mmq 20 --mbq 20 --filterreads 0 --minc 2` (zealbc1, plus `--mbq 20`).
 4. `BCFTOOLS_VIEW` as `BED_CLIP` (nf-core): `-T <lowcopy BED>`, which drops the base CRISP calls one past every range
    end (CRISP bug, vibansal/crisp#34).
-5. `BCFTOOLS_VIEW` as `WITNESS_VETO` (nf-core): keeps a record if the witness has >= 1 ALT read, as a bcftools
-   expression on the witness sample's allele counts.
+5. `BCFTOOLS_VIEW` as `WITNESS_VETO` (nf-core): keeps a record if the NIL pool has >= 1 ALT read, as a bcftools
+   expression on the NIL pool sample's allele counts.
 6. `BCFTOOLS_MPILEUP` (nf-core): the two B73 controls (check pool, ERR3288215) at the kept sites, `-I -a AD -q 20 -Q 20`
    (decision 2026-10-02).
 7. `POOLED_LIKELIHOOD_TIERS` (local module, own tool `bin/score_pooled_likelihood.py`): the pooled likelihood ratio
@@ -84,9 +84,9 @@ needs); samples are routed by `role` with a channel `branch` (BC1 pools and line
   The check pool flows from the samplesheet; ERR3288215 is a reference input (`--b73_controls`). Rejected: the B73
   checks one by one (about 0.4x each); the batch-2 B73 checks (zealbc1 did not use them); ERR3288215 as a samplesheet
   row, which is not a sample.
-- **Witness veto as a bcftools expression.** Rejected: zealgt-old's `veto_by_witness.py`; it comes back only if the
-  tool test shows bcftools cannot sum the witness's ALT counts in CRISP's format fields.
-- **Witness built with nf-core `samtools/merge` + `samtools/addreplacerg`**, limited to one chromosome. Rejected:
+- **NIL rule (`WITNESS_VETO`) as a bcftools expression.** Rejected: zealgt-old's `veto_by_witness.py`; it comes back only if the
+  tool test shows bcftools cannot sum the NIL pool's ALT counts in CRISP's format fields.
+- **NIL pool built with nf-core `samtools/merge` + `samtools/addreplacerg`**, limited to one chromosome. Rejected:
   zealgt-old's local piped module; at one chromosome the intermediate is about 100 MB.
 - **No annotation panels in step 4** (user). They only added columns and cost 2.4 GB of memory (zealgt-old); the
   comparison panels belong to the simulation QC (Not in this milestone).
@@ -117,7 +117,7 @@ plan in `docs/runs/`, with the whole-chromosome run and the precedent check agai
 
 1. **Tool** (laptop): `score_pooled_likelihood.py` on small fixtures with hand-computed LLRs and tiers; reference
    answers from zealbc1's step-4 table for Zx.0540_P3 (post-fix rerun, job 949447) on a few hundred sites. The veto
-   expression on a small CRISP VCF with known witness counts.
+   expression on a small CRISP VCF with known NIL pool counts.
 2. **Wiring** (laptop, stubs, seconds): one discovery task per donor, one B73 check pool, one mpileup task per B73 control, the DAG.
 3. **Slice** (laptop, real data, <= 15 min): the milestone's samples, chr10:1-5 Mb, Docker.
 4. **Cluster** (hazel, `hpc_dev`, < 30 min): `-stub-run`, then the milestone's samples on chr10:1-20 Mb for the

@@ -67,9 +67,9 @@ graph LR
     subgraph geno [Variant calling]
         %%metro entry: left | variant_calling
         %%metro exit: right | ancestry
-        filter[no supplementary]
+        filter[low-copy reads]
         crisp[CRISP]
-        veto[witness veto]
+        veto[check pool, NIL rules]
         b73_in[ ]
         regions_in[ ]
         tiers[pooled likelihood]
@@ -78,13 +78,16 @@ graph LR
         fill[gap filling]
         merge_alleles[merge]
         alleles_out[donor alleles]
+        known_sites[known sites]
         count_lines[mpileup lines]
+        depth[depth filter]
         counts_out[counts]
 
         filter -->|variant_calling| crisp
         regions_in -->|variant_calling| crisp
         crisp -->|variant_calling| veto
         veto -->|variant_calling| tiers
+        b73_in -->|variant_calling| crisp
         b73_in -->|variant_calling| tiers
         tiers -->|variant_calling| union
         union -->|variant_calling| site_counts
@@ -92,8 +95,10 @@ graph LR
         union -->|variant_calling| fill
         fill -->|variant_calling| merge_alleles
         merge_alleles -->|variant_calling| alleles_out
-        merge_alleles -->|variant_calling| count_lines
-        count_lines -->|variant_calling| counts_out
+        merge_alleles -->|variant_calling| known_sites
+        known_sites -->|variant_calling| count_lines
+        count_lines -->|variant_calling| depth
+        depth -->|variant_calling| counts_out
         union -->|variant_calling| counts_out
     end
 
