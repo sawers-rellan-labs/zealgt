@@ -1,0 +1,25 @@
+{
+    "--step markers - stub": {
+        "content": [
+            {
+                "COUNT_TAXON_UNION": {
+                    "bcftools": "1.23.1"
+                },
+                "FLAG_MARKER_SITES": {
+                    "pysam": "0.24.1"
+                },
+                "RECOUNT_LINES": {
+                    "bcftools": "1.23.1"
+                },
+                "Workflow": {
+                    "sawers-rellan-labs/zealgt": "v0.2.0dev"
+                }
+            }
+        ],
+        "timestamp": "2026-11-15T17:55:41.507766",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

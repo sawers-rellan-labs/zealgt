@@ -38,7 +38,9 @@ nextflow_pipeline {
                 { assert tasks == [RECOUNT_LINES: 2, FLAG_MARKER_SITES: 1, COUNT_TAXON_UNION: 2] },
                 // one row per donor, the taxon union as both donors' markers
                 { assert sheet[0] == ['donor', 'region', 'counts', 'markers', 'union'] && sheet.size() == 3 },
-                { assert sheet.drop(1).collect { r -> r[3].tokenize('/')[-1] }.unique() == ['Zx.chrA_1-5000.union_markers.vcf'] }
+                { assert sheet.drop(1).collect { r -> r[3].tokenize('/')[-1] }.unique() == ['Zx.chrA_1-5000.union_markers.vcf'] },
+                // software versions as in the other pipeline tests
+                { assert snapshot(removeNextflowVersion("$outputDir/pipeline_info/zealgt_software_mqc_versions.yml")).match() }
             )
         }
     }
