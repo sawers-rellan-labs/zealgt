@@ -79,6 +79,17 @@ SNP50K HET segments >= 1 Mb kept whole / split into >= 3 pieces); class shares a
 factor per sample (notebook 05); a chromosome painting in the user's style (SNP50K | alone | + parviglumis | + mexicana
 | all three; `agent/genochr10/dip_plots/fig1_paint_columns.R`). Partner effect: mexicana donors against 1273053.
 
+The user's hunch for an all-donor union (2026-10-16): a larger marker set dilutes the REF noise and calls diluted pools
+REF, both wanted, as long as the diluted pools stay flagged. Three checks for the 6 diploperennis donors, alone
+against D, E, F (own and gap markers apart, as `agent/diplo_chr10/measure_gap_markers.py`):
+
+1. REF noise: ALT % of the samples' reads in REF segments, at own and at gap markers.
+2. Smoothing toward REF: donor segments per sample; whether the samples with REF % ALT > 3 stay flagged.
+3. Class separation kept: ALT % in ALT segments and the class shares; ALT segments must not slide toward HET
+   (notebook 07: Zh00203113 (PN9_SID806)'s ALT segment at 143-146 Mb was called HET in run B).
+
+Also from F: union size and the cost of the union steps (time, peak memory), the scale for an all-donor union.
+
 Expectation, not a measurement: a smaller effect than for huehuetenangensis, because diploperennis already has 6
 donors and 29-145 k markers per donor alone (its fragmentation may have another cause: dilution in Zd.0020_P3), and its
 partners are more distant (0.23-0.28 against 0.20-0.25).
