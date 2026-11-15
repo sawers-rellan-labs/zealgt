@@ -4,75 +4,66 @@ DRAFT, 2026-11-15, for the user's approval.
 
 ## Why
 
-User, 2026-11-15: "I think I'll do the unipon for now"; on the huehuetenangensis union (row 2, jobs 1855319-1856527):
-"what I do not like is that thatr does not seem to be a nextflow run". Row 2 was sbatch scripts in `agent/`; this
-milestone makes it a pipeline step, so every taxon gets the same method from one run.
+User, 2026-11-15: "I think I'll do the unipon for now"; on row 2 (huehuetenangensis union, sbatch scripts, jobs
+1855319-1856527): "what I do not like is that thatr does not seem to be a nextflow run"; "I do not want 3000 lines of
+code an 95 files for this run ... it should be sipler".
+
+## Budget
+
+About 230 lines in at most 8 files; no new nf-core modules; `variant_calling` and `ancestry` unchanged. `git diff --stat`
+goes first in the report; over budget means cut, not explain.
 
 ## What it does
 
-A new step between `variant_calling` and `ancestry`, reading an existing variant-calling run (run 1367152) and writing a
-counts sheet for `--step ancestry`. Per region, as row 2 did (`agent/hue_q60q30_maf/`, `agent/hue_q60q30_union/`):
+Reads run 1367152's outputs on `/rsstu` (nothing rerun or resumed) and writes a counts sheet for `--step ancestry`.
+Per region, as row 2 (`agent/hue_q60q30_maf/`, `agent/hue_q60q30_union/`):
 
-1. **Recount** each donor's lines at its markers (the counts sheet's `markers`, the union-ALT markers of run 1367152)
-   at MAPQ >= 60 / BQ >= 30 (decisions.md 2026-10-21).
-2. **Flag sites per taxon**, over the lines of every donor of the taxon that has the site among its markers:
-   - depth: reads summed over those lines in 0.5-2x their expected reads (each line's reads per marker in the region,
-     from run 1367152's count VCF, as row 2's `lambda.tsv`);
-   - MQ: read-weighted mean `INFO/MQ` > 40;
-   - "MAF": lines with an ALT read / lines >= 0.05 (a line share, not an allele frequency).
-3. **Keep each donor's markers** that pass all three and whose POS, REF, ALT are in wideseq (`--known_sites`).
-4. **Union within the taxon**: the kept markers of the taxon's donors, one record per position.
-5. **Count each donor's lines at its taxon's union** at MAPQ >= 60 / BQ >= 30.
-6. **Counts sheet** `samplesheets/<input name>.markers.csv`: `counts` = step 5's VCF, `markers` = the taxon union,
-   `union` = run 1367152's union (the ancestry grid), as row 2's `counts.csv`.
+| process        | per   | what                                                                | tool                                                                   |
+| -------------- | ----- | ------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `RECOUNT`      | donor | the donor's lines at its run-1367152 markers, MAPQ >= 60 / BQ >= 30 | installed nf-core `bcftools/mpileup` (as `COUNT_LINES`, `-q 60 -Q 30`) |
+| `FLAG_MARKERS` | taxon | site flags, each donor's kept markers, the taxon union              | `bin/flag_marker_sites.py` (new)                                       |
+| `COUNT_UNION`  | donor | the donor's lines at its taxon's union, MAPQ >= 60 / BQ >= 30       | installed nf-core `bcftools/mpileup`                                   |
 
-`--step ancestry` runs on that sheet unchanged (chromosome fit, 1 Mb rigidity, as row 2).
+`FLAG_MARKERS`, over the lines of every donor of the taxon that has the site among its markers (row 2's step B):
 
-## Inputs and outputs
+- depth: reads in 0.5-2x the expected reads (each line's reads per marker in the region, from its run-1367152 count VCF);
+- MQ: read-weighted mean `INFO/MQ` > 40;
+- line share: lines with an ALT read / lines >= 0.05;
+- wideseq: POS, REF, ALT in `--known_sites`;
+- union: the taxon's kept markers, one record per position (first donor's alleles, as row 2's `sort -u`).
 
-- `--input`: a VARIANT_CALLING counts sheet (`assets/schema_counts.json`: donor, region, counts, markers, union).
-- `--crams`: the CRAM sheet of that run (`assets/schema_cram.json`), for the lines' CRAMs (`role = nil`, coverage floor
-  as in variant calling).
-- `--known_sites` (wideseq, `ZEAL/reference/wideseq_sites_biallelic_snps.vcf.gz`), the reference FASTA.
-- Outputs under `markers/`: per donor x region the recount and union-count VCFs, per taxon x region the flags TSV and the
-  union VCF, `marker_counts.tsv` (markers left after each filter, per donor x region, as row 2's), and the sheet.
+Outputs: the union VCF (+ tbi), `flags.tsv`, `marker_counts.tsv` (markers left after each filter, per donor; row 2's
+columns). Container: `python_pysam`, as `FILL_DONOR_ALLELES`.
 
-## Processes (all per region)
+Counts sheet `samplesheets/<input name>.markers.csv`: `counts` = `COUNT_UNION`'s VCF, `markers` = the taxon union,
+`union` = run 1367152's union (the ancestry grid), as row 2's `counts.csv`.
 
-| process        | tool                                                                                                                                             | per   |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----- |
-| `RECOUNT`      | nf-core `bcftools/mpileup` (`-I -D -a AD -q 60 -Q 30 --ff UNMAP,SECONDARY,QCFAIL,DUP,SUPPLEMENTARY`, `-T` markers; call `-m -A`)                 | donor |
-| `SITE_READS`   | nf-core `bcftools/query` (`%POS\t%REF\t%ALT\t%INFO/MQ[\t%AD]`)                                                                                   | donor |
-| `FLAG_SITES`   | `bin/flag_marker_sites.py` (own script: no bcftools command sums reads and ALT-carrying lines over several donors' lines against expected reads) | taxon |
-| `KEEP_MARKERS` | nf-core `bcftools/isec` (`-c none -n =2 -w 1`, `-T` the passing positions): the donor's markers in wideseq that pass                             | donor |
-| `TAXON_UNION`  | nf-core `bcftools/concat` (`-a`) then `bcftools/norm` (`-d any`)                                                                                 | taxon |
-| `COUNT_UNION`  | nf-core `bcftools/mpileup`, settings of `RECOUNT`, `-T` the taxon union                                                                          | donor |
+## Inputs
 
-- Taxon = the donor ID's prefix (`Zx`, `Zv`, `Zd`, `Zl`, `Zh`), a `map` on `meta.donor`; donors grouped by `groupTuple`
-  with `groupKey` (each taxon's donor count known from the sheet).
+- `--input`: run 1367152's counts sheet (`assets/schema_counts.json`).
+- `--crams`: its CRAM sheet (`role = nil` rows; coverage floor as in variant calling).
+- `--known_sites`: wideseq, `ZEAL/reference/wideseq_sites_biallelic_snps.vcf.gz`.
+- Taxon = the donor ID's prefix (`Zx`, `Zv`, `Zd`, `Zl`, `Zh`), a `map` on `meta.donor`; donors per taxon by
+  `groupTuple` with `groupKey`.
 
-## Choices this spec settles
+## Choices
 
-- **A new step**, not a change to `variant_calling`: run 1367152's discovery is reused unchanged. Rejected: rerunning
-  discovery at 60/30 (9h's route, rejected 2026-10-24).
-- **Union within each taxon**, as row 2 and the chr10 mexicana/diploperennis union sets. Rejected: one union over all
-  taxa (run 1367152's union, which the step reads only for the grid).
-- **Expected reads from run 1367152's count VCF**, as row 2 tested. Rejected (mine): from the 60/30 recount (untested).
-- **Filters as row 2**, no new ones; no tiers, no veto.
+- New step reading run 1367152. Rejected: rerunning discovery (9h, rejected 2026-10-24).
+- Union within each taxon. Rejected: run 1367152's all-taxa union.
+- Filters, wideseq and union in one script (one task per taxon x region). Rejected: `bcftools isec` + `merge` + `norm`
+  (a new nf-core module, three more task kinds and their files under the file quota).
+- Expected reads from run 1367152's count VCFs, as row 2. Rejected (mine): from the recount (untested).
 
 ## Tests
 
-1. Tool: `flag_marker_sites.py` on a fixture of row 2's chr10 rows; its flags equal `agent/hue_q60q30_maf/flags/chr10.tsv`.
-2. Wiring: `--step markers` on stubs, laptop, seconds, with the DAG.
-3. Hazel setup checks (`scripts/run_hazel_tests.sbatch`): config, inspect, every process's stub at once.
-4. CodeRabbit on the commit range.
-5. Slice: huehuetenangensis chr10, from run 1367152's sheet; `marker_counts.tsv` and the union size equal row 2's
-   (`agent/hue_q60q30_maf/marker_counts.tsv`, `agent/hue_q60q30_union/union_sizes.tsv`).
-6. Resources: from the slice and row 2's jobs (recount 1-4 min, <= 3 GB; union count 1-2.5 min, <= 2.5 GB).
+1. Script on a fixture cut from row 2's chr10 inputs: flags and markers equal row 2's.
+2. Stubs on the laptop, seconds, with the DAG.
+3. Hazel setup check (config, inspect, each process's stub).
+4. CodeRabbit on the range.
+5. Slice: huehuetenangensis chr10 from run 1367152's sheet; markers and union size equal row 2's
+   (`agent/hue_q60q30_maf/marker_counts.tsv`, `agent/hue_q60q30_union/union_sizes.tsv`), and `--step ancestry` on its
+   sheet gives row 2's chr10 segments.
 
 ## Done when
 
-- The huehuetenangensis chr10 slice reproduces row 2's markers and union exactly, and `--step ancestry` on its sheet
-  gives row 2's segments on chr10.
-- Both metro maps show the new step; `docs/structure.md` has its row.
-- Then the run: `docs/runs/union_markers_genome.md`.
+Tests pass within the budget; metro maps and `docs/structure.md` updated; then `docs/runs/union_markers_genome.md`.
