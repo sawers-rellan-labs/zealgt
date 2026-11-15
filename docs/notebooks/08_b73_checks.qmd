@@ -23,7 +23,7 @@ theme_set(theme_bw(base_size = 13))
 d <- "b73_checks"
 rd <- function(f, ...) fread(file.path(d, f), ...)
 taxa <- c(Zd = "diploperennis", Zh = "huehuetenangensis", Zl = "luxurians", Zv = "parviglumis", Zx = "mexicana")
-batch <- c(`B73-bulk` = "batch 1, B73-bulk", B73 = "batch 2, B73")
+batch <- c(`B73-bulk` = "PV23, B73-bulk", B73 = "CLY24, B73")
 chroms <- paste0("chr", 1:10)
 cc <- rd("counts_chr.tsv")[, chrom := factor(chrom, chroms)]
 cc[, batch := batch[pedigree]]
@@ -43,7 +43,7 @@ calls: every union site of run 1367152 (chr1-chr10), and each check's reads ther
 
 - **ALT reads**: reads carrying the run's ALT allele at a site; **other reads**: a third allele; **ALT share** = ALT
   reads / all reads at the run's sites.
-- The checks: the 12 batch-1 B73-bulk checks (the pipeline's check filter tests these) and the 11 batch-2 B73 checks
+- The checks: the 12 PV23 B73-bulk checks (the pipeline's check filter tests these) and the 11 CLY24 B73 checks
   (in the run's sheet, never tested or used).
 - Reads are counted as the run counts the BC1 pools at the union: MAPQ and base quality >= 20, no duplicate, secondary or
   supplementary records.
@@ -94,7 +94,7 @@ knitr::kable(st[order(-error_rate), .(check = sample, batch, `bases mapped` = ba
              format.args = list(big.mark = ","), caption = "Whole-genome mismatch rate against the two site-based ALT shares.")
 ```
 
-The base qualities (`samtools stats` of the same CRAMs) show why: batch 1 is sequenced worse.
+The base qualities (`samtools stats` of the same CRAMs) show why: PV23 is sequenced worse.
 
 ```{r quality}
 q <- merge(rd("samtools_quality.tsv"), st[, .(sample, batch, error_rate)], by = "sample")
