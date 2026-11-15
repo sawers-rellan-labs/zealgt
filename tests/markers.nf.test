@@ -1,0 +1,79 @@
+nextflow_pipeline {
+
+    name "Test --step markers"
+    script "../main.nf"
+    tag "pipeline"
+    tag "markers"
+
+    profile "test,docker"
+
+    test("--step markers - stub") {
+
+        options "-stub"
+
+        when {
+            // the ancestry fixture's counts sheet (2 Zx donors, chrA:1-5000) and the variant-calling CRAM sheet, made absolute
+            def (counts_sheet, cram_sheet) = ['ancestry/whole.counts.csv', 'genotype/samplesheet_cram.csv'].collect { name ->
+                new File("$outputDir/${name.tokenize('/')[-1]}").with { sheet ->
+                    sheet.parentFile.mkdirs()
+                    sheet.text = new File("$baseDir/tests/fixtures/$name").text.replace('tests/fixtures/', "$baseDir/tests/fixtures/")
+                    sheet.path
+                }
+            } // a bare closing brace here ends nf-core lint's scan of the when block before params
+            params {
+                outdir      = "$outputDir"
+                input       = counts_sheet
+                step        = 'markers'
+                crams       = cram_sheet
+                known_sites = "$baseDir/tests/fixtures/markers/known_sites.vcf.gz"
+            }
+        }
+
+        then {
+            def tasks = workflow.trace.tasks().countBy { t -> t.name.tokenize(' ')[0].tokenize(':')[-1] }
+            def sheet = path("$outputDir/samplesheets/whole.counts.markers.csv").readLines()*.replace('"', '')*.tokenize(',')
+            assert workflow.success
+            assertAll(
+                // 2 donors of one taxon (Zx): one recount and one union count each, one flag task
+                { assert tasks == [RECOUNT_LINES: 2, FLAG_MARKER_SITES: 1, COUNT_TAXON_UNION: 2] },
+                // one row per donor, the taxon union as both donors' markers
+                { assert sheet[0] == ['donor', 'region', 'counts', 'markers', 'union'] && sheet.size() == 3 },
+                { assert sheet.drop(1).collect { r -> r[3].tokenize('/')[-1] }.unique() == ['Zx.chrA_1-5000.union_markers.vcf'] }
+            )
+        }
+    }
+
+    test("--step markers - fixtures") {
+
+        when {
+            def (counts_sheet, cram_sheet) = ['ancestry/whole.counts.csv', 'genotype/samplesheet_cram.csv'].collect { name ->
+                new File("$outputDir/${name.tokenize('/')[-1]}").with { sheet ->
+                    sheet.parentFile.mkdirs()
+                    sheet.text = new File("$baseDir/tests/fixtures/$name").text.replace('tests/fixtures/', "$baseDir/tests/fixtures/")
+                    sheet.path
+                }
+            } // a bare closing brace here ends nf-core lint's scan of the when block before params
+            params {
+                outdir      = "$outputDir"
+                input       = counts_sheet
+                step        = 'markers'
+                crams       = cram_sheet
+                known_sites = "$baseDir/tests/fixtures/markers/known_sites.vcf.gz"
+            }
+        }
+
+        then {
+            def t = "$outputDir/markers/tables"
+            def union = "$outputDir/markers/counts/Zx.9001_P1/chrA_1-5000/Zx.chrA_1-5000.union_markers.vcf"
+            assert workflow.success
+            assertAll(
+                // L_1 and M_1 at the two markers: each site passes depth, MQ and line share
+                { assert path("$t/Zx.chrA_1-5000.flags.tsv").readLines() == ['pos\tdepth\tmq\tline_share', '2000\t1\t1\t1', '4000\t1\t1\t1'] },
+                // both donors keep both markers through every filter (both sites are in the wideseq fixture)
+                { assert path("$t/Zx.chrA_1-5000.marker_counts.tsv").readLines().drop(1) == ['Zx.9001_P1', 'Zx.9002_P1'].collect { d -> "${d}\tchrA:1-5000\t2\t2\t2\t2\t2\t2" } },
+                // the taxon union: one record per position
+                { assert path(union).readLines().findAll { l -> !l.startsWith('#') }*.tokenize('\t')*.getAt(1) == ['2000', '4000'] }
+            )
+        }
+    }
+}

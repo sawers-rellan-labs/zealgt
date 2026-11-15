@@ -14,8 +14,8 @@
             "properties": {
                 "step": {
                     "type": "string",
-                    "enum": ["demultiplex", "alignment", "variant_calling", "ancestry"],
-                    "description": "Workflow to run: demultiplex (libraries to per-sample FASTQs), alignment (per-sample FASTQs to CRAMs), variant_calling (CRAMs to variant sites, donor alleles and each line's counts at its donor's markers) or ancestry (those counts to ancestry segments and the grid).",
+                    "enum": ["demultiplex", "alignment", "variant_calling", "markers", "ancestry"],
+                    "description": "Workflow to run: demultiplex (libraries to per-sample FASTQs), alignment (per-sample FASTQs to CRAMs), variant_calling (CRAMs to variant sites, donor alleles and each line's counts at its donor's markers), markers (a variant_calling run's markers recounted, filtered and joined per taxon) or ancestry (counts to ancestry segments and the grid).",
                     "fa_icon": "fas fa-play"
                 },
                 "input": {
@@ -154,6 +154,41 @@
                 }
             }
         },
+        "markers_options": {
+            "title": "Markers options",
+            "type": "object",
+            "fa_icon": "fas fa-seedling",
+            "description": "Inputs of --step markers; --input is a variant_calling run's samplesheets/<name>.counts.csv.",
+            "if": {
+                "properties": {
+                    "step": {
+                        "const": "markers"
+                    }
+                },
+                "required": ["step"]
+            },
+            "then": {
+                "required": ["crams", "known_sites"]
+            },
+            "properties": {
+                "crams": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.csv$",
+                    "description": "The CRAM sheet of the variant_calling run whose counts sheet is --input (assets/schema_cram.json).",
+                    "fa_icon": "fas fa-file-csv"
+                },
+                "known_sites": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.vcf\\.gz$",
+                    "description": "Wideseq sites (bgzipped VCF, .tbi next to it); a marker is kept only with its POS, REF and ALT here.",
+                    "fa_icon": "fas fa-file"
+                }
+            }
+        },
         "ancestry_options": {
             "title": "Ancestry options",
             "type": "object",
@@ -282,6 +317,9 @@
         },
         {
             "$ref": "#/$defs/variant_calling_options"
+        },
+        {
+            "$ref": "#/$defs/markers_options"
         },
         {
             "$ref": "#/$defs/ancestry_options"

@@ -17,6 +17,7 @@ include { DEMULTIPLEX     } from './workflows/demultiplex'
 include { ALIGNMENT       } from './workflows/alignment'
 include { VARIANT_CALLING } from './workflows/variant_calling'
 include { ANCESTRY        } from './workflows/ancestry'
+include { MARKERS         } from './workflows/markers'
 include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_zealgt_pipeline'
 include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_zealgt_pipeline'
 include { softwareVersionsToYAML  } from './subworkflows/nf-core/utils_nfcore_pipeline'
@@ -80,6 +81,8 @@ workflow ZEALGT {
     def ch_donor_alleles = channel.empty()
     def ch_counts = channel.empty()
     def ch_ancestry = channel.empty()
+    def ch_marker_counts = channel.empty()
+    def ch_marker_tables = channel.empty()
     if (params.step == 'demultiplex') {
         DEMULTIPLEX(samplesheet, params.head, file(params.multiqc_config ?: "${projectDir}/assets/multiqc_config.yml", checkIfExists: true))
         ch_fastq = DEMULTIPLEX.out.fastq
@@ -100,6 +103,10 @@ workflow ZEALGT {
         ch_union = VARIANT_CALLING.out.union
         ch_donor_alleles = VARIANT_CALLING.out.donor_alleles
         ch_counts = VARIANT_CALLING.out.counts
+    } else if (params.step == 'markers') {
+        MARKERS(samplesheet, params.crams, params.fasta, params.known_sites, params.min_mean_coverage)
+        ch_marker_counts = MARKERS.out.counts
+        ch_marker_tables = MARKERS.out.tables
     } else if (params.step == 'ancestry') {
         ANCESTRY(samplesheet, params.ancestry_fit, params.genetic_map)
         ch_ancestry = ANCESTRY.out.ancestry
@@ -132,6 +139,8 @@ workflow ZEALGT {
     donor_alleles      = ch_donor_alleles      // channel: [ meta, vcf.gz, tbi ]
     counts             = ch_counts             // channel: [ donor:, region:, counts:, markers:, union: ], one per donor x region
     ancestry           = ch_ancestry           // channel: [ meta, files ], the grid and each donor's mosaic outputs
+    marker_counts      = ch_marker_counts      // channel: [ donor:, region:, counts:, markers:, union: ], one per donor x region
+    marker_tables      = ch_marker_tables      // channel: [ meta, [ flags.tsv, marker_counts.tsv ] ], one per taxon x region
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -183,6 +192,8 @@ workflow {
     donor_alleles = ZEALGT.out.donor_alleles
     counts = ZEALGT.out.counts
     ancestry = ZEALGT.out.ancestry
+    marker_counts = ZEALGT.out.marker_counts
+    marker_tables = ZEALGT.out.marker_tables
 }
 
 output {
@@ -239,6 +250,22 @@ output {
             path "samplesheets/${file(params.input).baseName}.counts.csv"
             header true
         }
+    }
+    // markers: each donor's counts at its taxon union and that union; the union column stays the source run's file
+    marker_counts {
+        enabled params.step == 'markers'
+        path { r ->
+            r.counts >> "markers/counts/${r.donor}/${r.region.replace(':', '_')}/${r.counts.name}"
+            r.markers >> "markers/counts/${r.donor}/${r.region.replace(':', '_')}/${r.markers.name}"
+        }
+        index {
+            path "samplesheets/${file(params.input).baseName}.markers.csv"
+            header true
+        }
+    }
+    // per taxon and region: the site flags and the markers left after each filter
+    marker_tables {
+        path 'markers/tables'
     }
     // each donor's mosaic (segments, dropped lines, R/qtl, VCF) and the R/qtl grid
     ancestry {

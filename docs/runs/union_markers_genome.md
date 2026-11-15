@@ -15,8 +15,7 @@ then `--step ancestry` on its sheet. chr1-chr10, 95 donors, `hpc_prod`.
 ## Inputs
 
 - `--input /rsstu/users/r/rrellan/BZea/ZEAL/variant_calling/samplesheets/samplesheet.counts.csv` (run 1367152, 950 rows).
-- `--crams`: run 1367152's CRAM sheet (`docs/runs/variant_calling_production/samplesheet.csv`, on branch
-  `runs-variant-calling-production`, not yet on `dev`).
+- `--crams`: run 1367152's CRAM sheet (`docs/runs/variant_calling_production/samplesheet.csv`, PR #68).
 - `--known_sites /rsstu/users/r/rrellan/BZea/ZEAL/reference/wideseq_sites_biallelic_snps.vcf.gz`.
 
 ## File quota

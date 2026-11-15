@@ -18,13 +18,13 @@ goes first in the report; over budget means cut, not explain.
 Reads run 1367152's outputs on `/rsstu` (nothing rerun or resumed) and writes a counts sheet for `--step ancestry`.
 Per region, as row 2 (`agent/hue_q60q30_maf/`, `agent/hue_q60q30_union/`):
 
-| process        | per   | what                                                                | tool                                                                   |
-| -------------- | ----- | ------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `RECOUNT`      | donor | the donor's lines at its run-1367152 markers, MAPQ >= 60 / BQ >= 30 | installed nf-core `bcftools/mpileup` (as `COUNT_LINES`, `-q 60 -Q 30`) |
-| `FLAG_MARKERS` | taxon | site flags, each donor's kept markers, the taxon union              | `bin/flag_marker_sites.py` (new)                                       |
-| `COUNT_UNION`  | donor | the donor's lines at its taxon's union, MAPQ >= 60 / BQ >= 30       | installed nf-core `bcftools/mpileup`                                   |
+| process             | per   | what                                                                | tool                                                                   |
+| ------------------- | ----- | ------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `RECOUNT_LINES`     | donor | the donor's lines at its run-1367152 markers, MAPQ >= 60 / BQ >= 30 | installed nf-core `bcftools/mpileup` (as `COUNT_LINES`, `-q 60 -Q 30`) |
+| `FLAG_MARKER_SITES` | taxon | site flags, each donor's kept markers, the taxon union              | `bin/flag_marker_sites.py` (new)                                       |
+| `COUNT_TAXON_UNION` | donor | the donor's lines at its taxon's union, MAPQ >= 60 / BQ >= 30       | installed nf-core `bcftools/mpileup`                                   |
 
-`FLAG_MARKERS`, over the lines of every donor of the taxon that has the site among its markers (row 2's step B):
+`FLAG_MARKER_SITES`, over the lines of every donor of the taxon that has the site among its markers (row 2's step B):
 
 - depth: reads in 0.5-2x the expected reads (each line's reads per marker in the region, from its run-1367152 count VCF);
 - MQ: read-weighted mean `INFO/MQ` > 40;
@@ -35,7 +35,7 @@ Per region, as row 2 (`agent/hue_q60q30_maf/`, `agent/hue_q60q30_union/`):
 Outputs: the union VCF (+ tbi), `flags.tsv`, `marker_counts.tsv` (markers left after each filter, per donor; row 2's
 columns). Container: `python_pysam`, as `FILL_DONOR_ALLELES`.
 
-Counts sheet `samplesheets/<input name>.markers.csv`: `counts` = `COUNT_UNION`'s VCF, `markers` = the taxon union,
+Counts sheet `samplesheets/<input name>.markers.csv`: `counts` = `COUNT_TAXON_UNION`'s VCF, `markers` = the taxon union,
 `union` = run 1367152's union (the ancestry grid), as row 2's `counts.csv`.
 
 ## Inputs

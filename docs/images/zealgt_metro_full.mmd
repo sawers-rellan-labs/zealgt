@@ -8,6 +8,7 @@
 %%metro line: demultiplex | --step demultiplex | #2db572
 %%metro line: alignment | --step alignment | #0570b0
 %%metro line: variant_calling | --step variant_calling | #e6550d
+%%metro line: markers | --step markers | #31a354
 %%metro line: ancestry | --step ancestry | #756bb1
 %%metro file: checks_out | TSV
 %%metro file: vcf_out | VCF
@@ -18,6 +19,7 @@
 %%metro file: segments_out | BED
 %%metro file: line_checks_out | TSV
 %%metro file: rqtl_out | CSV
+%%metro file: markers_out | CSV | markers sheet
 %%metro file: ancestry_out | VCF
 %%metro file: regions_in | LIST | --regions
 %%metro off_track: regions_in
@@ -27,6 +29,7 @@
 %%metro grid: qc | 1,1
 %%metro grid: geno | 0,2
 %%metro grid: anc | 0,3
+%%metro grid: mark | 1,2
 %%metro process_scope: ZEALGT
 %%metro process: extract_lane_d | EXTRACT_LANE
 %%metro process: fqtk | FQTK
@@ -68,6 +71,9 @@
 %%metro process: donor_subset | DONOR_SUBSET
 %%metro process: donor_alt | DONOR_ALT_SITES
 %%metro process: count_lines | COUNT_LINES
+%%metro process: recount | RECOUNT_LINES
+%%metro process: flag_sites | FLAG_MARKER_SITES
+%%metro process: count_taxon_union | COUNT_TAXON_UNION
 %%metro process: rtiger | CALL_ANCESTRY
 %%metro process: grid | ANCESTRY_GRID
 %%metro process: index_ancestry | ANCESTRY_VCF_INDEX
@@ -205,6 +211,18 @@ graph LR
         biallelic -->|variant_calling| counts_out
     end
 
+    subgraph mark [Markers]
+        %%metro entry: left | markers
+        recount[mpileup 60/30]
+        flag_sites[site flags + taxon union]
+        count_taxon_union[mpileup lines]
+        markers_out[markers]
+
+        recount -->|markers| flag_sites
+        flag_sites -->|markers| count_taxon_union
+        count_taxon_union -->|markers| markers_out
+    end
+
     subgraph anc [Ancestry]
         %%metro entry: left | ancestry
         rtiger[RTIGER]
@@ -230,3 +248,4 @@ graph LR
     markdup -->|alignment| multiqc
     cram_out -->|variant_calling| cov_filter
     counts_out -->|ancestry| rtiger
+    counts_out -->|markers| recount
