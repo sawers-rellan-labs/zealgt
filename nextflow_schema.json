@@ -14,8 +14,8 @@
             "properties": {
                 "step": {
                     "type": "string",
-                    "enum": ["demultiplex", "alignment", "variant_calling", "ancestry"],
-                    "description": "Workflow to run: demultiplex (libraries to per-sample FASTQs), alignment (per-sample FASTQs to CRAMs), variant_calling (CRAMs to variant sites, donor alleles and each line's counts at its donor's markers) or ancestry (those counts to ancestry segments and the grid).",
+                    "enum": ["demultiplex", "alignment", "variant_calling", "markers", "ancestry"],
+                    "description": "Workflow to run: demultiplex (libraries to per-sample FASTQs), alignment (per-sample FASTQs to CRAMs), variant_calling (CRAMs to variant sites, donor alleles and each line's counts at its donor's markers), markers (a variant_calling run's markers recounted, filtered and joined per taxon) or ancestry (counts to ancestry segments and the grid).",
                     "fa_icon": "fas fa-play"
                 },
                 "input": {
@@ -151,6 +151,14 @@
                     "minimum": 0,
                     "description": "Samples whose CollectWgsMetrics MEAN_COVERAGE is under this are dropped before variant calling.",
                     "fa_icon": "fas fa-filter"
+                },
+                "crams": {
+                    "type": "string",
+                    "description": "--step markers: the CRAM sheet of the variant_calling run whose counts sheet is --input."
+                },
+                "known_sites": {
+                    "type": "string",
+                    "description": "--step markers: wideseq sites, bgzipped VCF with its .tbi."
                 }
             }
         },

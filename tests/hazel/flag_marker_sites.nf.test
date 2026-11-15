@@ -1,0 +1,28 @@
+nextflow_process {
+
+    name "FLAG_MARKER_SITES stub (hazel setup check)"
+    script "../../modules/local/flag_marker_sites/main.nf"
+    process "FLAG_MARKER_SITES"
+    tag "hazel"
+    tag "markers"
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                def d = "${projectDir}/tests/fixtures/ancestry/whole/Zx.9001_P1/chrA_1-5000"
+                input[0] = [[id: 'Zx', region: 'chrA:1-5000', donors: ['Zx.9001_P1']], [file("${projectDir}/tests/fixtures/genotype/check_sites.vcf.gz", checkIfExists: true)], [file("\$d/Zx.9001_P1.chrA_1-5000.union_alt.vcf", checkIfExists: true)], [file("\$d/L_1.vcf.gz", checkIfExists: true)]]
+                input[1] = [file("${projectDir}/tests/fixtures/markers/known_sites.vcf.gz", checkIfExists: true), file("${projectDir}/tests/fixtures/markers/known_sites.vcf.gz.tbi", checkIfExists: true)]
+                input[2] = file("${projectDir}/bin/flag_marker_sites.py", checkIfExists: true)
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}

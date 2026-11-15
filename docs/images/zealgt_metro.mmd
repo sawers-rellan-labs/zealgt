@@ -7,10 +7,12 @@
 %%metro line: demultiplex | --step demultiplex | #2db572
 %%metro line: alignment | --step alignment | #0570b0
 %%metro line: variant_calling | --step variant_calling | #e6550d
+%%metro line: markers | --step markers | #31a354
 %%metro line: ancestry | --step ancestry | #756bb1
 %%metro file: b73_in | CRAM | B73 checks
 %%metro file: alleles_out | VCF | donor alleles
 %%metro file: counts_out | CSV | counts sheet
+%%metro file: markers_out | CSV | markers sheet
 %%metro file: ancestry_out | VCF | ancestry
 %%metro file: regions_in | LIST | --regions
 %%metro off_track: b73_in
@@ -20,6 +22,7 @@
 %%metro grid: align | 0,1
 %%metro grid: geno | 0,2
 %%metro grid: anc | 0,3
+%%metro grid: mark | 1,2
 
 graph LR
     subgraph demux [Demultiplex]
@@ -97,6 +100,18 @@ graph LR
         union -->|variant_calling| counts_out
     end
 
+    subgraph mark [Markers]
+        %%metro entry: left | markers
+        recount[mpileup 60/30]
+        flag_sites[site flags + taxon union]
+        count_taxon_union[mpileup lines]
+        markers_out[markers]
+
+        recount -->|markers| flag_sites
+        flag_sites -->|markers| count_taxon_union
+        count_taxon_union -->|markers| markers_out
+    end
+
     subgraph anc [Ancestry]
         %%metro entry: left | ancestry
         rtiger[RTIGER]
@@ -109,4 +124,5 @@ graph LR
 
     cram_out -->|variant_calling| filter
     counts_out -->|ancestry| rtiger
+    counts_out -->|markers| recount
     fastq_sheet -->|alignment| split

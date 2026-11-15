@@ -344,3 +344,14 @@ the variant-calling input; the `/rsstu` CRAMs stay whole. CRISP 1a9027e has a us
   copies of every CRAM (about the alignment archive's size on `/share`).
 - Accepted (user, 2026-10-17: "the losses are ok"): ~2 % fewer discovery records and tier-A sites (pilot slice, chr10:1-5
   Mb; full chr1 of Zl.0020_P3: 229,627 vs 234,635 CRISP calls), counts at most 4 reads per cell.
+
+## 2026-10-21 MAPQ 60 and BQ 30 in variant calling
+
+User, 2026-10-21: "I think that I will just use the MAPQ>60 BQ>30 for the rest of the varint callingtha will
+decrease the effective coverage"; "yes record that decision I think is very justifiable".
+
+- Evidence (zealhmm missing-data notebook, 2026-10-21): at run 1367152's markers (counted at MAPQ >= 20, BQ >= 20),
+  CLY24-C8A lines' missing data follows Poisson (KS against exp(-lambda): D 0.042, p 0.91; 361 lines), PV23 lines'
+  does not (D 0.264, p 1e-42; 1,388 lines); the SNP50K set behaves Poisson (user: "i am pretty sutre that it included a MAPQ filter of 60").
+- OPEN (mine): which processes take the new cuts (`COUNT_LINES` only, or discovery too); `MAPQ>60` read as MAPQ >= 60
+  (`-q 60`), since 60 is the aligner's top value, and `BQ>30` as BQ >= 30 (`-Q 30`).
