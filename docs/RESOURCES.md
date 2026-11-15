@@ -310,3 +310,37 @@ gave 16 GB; 1 Mb and 5 Mb rigidity alike (jobs 1343858, 1346168).
 0x800` filtered chr1 of Zl.0020_P3's five CRAMs (its four BC1 pools and witness) in 4.5 min with 4 threads (CRISP debug,
 job 1365010), ~1 min per chr1 CRAM; a whole-genome BC1 CRAM is ~7 x that. Set until the production run measures them:
 2 cpus, 1 GB, 2 h, arrays of 20 in `hpc_prod`; 384 + 950 tasks in production.
+
+## VARIANT_CALLING production, measured (2026-10-17, all 95 donors, chr1-chr10, job 1367152)
+
+`docs/runs/variant_calling_production.md` attempt 5 (`hpc_prod`, `queueSize = 400`, arrays of 20): 2 h 51 min to the
+end of the pipeline plus 13 min of `work/` cleanup, 17,678 tasks, 606 CPU-h, no retry. `/share` peak 3.22 TB for
+`frodrig4` (`work/` with the filtered CRAM copies), group file count peak 817,053 of 1 M. Head job: 16 GB, MaxRSS 16.0
+GB (the request, as always). Trace `ZEAL/variant_calling/pipeline_info/execution_trace_2026-10-17_12-28-34.txt`.
+`FILTER_BC1` (whole-genome BC1 CRAM) took up to 50.6 min, `FILTER_WITNESS` up to 7.9 min, both at 0.72 GB of 1 GB.
+
+| process                   | tasks | max realtime | CPU-h  | max peak RSS | asked          |
+| ------------------------- | ----- | ------------ | ------ | ------------ | -------------- |
+| `CRISP`                   | 950   | 38.2 min     | 206.91 | 0.68 GB      | 2 GB x attempt |
+| `FILTER_BC1`              | 384   | 50.6 min     | 119.75 | 0.72 GB      | 1 GB, 2 h      |
+| `COUNT_UNION`             | 3,860 | 6.2 min      | 69.01  | 0.42 GB      | 2 GB           |
+| `UNION_TIERS`             | 950   | 6.3 min      | 42.82  | 3.70 GB      | 8 GB           |
+| `SAMTOOLS_MERGE` (pools)  | 970   | 4.2 min      | 38.58  | 1.20 GB      | 4 GB           |
+| `SAMTOOLS_ADDREPLACERG`   | 970   | 8.0 min      | 35.38  | 0.72 GB      | 2 GB           |
+| `FILTER_WITNESS`          | 950   | 7.9 min      | 32.84  | 0.72 GB      | 1 GB, 2 h      |
+| `COUNT_LINES`             | 950   | 7.1 min      | 22.11  | 1.20 GB      | 4 GB x attempt |
+| `BCFTOOLS_MPILEUP`        | 1,900 | 1.5 min      | 15.68  | 0.40 GB      | 2 GB           |
+| `DONOR_SUBSET`            | 950   | 1.0 min      | 9.51   | 0.02 GB      | 1 GB           |
+| `FILL_DONOR_ALLELES`      | 950   | 1.1 min      | 8.61   | 1.50 GB      | 4 GB           |
+| `POOLED_LIKELIHOOD_TIERS` | 950   | 1.2 min      | 2.18   | 0.85 GB      | 4 GB           |
+| `DONOR_ALLELES_MERGE`     | 10    | 7.4 min      | 0.89   | 0.28 GB      | 1 GB           |
+| `UNION_SITE_COUNTS`       | 10    | 6.7 min      | 0.80   | 1.40 GB      | 4 GB           |
+| `BED_CLIP`                | 950   | 0.2 min      | 0.47   | 0.02 GB      | 1 GB           |
+| `DONOR_ALT_SITES`         | 950   | 0.1 min      | 0.34   | 0.02 GB      | 1 GB           |
+| `WITNESS_VETO`            | 950   | 0.1 min      | 0.27   | 0.03 GB      | 1 GB           |
+| `CHECK_COUNTS`            | 12    | 0.7 min      | 0.07   | 0.62 GB      | 2 GB           |
+| `BCFTOOLS_NORM`           | 10    | 0.2 min      | 0.02   | 0.02 GB      | 1 GB           |
+| `BCFTOOLS_MERGE`          | 10    | 0.2 min      | 0.02   | 0.03 GB      | 1 GB           |
+| `BIALLELIC_UNION`         | 10    | 0.0 min      | 0.00   | 0.02 GB      | 1 GB           |
+| `SAMTOOLS_INDEX`          | 20    | 0.1 min      | 0.00   | 0.01 GB      | -              |
+| `CHECK_ALT_RATE`          | 12    | 0.0 min      | 0.00   | 0.01 GB      | 1 GB           |
