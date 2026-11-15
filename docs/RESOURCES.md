@@ -344,3 +344,13 @@ GB (the request, as always). Trace `ZEAL/variant_calling/pipeline_info/execution
 | `BIALLELIC_UNION`         | 10    | 0.0 min      | 0.00   | 0.02 GB      | 1 GB           |
 | `SAMTOOLS_INDEX`          | 20    | 0.1 min      | 0.00   | 0.01 GB      | -              |
 | `CHECK_ALT_RATE`          | 12    | 0.0 min      | 0.00   | 0.01 GB      | 1 GB           |
+
+## MARKERS, slice (Milestone 10)
+
+Huehuetenangensis chr10 (2 donors, 61 lines), hpc_dev, jobs 1913592-93 (trace `m10_slice/results/pipeline_info`):
+
+| process             | tasks | longest | peak RSS | request                        |
+| ------------------- | ----- | ------- | -------- | ------------------------------ |
+| `RECOUNT_LINES`     | 2     | 3.0 min | 0.68 GB  | 4 GB (as `COUNT_LINES`)        |
+| `COUNT_TAXON_UNION` | 2     | 2.0 min | 0.65 GB  | 4 GB (as `COUNT_LINES`)        |
+| `FLAG_MARKER_SITES` | 1     | 1.8 min | 0.14 GB  | 4 GB (as `FILL_DONOR_ALLELES`) |
