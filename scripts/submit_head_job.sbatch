@@ -11,6 +11,7 @@
 #SBATCH --qos=short
 #SBATCH --time=02:00:00
 #SBATCH --cpus-per-task=1
+# 8 GB for tests; production passes --mem=16G and NXF_OPTS="-Xms1g -Xmx12g" (docs/running.md)
 #SBATCH --mem=8G
 #SBATCH --output=/share/maize/frodrig4/nf_work/zealgt_head_%j.log
 set -eo pipefail

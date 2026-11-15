@@ -1,7 +1,7 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/sawers-rellan-labs/zealgt/main/assets/schema_cram.json",
-    "title": "sawers-rellan-labs/zealgt pipeline - params.input schema for --step genotype",
+    "title": "sawers-rellan-labs/zealgt pipeline - params.input schema for --step variant_calling",
     "description": "One row per sample: its CRAM and CollectWgsMetrics file from ALIGNMENT, with its role, donor and pedigree from meta/samples.csv",
     "type": "array",
     "items": {

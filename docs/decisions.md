@@ -300,3 +300,47 @@ User, 2026-10-16 ("keep 9b as a record, record the decision"), on the chr10 diag
   introgressions per line).
 - Milestone 9c (the dosage check deciding a second union pass) is dropped; draft spec on branch `m09c-curve-rule` only.
 - Lines and families are flagged, never dropped; the sample introgression dosage check stays a check applied downstream of the line checks.
+
+## 2026-10-16 Steps variant_calling and ancestry (Milestone 9e)
+
+Spec approved by the user, 2026-10-16 (`docs/milestones/09e_variant_calling_ancestry_split.md`).
+
+- `--step genotype` becomes `variant_calling` (discovery, union, gap filling, each line's counts at its donor's
+  markers) and `ancestry` (RTIGER and the grid). Reason (user): "the only thing that I need genome-wide are the
+  counts; the variant discovery can be done once and then we can fiddle with the HMM", as alignment was separated.
+- `variant_calling` publishes the counts and a counts sheet (`samplesheets/<input name>.counts.csv`); `ancestry` reads it.
+- `--ancestry_fit chromosome` (default, outputs as before) or `genome` (one RTIGER fit per donor over its regions).
+- Short task names: stages `LINE_COUNTS` and `ANCESTRY_RTIGER`; the pipeline workflow `ZEALGT`.
+- Published folders `variant_calling/` and `ancestry/` (were `genotype/`); results already on `/rsstu` stay where they are.
+- RTIGER rigidity as a window in Mb, replacing 0.5 % of the markers (user, 2026-10-16: "the per Mb rule seems to work
+  the best everywhere for now"; "1 Mb default, add it to 9e"): r = `--rigidity_mb` (default 1) x the median line's
+  covered markers per Mb of the markers' span, per chromosome and per genome alike.
+
+## 2026-10-16 Efficiency before production (Milestone 9f)
+
+Spec approved by the user, 2026-10-16 (`docs/milestones/09f_efficiency_before_production.md`).
+
+- Group sizes read from the samplesheet (`groupKey`), so each donor and region goes on once its own files are in.
+- One count VCF per donor and region (a sample per line), published as the counts; the counts sheet one row per donor
+  and region. Rejected: splitting it back to one file per line.
+- `COUNT_LINES` with full BAQ (`-D`; user: "go with -D"): partial BAQ looks at every sample in the call, so a line's
+  counts depended on its siblings (slice: 60 of 82 lines moved by 1-2 reads). Rejected: no BAQ (`-B`); one call per line.
+- CRISP log timestamps left to a PR upstream (`vibansal/crisp`). Rejected: `gawk` in the CRISP image.
+
+## 2026-10-17 Job arrays for variant calling in `hpc_prod`
+
+User, 2026-10-17: "I want the array jobs implemented": arrays of 20 for the per-donor and per-sample variant-calling
+processes; `submitRateLimit` 20/1min would take ~14 h to submit ~17,500 single jobs (run 1349242, cancelled).
+
+## 2026-10-17 No supplementary records in variant calling (Milestone 9g)
+
+User, 2026-10-17: exclude supplementary records (0x800) consistently across variant calling, always (no parameter), at
+the variant-calling input; the `/rsstu` CRAMs stay whole. CRISP 1a9027e has a use-after-free on them
+(vibansal/crisp#35) that stopped the production run.
+
+- CRISP reads filtered copies (`samtools view -F 0x800`): each BC1 CRAM once, whole genome; each witness pool per region.
+  The four mpileup steps skip them with `--ff UNMAP,SECONDARY,QCFAIL,DUP,SUPPLEMENTARY`.
+- Rejected: filtering at CRAM export (the archive loses the records, 2,173 CRAMs re-exported); a parameter; filtered
+  copies of every CRAM (about the alignment archive's size on `/share`).
+- Accepted (user, 2026-10-17: "the losses are ok"): ~2 % fewer discovery records and tier-A sites (pilot slice, chr10:1-5
+  Mb; full chr1 of Zl.0020_P3: 229,627 vs 234,635 CRISP calls), counts at most 4 reads per cell.

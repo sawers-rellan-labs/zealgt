@@ -110,7 +110,8 @@ main <- function(argv = commandArgs(trailingOnly = TRUE)) {
     donor <- a$donors[k]
     seg <- fread(a$segments[k], sep = "\t", colClasses = list(character = c("#chrom", "line")))
     setnames(seg, "#chrom", "chrom")
-    states <- read_at_grid(seg, grid$bp)
+    # a genome-wide fit's segments hold every chromosome: only this grid's are read
+    states <- read_at_grid(seg[chrom %in% grid$chrom], grid$bp)
     write_rqtl(grid, states, sprintf("%s.%s.rqtl.csv", donor, a$prefix))
     write_vcf(grid, states, donor, union$meta, sprintf("%s.%s.ancestry.vcf", donor, a$prefix))
     log_info("%s: %d lines, %d of %d calls missing", donor, ncol(states), sum(is.na(states)), length(states))

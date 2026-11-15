@@ -8,7 +8,7 @@ Changes in 'bcftools/mpileup/meta.yml':
          description: Input BAM file
          pattern: "*.{bam}"
 +        ontologies: []
-+    - index:
++    - bam_index:
 +        type: file
 +        description: Index of the input file, for --regions
 +        pattern: "*.{bai,csi,crai}"
@@ -24,10 +24,19 @@ Changes in 'bcftools/mpileup/main.nf':
  
      input:
 -    tuple val(meta), path(bam), path(intervals_mpileup, stageAs: 'mpileup_intervals/*'), path(intervals_call, stageAs: 'call_intervals/*')
-+    tuple val(meta), path(bam), path(index), path(intervals_mpileup, stageAs: 'mpileup_intervals/*'), path(intervals_call, stageAs: 'call_intervals/*')
++    tuple val(meta), path(bam), path(bam_index), path(intervals_mpileup, stageAs: 'mpileup_intervals/*'), path(intervals_call, stageAs: 'call_intervals/*')
      tuple val(meta2), path(fasta), path(fai)
      val save_mpileup
  
+@@ -41,7 +41,7 @@
+                     ? "vcf"
+                     : "vcf"
+     """
+-    echo "${meta.id}" > sample_name.list
++    printf '%s\\n' ${(meta.samples ?: [meta.id]).join(' ')} > sample_name.list
+ 
+     bcftools \\
+         mpileup \\
 
 'modules/nf-core/bcftools/mpileup/tests/main.nf.test.snap' is unchanged
 'modules/nf-core/bcftools/mpileup/tests/nextflow.config' is unchanged

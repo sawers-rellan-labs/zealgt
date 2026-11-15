@@ -20,9 +20,10 @@ stage (a row in `../structure.md`); a run of built stages on real data has a run
 - Every choice the spec left open is logged with the option rejected.
 - Stop and ask only when a choice would change outputs or the spec.
 
-## After: the report (the user reviews it)
+## After: the report, the PR, the merge
 
-- The diff.
-- The DAG of what ran (a stub run's `-stub -with-dag`, `docs/running.md` "The DAG", and the run's `pipeline_dag`).
-- Test results and resource numbers.
-- The list of choices made during the work.
+- The report leads with the test results and the numbers to judge (the slice against the previous results, resource
+  numbers); then the choices made during the work and the DAG of what ran (a stub run's `-stub -with-dag`,
+  `docs/running.md` "The DAG", and the run's `pipeline_dag`). Not the diff: the user approves on tests and results.
+- CodeRabbit findings are fixed, or put to the user when they are the user's decision; then the agent opens the
+  milestone's PR, CI runs on GitHub, and the user merges.

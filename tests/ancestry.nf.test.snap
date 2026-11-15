@@ -1,0 +1,53 @@
+{
+    "--step ancestry - stub, per chromosome": {
+        "content": [
+            {
+                "ANCESTRY_GRID": {
+                    "nilHMM": "0.3.1"
+                },
+                "ANCESTRY_VCF_INDEX": {
+                    "bcftools": "1.23.1"
+                },
+                "CALL_ANCESTRY": {
+                    "nilHMM": "0.3.1"
+                },
+                "Workflow": {
+                    "sawers-rellan-labs/zealgt": "v0.2.0dev"
+                }
+            },
+            [
+                "ancestry/Zx.9001_P1.chrA_1-2500.ancestry.vcf.gz",
+                "ancestry/Zx.9001_P1.chrA_1-2500.ancestry.vcf.gz.tbi",
+                "ancestry/Zx.9001_P1.chrA_1-2500.dropped_lines.tsv",
+                "ancestry/Zx.9001_P1.chrA_1-2500.line_checks.tsv",
+                "ancestry/Zx.9001_P1.chrA_1-2500.rqtl.csv",
+                "ancestry/Zx.9001_P1.chrA_1-2500.segments.bed",
+                "ancestry/Zx.9001_P1.chrA_2501-5000.ancestry.vcf.gz",
+                "ancestry/Zx.9001_P1.chrA_2501-5000.ancestry.vcf.gz.tbi",
+                "ancestry/Zx.9001_P1.chrA_2501-5000.dropped_lines.tsv",
+                "ancestry/Zx.9001_P1.chrA_2501-5000.line_checks.tsv",
+                "ancestry/Zx.9001_P1.chrA_2501-5000.rqtl.csv",
+                "ancestry/Zx.9001_P1.chrA_2501-5000.segments.bed",
+                "ancestry/Zx.9002_P1.chrA_1-2500.ancestry.vcf.gz",
+                "ancestry/Zx.9002_P1.chrA_1-2500.ancestry.vcf.gz.tbi",
+                "ancestry/Zx.9002_P1.chrA_1-2500.dropped_lines.tsv",
+                "ancestry/Zx.9002_P1.chrA_1-2500.line_checks.tsv",
+                "ancestry/Zx.9002_P1.chrA_1-2500.rqtl.csv",
+                "ancestry/Zx.9002_P1.chrA_1-2500.segments.bed",
+                "ancestry/Zx.9002_P1.chrA_2501-5000.ancestry.vcf.gz",
+                "ancestry/Zx.9002_P1.chrA_2501-5000.ancestry.vcf.gz.tbi",
+                "ancestry/Zx.9002_P1.chrA_2501-5000.dropped_lines.tsv",
+                "ancestry/Zx.9002_P1.chrA_2501-5000.line_checks.tsv",
+                "ancestry/Zx.9002_P1.chrA_2501-5000.rqtl.csv",
+                "ancestry/Zx.9002_P1.chrA_2501-5000.segments.bed",
+                "ancestry/chrA_1-2500.grid.tsv",
+                "ancestry/chrA_2501-5000.grid.tsv"
+            ]
+        ],
+        "timestamp": "2026-10-16T19:09:17.324305",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}

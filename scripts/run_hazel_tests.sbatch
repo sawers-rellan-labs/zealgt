@@ -1,5 +1,5 @@
 #!/bin/bash
-# Hazel setup check (CLAUDE.md test step 3): every tests/hazel stub test at once, tasks as Slurm jobs (hpc_prod);
+# Hazel setup check (CLAUDE.md test step 3): every tests/hazel stub test, 12 at a time, tasks as Slurm jobs (hpc_prod);
 # with PARAMS=<params file of a run> also the run's config and containers, beside the tests.
 # Usage, on hazel: sbatch --export=ALL,ZEALGT_REPO=<checkout>[,PARAMS=<params.yaml>,PROFILE=<hpc_dev|hpc_prod>]
 #                  scripts/run_hazel_tests.sbatch [test files; default all]
@@ -10,7 +10,7 @@
 #SBATCH --qos=short
 #SBATCH --time=00:30:00
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=32G
+#SBATCH --mem=8G
 #SBATCH --output=/share/maize/frodrig4/nf_work/zealgt_hazel_tests_%j.log
 set -o pipefail
 REPO=${ZEALGT_REPO:-/rsstu/users/r/rrellan/BZea/ZEAL/zealgt}
@@ -31,6 +31,9 @@ cd "$REPO" || exit 2
 echo "$(date '+%F %T') job=$SLURM_JOB_ID node=$(hostname) commit=$(git rev-parse --short HEAD) params=${PARAMS:-none}"
 [ $# -gt 0 ] || set -- tests/hazel/*.nf.test
 pids=()
+failed=0
+# each nf-test peaks at ~0.5-0.6 GB (jobs 1317265, 1317802): at most 12 at once in 8 GB
+reap() { for p in "${pids[@]}"; do wait "$p" || failed=$((failed + 1)); done; pids=(); }
 # the run's setup: config, then every container; no -preview: it never exits with a workflow output block
 # (nextflow-io/nextflow#7836); parameters are checked by the sheet check and in the run's first seconds
 if [ -n "$PARAMS" ]; then
@@ -44,7 +47,8 @@ if [ -n "$PARAMS" ]; then
       exit $rc ) 2>&1 | stamp setup &
     pids+=($!)
 fi
-# one nf-test per test file, each with its own work directory, all in the background
+# one nf-test per test file, each with its own work directory, in the background, 12 at a time
+n_checks=$(( ${PARAMS:+1} + $# ))
 for t in "$@"; do
     n=$(basename "$t" .nf.test)
     ( s=$(date +%s)
@@ -54,8 +58,8 @@ for t in "$@"; do
       echo "$(date '+%F %T') [$n] exit=$rc wall=$(($(date +%s) - s))s"
       exit $rc ) &
     pids+=($!)
+    [ "${#pids[@]}" -lt 12 ] || reap
 done
-failed=0
-for p in "${pids[@]}"; do wait "$p" || failed=$((failed + 1)); done
-echo "$(date '+%F %T') done: ${#pids[@]} checks (${PARAMS:+setup + }$# tests), $failed failed"
+reap
+echo "$(date '+%F %T') done: $n_checks checks (${PARAMS:+setup + }$# tests), $failed failed"
 [ "$failed" -eq 0 ]

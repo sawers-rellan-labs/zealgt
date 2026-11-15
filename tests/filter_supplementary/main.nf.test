@@ -1,0 +1,41 @@
+nextflow_process {
+
+    name "Test the supplementary-record filter (FILTER_BC1, FILTER_WITNESS)"
+    script "../../modules/nf-core/samtools/view/main.nf"
+    process "SAMTOOLS_VIEW"
+    config "./nextflow.config"
+    tag "variant_calling"
+    tag "filter_supplementary"
+
+    // the tool in its container; the fixture is the CRISP crash reproducer (vibansal/crisp#35): 18 records and one supplementary
+    profile "test,docker"
+
+    test("supplementary records dropped, the others kept") {
+
+        when {
+            process {
+                """
+                input[0] = [[id: 'supp'], file("${projectDir}/tests/fixtures/supplementary/supp.cram", checkIfExists: true), []]
+                input[1] = [[id: 'ref'], file("${projectDir}/tests/fixtures/supplementary/ref.fa", checkIfExists: true), file("${projectDir}/tests/fixtures/supplementary/ref.fa.fai", checkIfExists: true)]
+                input[2] = [[], []]
+                input[3] = [[], []]
+                input[4] = 'crai'
+                """
+            }
+        }
+
+        then {
+            def ref = "${projectDir}/tests/fixtures/supplementary/ref.fa"
+            def supplementary = { line -> (line.tokenize('\t')[1] as int) & 0x800 }
+            def before = cram("${projectDir}/tests/fixtures/supplementary/supp.cram", ref).getSamLines()
+            def after = cram(process.out.cram[0][1], ref).getSamLines()
+            assertAll(
+                { assert process.success },
+                { assert before.count(supplementary) == 1 },
+                { assert after.count(supplementary) == 0 },
+                { assert after == before.findAll { line -> !supplementary(line) } },
+                { assert process.out.crai[0][1].endsWith('supp.nosupp.cram.crai') }
+            )
+        }
+    }
+}

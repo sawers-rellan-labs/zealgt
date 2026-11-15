@@ -3,7 +3,8 @@
 ## Project
 
 `zealgt` takes the ZEAL maize samples from raw reads to genotypes on the NCSU hazel cluster (Nextflow, nf-core template):
-the `ALIGNMENT` workflow stops at one CRAM per sample, then the `GENOTYPE` workflow reads those CRAMs.
+the `ALIGNMENT` workflow stops at one CRAM per sample, the `VARIANT_CALLING` workflow reads those CRAMs and stops at
+each line's counts at its donor's markers, then the `ANCESTRY` workflow reads those counts.
 
 ## Never delete
 
@@ -20,8 +21,10 @@ the `ALIGNMENT` workflow stops at one CRAM per sample, then the `GENOTYPE` workf
 
 ## Shell
 
-- Anything longer than one line is a script in `agent/`, then run.
+- Anything longer than one line is a script in `agent/`, then run: loops, `&&`/`;`/`|` chains of several steps, heredocs,
+  `python -c` and `Rscript -e` count; inline only single commands (`ls`, `git status`, `cat`, `wc`).
 - `agent/` is gitignored scratch; never `git add -f` it.
+- All scratch (scripts, logs, temp outputs, worktrees `agent/wt_<name>`) lives in `agent/`; this overrides the harness scratchpad. Never `/tmp`.
 
 ## Code
 
@@ -31,6 +34,7 @@ the `ALIGNMENT` workflow stops at one CRAM per sample, then the `GENOTYPE` workf
 - nf-core modules first; patch them only with `nf-core modules patch`.
 - Established tools (bcftools, bedtools, samtools, ...) before own scripts; an own script only when none fits, with the reason in the commit message.
 - Resources only in config, measured per process; modules read only `task.cpus` and `task.memory`.
+- Head jobs: 16 GB for production, 8 GB for tests; their peak always equals the request, so never raise it unless authentically OOM.
 - Comments: one line saying what the code does; history goes in commits.
 - `workflows/<name>.nf`: the list of stage calls only, <= 100 lines.
 - `subworkflows/local/<stage>/main.nf`: one stage's channel wiring, <= 100 lines; `modules/local/<tool>/main.nf`: one tool call, <= 100 lines.

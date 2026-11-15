@@ -28,11 +28,11 @@ nextflow_pipeline {
             def tasks = workflow.trace.tasks().countBy { t -> t.name.tokenize(':')[-1].tokenize(' ')[0] }
             def kept = ['LX_1', 'LX_2', 'LX_3', 'PB1_SID1', 'PB1_SID2', 'PB1_SID4']
             // the published samplesheet: one quoted row per kept sample, paths to the published files
-            def lines = path("$outputDir/samplesheets/samplesheet.csv").readLines()
+            def lines = path("$outputDir/samplesheets/samplesheet.csv").readLines()*.replace('"', '')
             def source = { s -> s.startsWith('LX_') ? 'bc1' : 'bc2s3_batch1' }
             def expected = kept.collect { s ->
                 def (lib, lanes, kit) = s.startsWith('LX_') ? ['LIBX', 'LIBX_TESTFC01_L1,LIBX_TESTFC01_L2', 'twist_flexprep'] : ['LIBB1', 'LIBB1_S1_L001,LIBB1_S1_L002', 'twist_96plex']
-                [s, "$outputDir/${source(s)}/${s}_R1.fastq.gz", "$outputDir/${source(s)}/${s}_R2.fastq.gz", source(s), lib, lanes, kit].collect { v -> "\"${v}\"" }.join(',')
+                [s, "$outputDir/${source(s)}/${s}_R1.fastq.gz", "$outputDir/${source(s)}/${s}_R2.fastq.gz", source(s), lib, lanes, kit].join(',')
             }
             assert workflow.success
             assertAll(
@@ -43,7 +43,8 @@ nextflow_pipeline {
                 { assert stable_path.contains('multiqc/reads/samplesheet/multiqc_report.html') },
                 { assert stable_path.findAll { p -> p.endsWith('.fastq.gz') }*.toString().sort() ==
                     kept.collectMany { s -> ["${source(s)}/${s}_R1.fastq.gz", "${source(s)}/${s}_R2.fastq.gz"] }*.toString().sort() },
-                { assert lines[0] == '"sample_id","fastq_1","fastq_2","source","library","lanes","kit"' },
+                // quotes stripped: Nextflow 26.04 quotes the index CSV's fields, later releases do not
+                { assert lines[0] == 'sample_id,fastq_1,fastq_2,source,library,lanes,kit' },
                 { assert lines.drop(1).sort() == expected*.toString().sort() },
                 { assert !stable_path.any { p -> p.startsWith('cram') } },
                 { assert snapshot(

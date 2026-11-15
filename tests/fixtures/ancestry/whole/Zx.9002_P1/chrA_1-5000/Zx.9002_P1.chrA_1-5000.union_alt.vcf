@@ -1,0 +1,11 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="All filters passed">
+##contig=<ID=chrA>
+##INFO=<ID=AC,Number=A,Type=Integer,Description="Allele count in genotypes">
+##INFO=<ID=AN,Number=1,Type=Integer,Description="Total number of alleles in called genotypes">
+##bcftools_viewVersion=1.23.1+htslib-1.23.1
+##bcftools_viewCommand=view --output Zx.9002_P1.chrA_1-5000.donor_column.vcf.gz -s Zx.9002_P1 -Oz --threads 5 chrA_1-5000.donor_alleles.vcf.gz; Date=Fri Oct 16 23:07:04 2026
+##bcftools_viewCommand=view --output Zx.9002_P1.chrA_1-5000.union_alt.vcf -i GT="1" -G -Ov --threads 5 Zx.9002_P1.chrA_1-5000.donor_column.vcf.gz; Date=Fri Oct 16 23:07:06 2026
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+chrA	2000	.	T	A	.	.	AC=1;AN=1
+chrA	4000	.	C	G	.	.	AC=1;AN=1

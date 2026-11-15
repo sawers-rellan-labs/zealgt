@@ -26,6 +26,12 @@ Nextflow 26.04.6 (laptop, or hazel GPFS with tasks on Slurm compute nodes).
 - One fixed launch directory per profile: the task cache lives in `<launch directory>/.nextflow/cache`, and resuming
   needs that cache and `work/` intact (docs). A new directory per attempt starts every run cold.
 
+## Head job memory (hazel)
+
+Head jobs: 16 GB for production (`NXF_OPTS="-Xms1g -Xmx12g"`), 8 GB for tests (the default of
+`scripts/submit_head_job.sbatch`); their peak always equals the request, so never raise it unless authentically OOM
+(user, 2026-10-17).
+
 ## Container bindings (hazel)
 
 Two layers of Apptainer containers, each seeing only the host paths bound into it (`-B`):
@@ -68,6 +74,16 @@ already in the mount point list` in the task's `.command.err`, skips the duplica
 - Effects: disk budgets hold (a finished task writes nothing); idle allocations count against fair-share. Nothing to
   change on our side.
 - To check a run: compare each job's `Task completed` time in `.nextflow.log` with `sacct -j <ids> -X --format=JobID,End`.
+
+## Slurm job names (hazel)
+
+- `hpc_dev` and `hpc_prod` name each task's job by its process and tag (`executor.jobName`), e.g.
+  `CRISP_Zh.0030_P4_chr3`; VARIANT_CALLING tags carry the region (`conf/modules.config`).
+- A job array (`array` in the profiles: `COUNT_UNION` in `hpc_dev`; alignment steps and the per-donor variant-calling
+  steps in `hpc_prod`) keeps Nextflow's own long name
+  for all its tasks, `executor.jobName` aside (`nf-ZEALGT_..._COUNT_UNION_(1)`, Milestone 9f test 6). An array also
+  waits until it holds `array` tasks or its input ends. Which task is which: `.nextflow.log` (`Submitted process`, task
+  name and tag) or the trace (`name`, `native_id` = array job ID and index).
 
 ## What reruns a step on `-resume`
 
@@ -115,7 +131,7 @@ scheduling pass (`SchedulerParameters=defer`, ~50 s), so the GENOTYPE stub (~20 
 - **Process checks**: every process's stub runs alone from ready inputs, all at once, one Slurm wait in all.
   `tests/hazel/*.nf.test` (one per module, inputs from `tests/fixtures/`; the nf-core modules' own tests download
   theirs) run from one job: `sbatch --export=ALL,ZEALGT_REPO=<checkout> scripts/run_hazel_tests.sbatch`, with nf-test
-  under the Nextflow image's java and `conf/stub_hazel.config`. 26 tests in 6 min (job 1317802). Parallel tasks cannot
+  under the Nextflow image's java and `conf/stub_hazel.config`. 26 tests in 6 min (job 1317802); 12 at a time in 8 GB, ~0.5-0.6 GB each (jobs 1317265, 1317802). Parallel tasks cannot
   race: each task writes only in its own work directory. A process test applies settings under the module's own name
   only, not under its aliases (`COUNT_LINES`, `.*FASTQ_ALIGN_MINIBWA:SAMTOOLS_MERGE`).
 - **The run's setup**, with `PARAMS=<the run's params file>` (and `PROFILE`) on the same job, beside the tests:

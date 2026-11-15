@@ -6,7 +6,8 @@ process CALL_ANCESTRY {
     container 'ghcr.io/sawers-rellan-labs/zealgt-nilhmm:0.3.1-1'
 
     input:
-    tuple val(meta), path(markers), path(counts, stageAs: 'counts/*')
+    // a line's count files of several regions share a name: one folder each
+    tuple val(meta), path(markers), path(counts, stageAs: 'counts/*/*')
     path tool
 
     output:

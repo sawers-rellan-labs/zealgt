@@ -1,0 +1,31 @@
+nextflow_process {
+
+    name "SAMTOOLS_VIEW stub (hazel setup check)"
+    script "../../modules/nf-core/samtools/view/main.nf"
+    process "SAMTOOLS_VIEW"
+    // FILTER_BC1's settings: without its prefix the module refuses an output named as its input
+    config "../filter_supplementary/nextflow.config"
+    tag "hazel"
+    tag "variant_calling"
+
+    test("stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = [[id: 'L_1'], file("${projectDir}/tests/fixtures/genotype/cram/L_1.cram", checkIfExists: true), []]
+                input[1] = [[id: 'tiny'], file("${projectDir}/tests/fixtures/ref/tiny.fa", checkIfExists: true), file("${projectDir}/tests/fixtures/ref/tiny.fa.fai", checkIfExists: true)]
+                input[2] = [[], []]
+                input[3] = [[], []]
+                input[4] = 'crai'
+                """
+            }
+        }
+
+        then {
+            assert process.success
+        }
+    }
+}
