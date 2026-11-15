@@ -16,7 +16,6 @@ workflow UNION_MARKERS {
         .map { meta, cram, crai -> [meta.donor, meta.id, cram, crai] }.groupTuple()
     def ch_row = ch_rows.map { meta, counts, markers, union -> [meta.donor, meta.region, meta.donor.tokenize('.')[0], counts, markers, union] }
 
-    // the donor's lines at its markers, MAPQ >= 60 / BQ >= 30
     RECOUNT_LINES(
         ch_lines.combine(ch_row, by: 0)
             .map { donor, ids, crams, crais, region, _taxon, _counts, markers, _union -> [[id: donor, region: region, samples: ids], crams, crais, markers, []] },
@@ -24,7 +23,7 @@ workflow UNION_MARKERS {
         false
     )
 
-    // per taxon x region, once all its donors' recounts are in: site flags, each donor's kept markers, the taxon union
+    // per taxon x region, once all its donors' recounts are in (groupKey)
     def ch_n = ch_row.map { _donor, region, taxon, _c, _m, _u -> [[taxon, region], 1] }.groupTuple().map { key, ones -> [key, ones.size()] }
     FLAG_MARKER_SITES(
         RECOUNT_LINES.out.vcf.map { meta, vcf -> [meta.id, meta.region, vcf] }
@@ -38,7 +37,6 @@ workflow UNION_MARKERS {
         tool
     )
 
-    // each donor's lines at its taxon's union, MAPQ >= 60 / BQ >= 30
     def ch_union = FLAG_MARKER_SITES.out.union.map { meta, vcf -> [meta.id, meta.region, vcf] }
     COUNT_TAXON_UNION(
         ch_row.map { donor, region, taxon, _c, _m, _u -> [taxon, region, donor] }

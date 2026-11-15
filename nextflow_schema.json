@@ -151,41 +151,14 @@
                     "minimum": 0,
                     "description": "Samples whose CollectWgsMetrics MEAN_COVERAGE is under this are dropped before variant calling.",
                     "fa_icon": "fas fa-filter"
-                }
-            }
-        },
-        "markers_options": {
-            "title": "Markers options",
-            "type": "object",
-            "fa_icon": "fas fa-seedling",
-            "description": "Inputs of --step markers; --input is a variant_calling run's samplesheets/<name>.counts.csv.",
-            "if": {
-                "properties": {
-                    "step": {
-                        "const": "markers"
-                    }
                 },
-                "required": ["step"]
-            },
-            "then": {
-                "required": ["crams", "known_sites"]
-            },
-            "properties": {
                 "crams": {
                     "type": "string",
-                    "format": "file-path",
-                    "exists": true,
-                    "pattern": "^\\S+\\.csv$",
-                    "description": "The CRAM sheet of the variant_calling run whose counts sheet is --input (assets/schema_cram.json).",
-                    "fa_icon": "fas fa-file-csv"
+                    "description": "--step markers: the CRAM sheet of the variant_calling run whose counts sheet is --input."
                 },
                 "known_sites": {
                     "type": "string",
-                    "format": "file-path",
-                    "exists": true,
-                    "pattern": "^\\S+\\.vcf\\.gz$",
-                    "description": "Wideseq sites (bgzipped VCF, .tbi next to it); a marker is kept only with its POS, REF and ALT here.",
-                    "fa_icon": "fas fa-file"
+                    "description": "--step markers: wideseq sites, bgzipped VCF with its .tbi."
                 }
             }
         },
@@ -317,9 +290,6 @@
         },
         {
             "$ref": "#/$defs/variant_calling_options"
-        },
-        {
-            "$ref": "#/$defs/markers_options"
         },
         {
             "$ref": "#/$defs/ancestry_options"
