@@ -135,3 +135,15 @@ File quota: group stop line 975k (user, 2026-11-15).
 Own sites: Slurm jobs 1929021 (task 1) and 1929022 (tasks 2-82), 2026-11-16 08:07-08:15, ~25 s per donor. Own markers
 equal `depth_mq_wideseq_maf` on all 820 donor x chromosome pairs; 6,076,346 own markers, 5,998,782 of them with a
 count record. Sheet: 820 rows, every path present.
+
+1. 2026-11-16 08:16, commit `155e7ec`, checkout `ZEAL/zealgt_prod`. Setup check 1929156 passed (config, 31 containers,
+   `CALL_ANCESTRY` and `ANCESTRY_GRID` stubs). Group files 914,737 at submission. Head job 1929182. **Succeeded**:
+   workflow 08:16-10:19 (submission ~3 s per task), cleanup to 10:21, head job ended 10:35 (2 h 19 min); group peak seen
+   933,254 files (polls every 5 min), 915,106 after cleanup.
+
+### Results (informative sites)
+
+- 820 RTIGER fits (`segments.bed`, `dropped_lines.tsv`, `line_checks.tsv`, `ancestry.vcf.gz`, `rqtl.csv`, 820 each),
+  10 grids; outputs `ZEAL/informative_markers/ancestry/`.
+- No line dropped by ancestry (0 rows in the 820 `dropped_lines.tsv`).
+- Segments: mexicana 45,799 (union run 50,481), parviglumis 40,904 (union run 44,530).
