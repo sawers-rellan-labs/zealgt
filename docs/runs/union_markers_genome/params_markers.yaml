@@ -1,0 +1,6 @@
+step: markers
+input: /rsstu/users/r/rrellan/BZea/ZEAL/variant_calling/samplesheets/samplesheet.counts.csv
+crams: /rsstu/users/r/rrellan/BZea/ZEAL/zealgt_prod/docs/runs/variant_calling_production/samplesheet.csv
+known_sites: /rsstu/users/r/rrellan/BZea/ZEAL/reference/wideseq_sites_biallelic_snps.vcf.gz
+fasta: /rsstu/users/r/rrellan/BZea/ZEAL/reference/Zm-B73-REFERENCE-NAM-5.0.fa
+outdir: /rsstu/users/r/rrellan/BZea/ZEAL/union_markers
