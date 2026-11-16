@@ -354,3 +354,22 @@ Huehuetenangensis chr10 (2 donors, 61 lines), hpc_dev, jobs 1913592-93 (trace `m
 | `RECOUNT_LINES`     | 2     | 3.0 min | 0.68 GB  | 4 GB (as `COUNT_LINES`)        |
 | `COUNT_TAXON_UNION` | 2     | 2.0 min | 0.65 GB  | 4 GB (as `COUNT_LINES`)        |
 | `FLAG_MARKER_SITES` | 1     | 1.8 min | 0.14 GB  | 4 GB (as `FILL_DONOR_ALLELES`) |
+
+## MARKERS and ANCESTRY genome-wide, measured (2026-11-15/16, all 95 donors, chr1-chr10)
+
+`hpc_prod`, `process.scratch = true`, `docs/runs/union_markers_genome.md` attempts 2-3: markers 1917377 (1,322 tasks)
+then 1920150 (`-resume`, 628 more, 30 min wall), ancestry 1920151 (3 h 2 min wall). Traces
+`ZEAL/union_markers/pipeline_info/execution_trace_2026-11-15_{20-11-09,21-06-16,21-37-16}.txt`.
+
+| process              | tasks | median  | longest  | peak RSS | request | CPU-h |
+| -------------------- | ----- | ------- | -------- | -------- | ------- | ----- |
+| `RECOUNT_LINES`      | 950   | 3.0 min | 9.8 min  | 1.10 GB  | 4 GB    | 52.5  |
+| `COUNT_TAXON_UNION`  | 950   | 1.2 min | 5.3 min  | 1.10 GB  | 4 GB    | 22.5  |
+| `FLAG_MARKER_SITES`  | 50    | 3.2 min | 14.9 min | 0.55 GB  | 4 GB    | 4.2   |
+| `CALL_ANCESTRY`      | 950   | 0.2 min | 1.5 min  | 1.50 GB  | 2 GB    | 3.2   |
+| `ANCESTRY_VCF_INDEX` | 950   | < 0.1   | < 0.1    | 0.01 GB  | 1 GB    | 0.1   |
+| `ANCESTRY_GRID`      | 10    | 0.3 min | 0.3 min  | 0.70 GB  | 1 GB    | < 0.1 |
+
+- Files: ~51 per task with job arrays and no scratch (attempt 1), 11.4 with `process.scratch = true` (attempt 2, 60
+  finished task dirs); group peak 963,284 files during ancestry, back to 936,864 after both cleanups.
+- Ancestry wall is mostly submission: `CALL_ANCESTRY` has no job arrays, 950 jobs at 20 per minute.

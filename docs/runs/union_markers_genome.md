@@ -74,4 +74,27 @@ Per taxon: CO and INT blocks per line, genotype classes against BC2S2, the QTL s
    over the 950,000 stop line.
 3. 2026-11-15 21:05, commit `d34c08c`, markers `-resume` from attempt 2's launch directory (`work/` 21,002 files kept),
    after the user's cleanup (group 936,227 files) and new stop line (user, 2026-11-15: "change ethe limit to 975k").
-   Markers 1920150, ancestry 1920151 afterok.
+   Markers 1920150, ancestry 1920151 afterok. **Succeeded**: markers 21:06-21:36 (628 tasks run, the rest cached), ancestry
+   21:37-00:38; group peak 963,284 files, 936,864 after cleanup. Outputs `ZEAL/union_markers/` (`markers/`, `ancestry/`,
+   `samplesheets/samplesheet.counts.markers.csv`).
+
+## Results
+
+Checks (`agent/` scripts, bugs not accuracy):
+
+1. The markers sheet has 950 rows, one per donor x chromosome; no donor x chromosome has 0 kept markers.
+2. Huehuetenangensis equals row 2 (jobs 1855319-1856527): all 20 marker-count rows at every filter, the 4,466 segments,
+   CO 63.2 and INT blocks 22.3 per line on the same 61 lines (0 lines differ).
+3. No line dropped by ancestry.
+
+| taxon             | donors | markers per donor at start (median) | kept markers per donor (median) | lines | CO per line (mean) | INT blocks per line (mean) |
+| ----------------- | ------ | ----------------------------------- | ------------------------------- | ----- | ------------------ | -------------------------- |
+| mexicana          | 42     | 1,464,234                           | 87,965                          | 715   | 60.6               | 18.4                       |
+| parviglumis       | 40     | 1,356,064                           | 58,693                          | 601   | 64.1               | 18.6                       |
+| diploperennis     | 6      | 1,419,232                           | 24,829                          | 253   | 52.5               | 20.5                       |
+| luxurians         | 5      | 1,333,147                           | 66,608                          | 119   | 62.2               | 24.6                       |
+| huehuetenangensis | 2      | 1,852,254                           | 56,752                          | 61    | 63.2               | 22.3                       |
+
+Markers per donor summed over chr1-chr10; CO = state changes along each chromosome (same state merged across missing
+gaps), INT blocks = runs of HET or ALT, summed over chr1-chr10 per line (lines with all ten chromosomes). Time and
+memory: `docs/RESOURCES.md`, "MARKERS and ANCESTRY genome-wide".
