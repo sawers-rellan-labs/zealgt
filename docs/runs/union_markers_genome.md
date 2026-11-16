@@ -72,3 +72,6 @@ Per taxon: CO and INT blocks per line, genotype classes against BC2S2, the QTL s
    error); Slurm cancelled ancestry. 13 orphaned task arrays cancelled by the IDs in `.nextflow.log`. Group 943,629 files
    after the failure; `work/` kept for `-resume`. Not resumed: the ~628 tasks left at ~11.4 files each end near 950.8k,
    over the 950,000 stop line.
+3. 2026-11-15 21:05, commit `d34c08c`, markers `-resume` from attempt 2's launch directory (`work/` 21,002 files kept),
+   after the user's cleanup (group 936,227 files) and new stop line (user, 2026-11-15: "change ethe limit to 975k").
+   Markers 1920150, ancestry 1920151 afterok.
