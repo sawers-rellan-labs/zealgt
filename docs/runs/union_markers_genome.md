@@ -98,3 +98,40 @@ Checks (`agent/` scripts, bugs not accuracy):
 Markers per donor summed over chr1-chr10; CO = state changes along each chromosome (same state merged across missing
 gaps), INT blocks = runs of HET or ALT, summed over chr1-chr10 per line (lines with all ten chromosomes). Time and
 memory: `docs/RESOURCES.md`, "MARKERS and ANCESTRY genome-wide".
+
+## Informative sites (mexicana, parviglumis)
+
+### Why
+
+User, 2026-11-16: "let's start with the informatibve as own in close taxa and add gapfilled in the divergent taxa";
+"yes reuse the segments for the divergent taxa". Diploperennis, luxurians and huehuetenangensis are not rerun: their
+informative set is the union, done above.
+
+### Inputs
+
+- Own markers per donor x chromosome (82 Zx/Zv donors, chr1-chr10, 820): the taxon union markers
+  (`ZEAL/union_markers/markers/counts/<donor>/<chr>/<taxon>.<chr>.union_markers.vcf`) whose POS, REF and ALT are in
+  the donor's `union_alt.vcf` of run 1367152 (`ZEAL/variant_calling/variant_calling/counts/<donor>/<chr>/`).
+  Their number equals `depth_mq_wideseq_maf` of the union run's marker counts.
+- Counts: the donor's union count VCF kept at those positions (its records carry ALT `.` where no line has an ALT
+  read, so positions, not alleles).
+- Written by a Slurm array outside the pipeline (bcftools 1.23.1, the nf-core `bcftools/view` image; no new pileup) to
+  `ZEAL/informative_markers/counts/<donor>/<chr>/` (`<donor>.<chr>.own_markers.vcf`, `<donor>.<chr>.counts.vcf.gz`
+  and `.tbi`).
+- Sheet `ZEAL/informative_markers/samplesheets/samplesheet.counts.informative.csv`: the union sheet's 820 Zx/Zv rows,
+  `counts` and `markers` pointing to the files above, `union` unchanged.
+
+### Run
+
+`--step ancestry`, `hpc_prod`, checkout `ZEAL/zealgt_prod` at `d34c08c` plus run-plan commits (docs only), params
+`docs/runs/union_markers_genome/params_informative.yaml`, `run.config`; launch
+`/share/maize/frodrig4/nf_work/informative_ancestry`; outputs `ZEAL/informative_markers/`. Expected 820 RTIGER fits
+(one per donor x chromosome), 10 grids.
+
+File quota: group stop line 975k (user, 2026-11-15).
+
+### Attempts
+
+Own sites: Slurm jobs 1929021 (task 1) and 1929022 (tasks 2-82), 2026-11-16 08:07-08:15, ~25 s per donor. Own markers
+equal `depth_mq_wideseq_maf` on all 820 donor x chromosome pairs; 6,076,346 own markers, 5,998,782 of them with a
+count record. Sheet: 820 rows, every path present.
