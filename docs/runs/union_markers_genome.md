@@ -64,3 +64,11 @@ Per taxon: CO and INT blocks per line, genotype classes against BC2S2, the QTL s
    stop; frodrig4 43,390 -> 86,802). 830 of 950 `RECOUNT_LINES` submitted, 433 completed; `work/` held 39,269 files at
    ~769 tasks: ~51 files per task, not the ~23 of run 1367152 (job arrays). At that rate the markers run is ~100k files
    and ancestry another ~100k: neither fits the ~34k now free. Not resumed (user's decision).
+2. 2026-11-15 20:10, commit `d34c08c` (`process.scratch = true`; user, after deleting attempt 1's `work/`), fresh. Setup
+   check 1917230 passed. Markers 1917377, ancestry 1917378 afterok. Early check at 79 finished tasks: 11.4 files per task
+   (60 task dirs). **Failed** at 20:40 after 1,322 of ~1,950 markers tasks succeeded (0 failed): Nextflow threw
+   `java.util.ConcurrentModificationException` in `TaskArrayCollector.createTaskArray` ->
+   `BashWrapperBuilder.createContainerBuilder` while submitting a `COUNT_TAXON_UNION` array (Nextflow internals, no task
+   error); Slurm cancelled ancestry. 13 orphaned task arrays cancelled by the IDs in `.nextflow.log`. Group 943,629 files
+   after the failure; `work/` kept for `-resume`. Not resumed: the ~628 tasks left at ~11.4 files each end near 950.8k,
+   over the 950,000 stop line.
