@@ -54,4 +54,13 @@ Per taxon: CO and INT blocks per line, genotype classes against BC2S2, the QTL s
 
 ## Attempts
 
-None yet.
+1. 2026-11-15 19:12, commit `67bf153` (tag `markers-genome-20261115` plus this run's params), checkout
+   `ZEAL/zealgt_prod`. Group files 922,286 of 1,000,000: one markers run. Counts sheet check: 950 rows, 95 donors, 10
+   regions, every path present. Setup check job 1915167 passed (config, inspect, 5 process stubs). Head jobs: markers
+   1915482 (launch `nf_work/union_markers_genome`), ancestry 1915483 afterok (launch `nf_work/union_markers_ancestry`);
+   params `docs/runs/union_markers_genome/params_{markers,ancestry}.yaml`, `run.config`.
+   **Stopped** at 19:34 (`scancel --signal=INT --batch 1915482`; ancestry 1915483 cancelled; 15 leftover task arrays
+   cancelled by the IDs in `.nextflow.log`): the group passed the 950k stop line (958,441 at 19:33, 966,370 after the
+   stop; frodrig4 43,390 -> 86,802). 830 of 950 `RECOUNT_LINES` submitted, 433 completed; `work/` held 39,269 files at
+   ~769 tasks: ~51 files per task, not the ~23 of run 1367152 (job arrays). At that rate the markers run is ~100k files
+   and ancestry another ~100k: neither fits the ~34k now free. Not resumed (user's decision).
