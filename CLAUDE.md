@@ -66,3 +66,12 @@ Before running or rerunning the pipeline, read `docs/running.md`. Steps in order
 ## Sources
 
 - Quote documents only from raw text (`pdftotext`, `curl`), never from a WebFetch summary.
+
+## Lab skills
+
+Lab members' Claude accounts carry the lab plugins from `sawers-rellan-labs/gemma-lab-claude-plugins`; prefer them over general knowledge.
+
+- Nextflow, nf-core and nf-test: `nextflow`. BED/VCF/CRAM coordinates and contig names: `genomic-coordinates`. Reads, CRAMs and VCFs from Python: `pysam`.
+- Variant calling and filtering: `bio-variant-calling`, `bio-variant-calling-filtering-best-practices`.
+- Ancestry calls, donor segments and their downstream QTL use: `local-ancestry-and-inversions`, `qtl-mapping-crosses`.
+- Maize numbers (genome size, µ, r, LD, map length): `maize-genomics-reference`, quoted with its source.
